@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireToken } from "@/lib/session";
-import { LoginForm } from "@/components/LoginForm";
-import { RegisterForm } from "@/components/RegisterForm";
+import { AuthFlow } from "@/components/AuthFlow";
 
 export const dynamic = "force-dynamic";
 
@@ -15,26 +14,7 @@ export default async function LoginPage() {
 
   return (
     <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      <div className="grid gap-8 md:grid-cols-2">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Sign in</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Use your Personal AI account to access the Waashop admin/vendor portal.
-          </p>
-          <div className="mt-6">
-            <LoginForm />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6">
-          <h2 className="text-xl font-semibold text-slate-900">Create an account</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            New vendors and admins can register via PAI. You will continue the onboarding flow once signed in.
-          </p>
-          <div className="mt-6">
-            <RegisterForm />
-          </div>
-        </div>
-      </div>
+      <AuthFlow />
     </div>
   );
 }

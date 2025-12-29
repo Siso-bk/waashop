@@ -32,6 +32,19 @@ router.post("/auth/telegram", async (req, res) => {
   }
 });
 
+router.post("/auth/email-status", async (req, res) => {
+  const schema = z.object({ email: z.string().email() });
+  try {
+    const { email } = schema.parse(req.body);
+    await connectDB();
+    const existing = await User.findOne({ email }).lean();
+    res.json({ exists: Boolean(existing) });
+  } catch (error) {
+    console.error("Email status error", error);
+    res.status(400).json({ error: "Unable to check email" });
+  }
+});
+
 router.get("/me", authMiddleware, async (req, res) => {
   const user = req.userDoc!;
   const vendor = await Vendor.findOne({ ownerUserId: req.userId }).lean();

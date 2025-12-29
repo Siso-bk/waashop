@@ -49,6 +49,12 @@ const authenticateToken = async (token: string): Promise<IUser | null> => {
   }
 };
 
+type PaiProfile = {
+  id: string;
+  email?: string;
+  name?: string;
+};
+
 const authenticatePaiToken = async (token: string): Promise<IUser | null> => {
   const response = await fetch(`${env.PAI_BASE_URL}/api/me`, {
     headers: {
@@ -59,7 +65,7 @@ const authenticatePaiToken = async (token: string): Promise<IUser | null> => {
   if (!response.ok) {
     throw new Error("PAI token invalid");
   }
-  const profile = await response.json();
+  const profile = (await response.json()) as PaiProfile;
   const email = profile.email;
   if (!email) {
     throw new Error("PAI user missing email");

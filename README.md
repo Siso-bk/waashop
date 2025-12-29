@@ -48,6 +48,7 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 | Method | Path | Notes |
 | --- | --- | --- |
 | `POST` | `/api/auth/telegram` | Verifies `initData`, upserts the user, returns `{ token, user }`. |
+| `POST` | `/api/auth/email-status` | Returns `{ exists: boolean }` for the given email so the UI can branch between login/registration. |
 | `GET` | `/api/me` | Requires `Authorization: Bearer <token>`. Returns balances/profile. |
 | `GET` | `/api/boxes` | Lists active boxes with reward tiers & probabilities. |
 | `POST` | `/api/boxes/buy` | Atomic purchase; deducts coins, runs secure random reward, writes ledgers/purchase. Body `{ boxId, purchaseId }`. |
@@ -64,11 +65,11 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 | `POST` | `/api/telegram/webhook` | Handles `/start`, replies with Mini App button pointing to `WEBAPP_URL`. |
 
 ## Auth Flow Recap
-1. Telegram launches the Mini App and injects `window.Telegram.WebApp.initData`.
-2. `TelegramAuthSync` calls the Express API’s `/api/auth/telegram` endpoint.
-3. The API verifies the HMAC signature, upserts the Mongo user (granting dev coins when not in production), issues a JWT, and returns `{ token, user }`.
-4. The frontend stores the token in the `waashop-token` cookie (SameSite Lax) so server components and client fetches can forward `Authorization: Bearer` headers.
-5. Subsequent UI renders call the API via `API_BASE_URL` to load `/api/me`, `/api/boxes`, `/api/ledger`, etc.
+1. Users enter their email. Waashop calls `/api/auth/email-status` to determine whether it’s a returning account.
+2. New users complete the PAI registration form (name + password); returning users enter their password. Both flows call PAI’s `/api/auth/register` or `/api/auth/login` respectively.
+3. PAI returns a JWT, which the frontend stores in the `waashop-token` cookie (SameSite Lax).
+4. Waashop immediately calls `/api/me` on the backend. If the token is a Waashop JWT we issued earlier, it verifies locally; otherwise it forwards the token to `PAI_BASE_URL/api/me`, upserts the user by email, and returns the Waashop profile.
+5. With the session active, subsequent requests (Mini App, dashboard, vendor portal) include `Authorization: Bearer <token>` when calling the backend.
 
 ## Business Logic Highlights
 - **Transparent rewards**: Each mystery box exposes its tier probabilities; the API enforces crypto-secure randomness and guarantees a minimum point payout.

@@ -5,12 +5,14 @@ import { registerAction } from "@/components/login-actions";
 
 const initialState = { error: "" };
 
-export function RegisterForm() {
+export function RegisterForm({ email }: { email: string }) {
   const [state, action] = useFormState(registerAction, initialState);
   const { pending } = useFormStatus();
 
   return (
     <form action={action} className="space-y-4">
+      <input type="hidden" name="email" value={email} />
+      <div className="text-sm text-slate-500">Registering as {email}</div>
       <div>
         <label htmlFor="name" className="text-sm font-medium text-slate-600">
           Full name
@@ -22,19 +24,6 @@ export function RegisterForm() {
           required
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
           placeholder="Jane Doe"
-        />
-      </div>
-      <div>
-        <label htmlFor="register-email" className="text-sm font-medium text-slate-600">
-          Email address
-        </label>
-        <input
-          id="register-email"
-          name="email"
-          type="email"
-          required
-          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-          placeholder="you@example.com"
         />
       </div>
       <div>

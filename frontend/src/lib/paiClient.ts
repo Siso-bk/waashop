@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 
-const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL || env.API_BASE_URL;
+const PAI_BASE_URL = env.NEXT_PUBLIC_PAI_BASE_URL || env.API_BASE_URL;
 
 const parseJson = async <T>(response: Response) => {
   if (!response.ok) {
