@@ -1,56 +1,75 @@
 # Mystery Wallet
 
-A minimal ecommerce + virtual wallet experience for selling transparent mystery boxes inside a Telegram Mini App. Users spend coins, earn points, and every purchase is settled server-side with crypto-secure randomness and Mongo-backed ledgers.
+An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-app coins on mystery boxes, receive guaranteed points, and every purchase is processed server-side with crypto-secure randomness and Mongo-backed ledgers.
 
-## Tech Stack
-- Next.js App Router + TypeScript + Tailwind CSS
-- MongoDB + Mongoose models for Users, Ledger entries, Purchases, and Mystery Boxes
-- Telegram Mini App authentication (initData verification + JWT session cookie)
-- Secure reward engine with per-user top prize cooldowns and idempotent purchase processing
+## Monorepo Structure
+| Path | Description |
+| --- | --- |
+| `/frontend` | Next.js 16 App Router frontend (TypeScript + Tailwind). Fetches data from the standalone API and handles the Mini App UX. |
+| `/backend` | Express + TypeScript backend. Hosts the REST API, Telegram webhook, Mongoose models, reward engine, and business logic. Deploy this service to Render (or similar). |
 
-## Getting Started
-1. **Install dependencies**
+## Frontend Setup (Next.js)
+1. Install deps & start dev server:
    ```bash
+   cd frontend
    npm install
-   ```
-2. **Configure environment** – copy `.env.example` to `.env.local` and set:
-   - `MONGODB_URI` – Mongo connection string
-   - `TELEGRAM_BOT_TOKEN` – Bot token used to verify Telegram Mini App `initData`
-   - `JWT_SECRET` – any strong secret for signing session cookies
-   - `WEBAPP_URL` – public HTTPS URL where the Mini App is deployed (used for the `/start` button)
-3. **Run the dev server**
-   ```bash
    npm run dev
    ```
-4. **Seed data (dev helper)** – optional POST to `/api/admin/seed` (blocked in production) to create the default box (`BOX_1000`). Pass `{ "telegramId": "123" }` to pre-fund a test user with 5,000 coins, or omit the body to only seed the box.
+2. Copy `frontend/.env.example` → `frontend/.env.local` and set:
+   - `NEXT_PUBLIC_API_BASE_URL` – public URL of the Express API (e.g. `https://waashop-api.onrender.com` or `http://localhost:4000`).
+   - `API_BASE_URL` – same value for server-only calls (use the private Render URL if you want to bypass the CDN).
+3. The Telegram Mini App client (`TelegramAuthSync`) posts init data directly to `${NEXT_PUBLIC_API_BASE_URL}/api/auth/telegram`, stores the returned JWT token in `waashop-token`, and refreshes the UI.
 
-## Telegram Authentication Flow
-- Web client obtains `window.Telegram.WebApp.initData` inside the Mini App context.
-- POST `/api/auth/telegram` with `{ initData }`.
-- Server verifies the HMAC signature, upserts the user, grants 5,000 dev coins for first-time users (non-production), sets an HTTP-only JWT cookie, and responds with profile + balances.
+## Backend Setup (Express API)
+1. Install deps & run locally:
+   ```bash
+   cd backend
+   npm install
+   npm run dev
+   ```
+2. Configure environment with `backend/.env.example`:
+   - `PORT` – defaults to 4000 locally.
+   - `MONGODB_URI` – Mongo connection string.
+   - `TELEGRAM_BOT_TOKEN` – bot token used for initData verification and webhook responses.
+   - `JWT_SECRET` – signing key for session tokens (shared only with the API).
+   - `WEBAPP_URL` – public HTTPS URL of your frontend; used for `/start` replies.
+   - `CORS_ORIGIN` – comma-delimited list of allowed frontend origins (e.g. `https://waashop.vercel.app`).
+3. Deploying to **Render**:
+   - Create a new Web Service from the `/backend` folder.
+   - Set the environment variables above in Render’s dashboard.
+   - Render builds via `npm install && npm run build` and starts with `npm run start`.
+4. Point BotFather’s `/setwebhook` to Render: `https://api.telegram.org/bot<token>/setWebhook?url=https://<render-service>/api/telegram/webhook`.
 
-### Telegram Bot Webhook
-- Set your bot webhook to `https://<your-domain>/api/telegram/webhook` (e.g. `curl "https://api.telegram.org/bot<token>/setWebhook?url=https://example.com/api/telegram/webhook"`).
-- The webhook responds to `/start` by replying with a welcome message and a `web_app` button that opens the URL from `WEBAPP_URL`.
+## Data & API Overview (backend)
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/api/auth/telegram` | Verifies `initData`, upserts the user, returns `{ token, user }`. |
+| `GET` | `/api/me` | Requires `Authorization: Bearer <token>`. Returns balances/profile. |
+| `GET` | `/api/boxes` | Lists active boxes with reward tiers & probabilities. |
+| `POST` | `/api/boxes/buy` | Atomic purchase; deducts coins, runs secure random reward, writes ledgers/purchase. Body `{ boxId, purchaseId }`. |
+| `GET` | `/api/ledger` | Paginated ledger history (`page`, `limit`). |
+| `POST` | `/api/admin/seed` | Dev-only helper to create `BOX_1000` + optional user coins. Blocked when `NODE_ENV === "production"`. |
+| `POST` | `/api/telegram/webhook` | Handles `/start`, replies with Mini App button pointing to `WEBAPP_URL`. |
 
-## API Overview
-| Method & Path | Description |
-| --- | --- |
-| `POST /api/auth/telegram` | Verify Telegram init data, upsert the user, start a session. |
-| `GET /api/me` | Return authenticated balances/profile. |
-| `GET /api/boxes` | List active boxes with reward tiers & probabilities. |
-| `POST /api/boxes/buy` | Purchase a box atomically. Requires `boxId` + client-generated `purchaseId` (idempotency key). Deducts coins, credits rewards, updates ledgers and purchase status. |
-| `GET /api/ledger` | Paginated ledger entries (`page`, `limit`). |
-| `POST /api/admin/seed` | Dev-only seeding for the default mystery box + optional user coins. |
+## Auth Flow Recap
+1. Telegram launches the Mini App and injects `window.Telegram.WebApp.initData`.
+2. `TelegramAuthSync` calls the Express API’s `/api/auth/telegram` endpoint.
+3. The API verifies the HMAC signature, upserts the Mongo user (granting dev coins when not in production), issues a JWT, and returns `{ token, user }`.
+4. The frontend stores the token in the `waashop-token` cookie (SameSite Lax) so server components and client fetches can forward `Authorization: Bearer` headers.
+5. Subsequent UI renders call the API via `API_BASE_URL` to load `/api/me`, `/api/boxes`, `/api/ledger`, etc.
 
 ## Business Logic Highlights
-- **Virtual wallet** tracks separate `coins` (spendable credits) and `points` (non-cashable rewards).
-- **Reward engine** pulls from the box tier table using crypto-secure randomness with transparent probabilities shown on every box page.
-- **Top tier fairness** enforces a 7-day cooldown per user. If they roll the top tier while on cooldown, they automatically receive the highest non-top tier.
-- **Guaranteed minimum** ensures every purchase awards at least the box’s `guaranteedMinPoints`.
-- **Transactions & ledgers** run inside MongoDB transactions (when supported) and log both the coin debit and points credit for auditability. Purchases are idempotent via the `purchaseId` field plus unique index.
+- **Transparent rewards**: Each mystery box exposes its tier probabilities; the API enforces crypto-secure randomness and guarantees a minimum point payout.
+- **Top-tier cooldown**: Users can only hit the top tier every 7 days; otherwise they’re downgraded to the next best tier.
+- **Wallet ledger**: Every purchase writes a coin debit + points credit entry so `/wallet` stays auditable.
+- **Idempotent purchases**: Clients supply a `purchaseId`; duplicates are ignored to prevent double credits.
+- **Separation of concerns**: Next.js handles the Mini App UX, while the Express API can scale independently on Render.
 
-## Development Notes
-- App Router pages (`/`, `/boxes/[boxId]`, `/wallet`) read directly from Mongo using shared model helpers.
-- The UI includes a modal animation when a reward is revealed, plus tables outlining every probability.
-- Adjust reward tables or add new boxes via MongoDB; the UI automatically surfaces active boxes.
+## Developing / Deploying
+1. Run the Express API locally (`backend/npm run dev`).
+2. Start the Next.js app (from `frontend/`) with `.env.local` pointing to that API.
+3. Seed data via `POST /api/admin/seed` while in dev.
+4. Deploy the backend to Render, update the frontend env vars to the Render URL, and redeploy the Next.js project to Vercel.
+5. Configure BotFather to point `/setdomain` and `/setmenubutton` to your Vercel domain; set `/setwebhook` to the Render endpoint.
+
+With both services live, Telegram users can open the Mini App, authenticate automatically, and purchase boxes backed by the standalone API.
