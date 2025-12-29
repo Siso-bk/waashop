@@ -10,7 +10,7 @@ export default async function LoginPage() {
     await requireToken();
     redirect("/");
   } catch {
-    // Not authenticated yet
+    // Continue to render login/register
   }
 
   return (
@@ -19,7 +19,7 @@ export default async function LoginPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Sign in</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Use your Personal AI account to access the Waashop admin/vendor portal.
+            Use your Personal AI account to continue. This unlocks your wallet and mystery boxes across platforms.
           </p>
           <div className="mt-6">
             <LoginForm />
@@ -28,7 +28,7 @@ export default async function LoginPage() {
         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6">
           <h2 className="text-xl font-semibold text-slate-900">Create an account</h2>
           <p className="mt-2 text-sm text-slate-500">
-            New vendors and admins can register via PAI. You will continue the onboarding flow once signed in.
+            New shoppers can register via PAI. Once verified, your Waashop wallet will be ready to use.
           </p>
           <div className="mt-6">
             <RegisterForm />

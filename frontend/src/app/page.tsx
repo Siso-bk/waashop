@@ -15,7 +15,7 @@ export default async function HomePage() {
             <p className="text-sm uppercase tracking-wide text-white/70">Mystery Boxes</p>
             <h1 className="text-3xl font-bold">Open boxes. Earn guaranteed points.</h1>
             <p className="mt-2 text-sm text-white/80">
-              Secure draws with transparent reward odds, top prize cooldowns, and server-side fairness.
+              Sign in with your Personal AI account to sync purchases across Telegram, web, and mobile.
             </p>
           </div>
           <div className="rounded-2xl bg-white/10 p-4 text-right">
@@ -31,7 +31,7 @@ export default async function HomePage() {
         <BalancePanel coins={user.coinsBalance} points={user.pointsBalance} />
       ) : (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-6 text-sm text-gray-600">
-          Connect through the Telegram Mini App to load your wallet. Auth is enforced via Telegram initData.
+          Sign in to load your wallet balances.
         </div>
       )}
 

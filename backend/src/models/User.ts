@@ -5,6 +5,7 @@ export interface IUser extends Document {
   firstName?: string;
   lastName?: string;
   username?: string;
+  email?: string;
   coinsBalance: number;
   pointsBalance: number;
   lastTopWinAt?: Date | null;
@@ -19,6 +20,7 @@ const UserSchema = new Schema<IUser>(
     firstName: String,
     lastName: String,
     username: String,
+    email: { type: String },
     coinsBalance: { type: Number, default: 0 },
     pointsBalance: { type: Number, default: 0 },
     lastTopWinAt: { type: Date },
@@ -26,5 +28,7 @@ const UserSchema = new Schema<IUser>(
   },
   { timestamps: true }
 );
+
+UserSchema.index({ email: 1 }, { unique: true, sparse: true });
 
 export default models.User || model<IUser>("User", UserSchema);

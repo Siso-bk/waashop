@@ -11,4 +11,5 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   API_BASE_URL: apiBase,
   NEXT_PUBLIC_API_BASE_URL: optional("NEXT_PUBLIC_API_BASE_URL") || apiBase,
+  NEXT_PUBLIC_PAI_BASE_URL: optional("NEXT_PUBLIC_PAI_BASE_URL") || undefined,
 };

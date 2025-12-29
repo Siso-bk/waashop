@@ -45,9 +45,7 @@ export default async function BoxDetails({ params }: Props) {
         </div>
         <div className="mt-6">
           <BoxPurchaseButton box={box} disabled={!user} />
-          {!user && (
-            <p className="mt-2 text-xs text-red-500">Log in via Telegram to buy boxes.</p>
-          )}
+          {!user && <p className="mt-2 text-xs text-red-500">Log in to buy boxes.</p>}
         </div>
       </div>
     </div>

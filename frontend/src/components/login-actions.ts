@@ -20,14 +20,14 @@ const persistToken = async (token: string) => {
   });
 };
 
-const syncPortalSession = async (): Promise<ActionState> => {
+const syncSession = async (): Promise<ActionState> => {
   try {
     await backendFetch("/api/me");
     redirect("/");
   } catch (error) {
     const cookieStore = await cookies();
     cookieStore.delete(SESSION_COOKIE);
-    const message = error instanceof Error ? error.message : "Failed to sync session";
+    const message = error instanceof Error ? error.message : "Failed to sync wallet";
     return { error: message };
   }
 };
@@ -45,7 +45,7 @@ export const loginAction = async (_prev: ActionState, formData: FormData): Promi
       body: JSON.stringify({ email, password }),
     });
     await persistToken(token);
-    return await syncPortalSession();
+    return await syncSession();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Login failed";
     return { error: message };
@@ -66,7 +66,7 @@ export const registerAction = async (_prev: ActionState, formData: FormData): Pr
       body: JSON.stringify({ name, email, password }),
     });
     await persistToken(token);
-    return await syncPortalSession();
+    return await syncSession();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed";
     return { error: message };

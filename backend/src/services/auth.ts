@@ -123,6 +123,7 @@ export const serializeUser = (user: IUser) => ({
   firstName: user.firstName,
   lastName: user.lastName,
   username: user.username,
+  email: user.email,
   coinsBalance: user.coinsBalance,
   pointsBalance: user.pointsBalance,
   lastTopWinAt: user.lastTopWinAt,

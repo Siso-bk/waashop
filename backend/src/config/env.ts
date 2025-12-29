@@ -22,6 +22,7 @@ export const env = {
     .split(",")
     .map((id) => id.trim())
     .filter(Boolean),
+  PAI_BASE_URL: process.env.PAI_BASE_URL,
 };
 
 export const isProd = env.NODE_ENV === "production";

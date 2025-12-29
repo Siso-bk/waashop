@@ -46,7 +46,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
         ?.split("=")[1];
 
       if (!token) {
-        setError("You need to connect through Telegram before buying.");
+        setError("Please sign in before buying.");
         setIsLoading(false);
         return;
       }

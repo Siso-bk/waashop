@@ -24,7 +24,8 @@ export interface LedgerEntryDto {
 
 export interface UserProfile {
   id: string;
-  telegramId: string;
+  telegramId?: string;
+  email?: string;
   firstName?: string;
   lastName?: string;
   username?: string;

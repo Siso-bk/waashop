@@ -3,6 +3,7 @@ import { verifySessionToken } from "../services/auth";
 import User, { IUser } from "../models/User";
 import Vendor, { IVendor } from "../models/Vendor";
 import { connectDB } from "../lib/db";
+import { env } from "../config/env";
 
 declare global {
   namespace Express {
@@ -22,9 +23,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
   const token = header.replace("Bearer ", "");
   try {
-    const payload = verifySessionToken(token);
-    await connectDB();
-    const user = await User.findById(payload.userId).exec();
+    const user = await authenticateToken(token);
     if (!user) {
       return res.status(401).json({ error: "User not found" });
     }
@@ -35,6 +34,50 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     console.error("Auth middleware error", error);
     res.status(401).json({ error: "Invalid session" });
   }
+};
+
+const authenticateToken = async (token: string): Promise<IUser | null> => {
+  try {
+    const payload = verifySessionToken(token);
+    await connectDB();
+    return User.findById(payload.userId).exec();
+  } catch (err) {
+    if (!env.PAI_BASE_URL) {
+      throw err;
+    }
+    return authenticatePaiToken(token);
+  }
+};
+
+const authenticatePaiToken = async (token: string): Promise<IUser | null> => {
+  const response = await fetch(`${env.PAI_BASE_URL}/api/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) {
+    throw new Error("PAI token invalid");
+  }
+  const profile = await response.json();
+  const email = profile.email;
+  if (!email) {
+    throw new Error("PAI user missing email");
+  }
+  await connectDB();
+  let user = await User.findOne({ email }).exec();
+  if (!user) {
+    user = new User({
+      email,
+      telegramId: `pai:${profile.id}`,
+      firstName: profile.name,
+      coinsBalance: 0,
+      pointsBalance: 0,
+      roles: ["customer"],
+    });
+    await user.save();
+  }
+  return user;
 };
 
 export const requireRole =

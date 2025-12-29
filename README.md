@@ -19,7 +19,8 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 2. Copy `frontend/.env.example` → `frontend/.env.local` and set:
    - `NEXT_PUBLIC_API_BASE_URL` – public URL of the Express API (e.g. `https://waashop-api.onrender.com` or `http://localhost:4000`).
    - `API_BASE_URL` – same value for server-only calls (use the private Render URL if you want to bypass the CDN).
-3. The Telegram Mini App client (`TelegramAuthSync`) posts init data directly to `${NEXT_PUBLIC_API_BASE_URL}/api/auth/telegram`, stores the returned JWT token in `waashop-token`, and refreshes the UI.
+   - `NEXT_PUBLIC_PAI_BASE_URL` – Personal AI auth base URL.
+3. Customers sign in/up via PAI (email + password). The returned JWT is stored in `waashop-token` and used when calling the Waashop backend (`/api/me`, `/api/boxes`, etc.).
 
 ## Backend Setup (Express API)
 1. Install deps & run locally:
@@ -36,6 +37,7 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
    - `WEBAPP_URL` – public HTTPS URL of your frontend; used for `/start` replies.
    - `CORS_ORIGIN` – comma-delimited list of allowed frontend origins (e.g. `https://waashop.vercel.app`).
    - `ADMIN_TELEGRAM_IDS` – comma-separated Telegram user IDs that should be auto-promoted to admin.
+   - `PAI_BASE_URL` – base URL of your Personal AI auth service (used to validate dashboard logins).
 3. Deploying to **Render**:
    - Create a new Web Service from the `/backend` folder.
    - Set the environment variables above in Render’s dashboard.
@@ -91,8 +93,10 @@ With both services live, Telegram users can open the Mini App, authenticate auto
    npm install
    npm run dev
    ```
-2. Copy `dashboard/.env.example` → `.env.local` and point both `API_BASE_URL` + `NEXT_PUBLIC_API_BASE_URL` to your backend (e.g. `http://localhost:4000`).
-3. The current login flow is a placeholder that expects you to paste a valid Waashop JWT (e.g. grabbed from the Telegram Mini App). Replace this with your preferred authentication when ready.
+2. Copy `dashboard/.env.example` → `.env.local` and set:
+   - `API_BASE_URL` / `NEXT_PUBLIC_API_BASE_URL` → backend URL.
+   - `PAI_BASE_URL` → Personal AI auth base URL (used for login/register).
+3. The login/register screens now call PAI’s `/api/auth/login` & `/api/auth/register` endpoints. On success they store the PAI JWT and sync with the Waashop backend, so you can use the portal in production.
 4. Admin views:
    - `/admin/vendors` – review vendor applications, approve/suspend.
    - `/admin/products` – activate/deactivate submitted mystery boxes.
