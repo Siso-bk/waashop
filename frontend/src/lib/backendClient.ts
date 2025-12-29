@@ -12,9 +12,13 @@ const parseJson = async <T>(response: Response) => {
   return (await response.json()) as T;
 };
 
-const authHeaders = () => {
-  const token = cookies().get(SESSION_COOKIE)?.value;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+const getSessionToken = async () => {
+  try {
+    const cookieStore = await cookies();
+    return cookieStore.get(SESSION_COOKIE)?.value;
+  } catch {
+    return undefined;
+  }
 };
 
 export const backendFetch = async <T>(path: string, init?: RequestInit & { auth?: boolean }) => {
@@ -22,8 +26,10 @@ export const backendFetch = async <T>(path: string, init?: RequestInit & { auth?
   const headers = new Headers(init?.headers);
   headers.set("Content-Type", "application/json");
   if (init?.auth !== false) {
-    const auth = authHeaders();
-    Object.entries(auth).forEach(([key, value]) => headers.set(key, value as string));
+    const token = await getSessionToken();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
   }
 
   const response = await fetch(url, {
