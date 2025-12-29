@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { IMysteryBox, IRewardTier } from "../models/MysteryBox";
+import { IProduct, IRewardTier } from "../models/Product";
 import { IUser } from "../models/User";
 
 export const TOP_REWARD_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -24,8 +24,12 @@ const selectTier = (tiers: IRewardTier[]) => {
 const fallbackTier = (tiers: IRewardTier[]) =>
   tiers.filter((tier) => !tier.isTop).sort((a, b) => b.points - a.points)[0];
 
-export const resolveReward = (box: IMysteryBox, user: IUser) => {
-  const selected = selectTier(box.rewardTiers);
+export const resolveReward = (product: IProduct, user: IUser) => {
+  const tiers = product.rewardTiers || [];
+  if (tiers.length === 0) {
+    throw new Error("Missing reward tiers configuration");
+  }
+  const selected = selectTier(tiers);
   const lastTop = user.lastTopWinAt?.getTime();
   const now = Date.now();
 
@@ -33,13 +37,13 @@ export const resolveReward = (box: IMysteryBox, user: IUser) => {
   let awardedTop = Boolean(selected.isTop);
 
   if (selected.isTop && lastTop && now - lastTop < TOP_REWARD_COOLDOWN_MS) {
-    const downgraded = fallbackTier(box.rewardTiers);
+    const downgraded = fallbackTier(tiers);
     if (downgraded) {
       awardedTier = downgraded;
       awardedTop = false;
     }
   }
 
-  const rewardPoints = Math.max(awardedTier.points, box.guaranteedMinPoints);
+  const rewardPoints = Math.max(awardedTier.points, product.guaranteedMinPoints || 0);
   return { tier: awardedTier, rewardPoints, awardedTop };
 };

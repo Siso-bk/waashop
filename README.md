@@ -7,6 +7,7 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 | --- | --- |
 | `/frontend` | Next.js 16 App Router frontend (TypeScript + Tailwind). Fetches data from the standalone API and handles the Mini App UX. |
 | `/backend` | Express + TypeScript backend. Hosts the REST API, Telegram webhook, Mongoose models, reward engine, and business logic. Deploy this service to Render (or similar). |
+| `/dashboard` | Next.js portal for admins & vendors. Uses the same API but provides management tooling (vendor onboarding, approvals, mystery-box submissions). |
 
 ## Frontend Setup (Next.js)
 1. Install deps & start dev server:
@@ -34,6 +35,7 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
    - `JWT_SECRET` – signing key for session tokens (shared only with the API).
    - `WEBAPP_URL` – public HTTPS URL of your frontend; used for `/start` replies.
    - `CORS_ORIGIN` – comma-delimited list of allowed frontend origins (e.g. `https://waashop.vercel.app`).
+   - `ADMIN_TELEGRAM_IDS` – comma-separated Telegram user IDs that should be auto-promoted to admin.
 3. Deploying to **Render**:
    - Create a new Web Service from the `/backend` folder.
    - Set the environment variables above in Render’s dashboard.
@@ -48,7 +50,15 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 | `GET` | `/api/boxes` | Lists active boxes with reward tiers & probabilities. |
 | `POST` | `/api/boxes/buy` | Atomic purchase; deducts coins, runs secure random reward, writes ledgers/purchase. Body `{ boxId, purchaseId }`. |
 | `GET` | `/api/ledger` | Paginated ledger history (`page`, `limit`). |
-| `POST` | `/api/admin/seed` | Dev-only helper to create `BOX_1000` + optional user coins. Blocked when `NODE_ENV === "production"`. |
+| `POST` | `/api/vendors` | Authenticated user submits/updates a vendor profile (status defaults to `PENDING`). |
+| `GET` | `/api/vendors/me` | Vendor can view their profile & approval status. |
+| `GET` | `/api/admin/vendors` | Admin-only list of vendors (filterable by status). |
+| `PATCH` | `/api/admin/vendors/:id/status` | Admin approves/rejects/suspends a vendor. |
+| `POST` | `/api/vendors/products` | Approved vendor creates a mystery-box product (goes into `PENDING` state). |
+| `GET` | `/api/vendors/products` | Vendor lists their own products. |
+| `GET` | `/api/admin/products` | Admin overview of every product. |
+| `PATCH` | `/api/admin/products/:id/status` | Admin activates/deactivates a product. |
+| `POST` | `/api/admin/seed` | Dev-only helper that creates a seed vendor + mystery box. Blocked when `NODE_ENV === "production"`. |
 | `POST` | `/api/telegram/webhook` | Handles `/start`, replies with Mini App button pointing to `WEBAPP_URL`. |
 
 ## Auth Flow Recap
@@ -73,3 +83,22 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 5. Configure BotFather to point `/setdomain` and `/setmenubutton` to your Vercel domain; set `/setwebhook` to the Render endpoint.
 
 With both services live, Telegram users can open the Mini App, authenticate automatically, and purchase boxes backed by the standalone API.
+
+## Admin/Vendor Dashboard Setup
+1. Install & run locally:
+   ```bash
+   cd dashboard
+   npm install
+   npm run dev
+   ```
+2. Copy `dashboard/.env.example` → `.env.local` and point both `API_BASE_URL` + `NEXT_PUBLIC_API_BASE_URL` to your backend (e.g. `http://localhost:4000`).
+3. The current login flow is a placeholder that expects you to paste a valid Waashop JWT (e.g. grabbed from the Telegram Mini App). Replace this with your preferred authentication when ready.
+4. Admin views:
+   - `/admin/vendors` – review vendor applications, approve/suspend.
+   - `/admin/products` – activate/deactivate submitted mystery boxes.
+5. Vendor workspace (`/vendor`):
+   - Submit/update vendor profile.
+   - Create new mystery boxes (reward tiers as JSON).
+   - See product statuses.
+
+Everything in `/dashboard` talks to the same backend API, so once you wire a proper auth flow, the portal is ready for production use.

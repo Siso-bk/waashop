@@ -1,12 +1,18 @@
 import { Router } from "express";
 import { z } from "zod";
-import { authMiddleware } from "../middleware/auth";
-import { verifyTelegramInitData, upsertTelegramUser, createSessionToken, serializeUser } from "../services/auth";
+import { authMiddleware, loadVendor, requireApprovedVendor, requireRole } from "../middleware/auth";
+import {
+  verifyTelegramInitData,
+  upsertTelegramUser,
+  createSessionToken,
+  serializeUser,
+} from "../services/auth";
 import { env, isProd } from "../config/env";
-import MysteryBox from "../models/MysteryBox";
 import Ledger from "../models/Ledger";
 import Purchase from "../models/Purchase";
 import User from "../models/User";
+import Vendor from "../models/Vendor";
+import Product from "../models/Product";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
 
@@ -28,13 +34,200 @@ router.post("/auth/telegram", async (req, res) => {
 
 router.get("/me", authMiddleware, async (req, res) => {
   const user = req.userDoc!;
-  res.json({ user: serializeUser(user) });
+  const vendor = await Vendor.findOne({ ownerUserId: req.userId }).lean();
+  res.json({ user: serializeUser(user), vendor });
 });
+
+/** Vendor onboarding */
+router.post("/vendors", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    name: z.string().min(2),
+    description: z.string().max(500).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    let vendor = await Vendor.findOne({ ownerUserId: req.userId }).exec();
+    if (!vendor) {
+      vendor = new Vendor({
+        ownerUserId: req.userId,
+        name: payload.name,
+        description: payload.description,
+        status: "PENDING",
+      });
+    } else {
+      vendor.name = payload.name;
+      vendor.description = payload.description;
+      if (vendor.status === "REJECTED") {
+        vendor.status = "PENDING";
+      }
+    }
+    await vendor.save();
+    if (!req.userDoc!.roles.includes("vendor")) {
+      req.userDoc!.roles.push("vendor");
+      await req.userDoc!.save();
+    }
+    res.json({ vendor });
+  } catch (error) {
+    console.error("Vendor create error", error);
+    res.status(400).json({ error: "Unable to submit vendor profile" });
+  }
+});
+
+router.get("/vendors/me", authMiddleware, loadVendor, async (req, res) => {
+  if (!req.vendorDoc) {
+    return res.status(404).json({ error: "Vendor profile not found" });
+  }
+  res.json({ vendor: req.vendorDoc });
+});
+
+router.get(
+  "/admin/vendors",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({ status: z.string().optional() });
+    const params = schema.parse(req.query);
+    await connectDB();
+    const query: Record<string, unknown> = {};
+    if (params.status) {
+      query.status = params.status;
+    }
+    const vendors = await Vendor.find(query).sort({ createdAt: -1 }).lean();
+    res.json({ vendors });
+  }
+);
+
+router.patch(
+  "/admin/vendors/:id/status",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({ status: z.enum(["APPROVED", "SUSPENDED", "REJECTED"]) });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const vendor = await Vendor.findById(req.params.id).exec();
+      if (!vendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      vendor.status = payload.status;
+      await vendor.save();
+      res.json({ vendor });
+    } catch (error) {
+      console.error("Vendor status error", error);
+      res.status(400).json({ error: "Unable to update vendor status" });
+    }
+  }
+);
+
+/** Product management */
+const rewardTierSchema = z.object({
+  points: z.number().int().positive(),
+  probability: z.number().positive(),
+  isTop: z.boolean().optional(),
+});
+
+const mysteryBoxSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().max(500).optional(),
+  priceCoins: z.number().int().positive(),
+  guaranteedMinPoints: z.number().int().positive(),
+  rewardTiers: z.array(rewardTierSchema).min(1),
+});
+
+router.post(
+  "/vendors/products",
+  authMiddleware,
+  loadVendor,
+  requireApprovedVendor,
+  async (req, res) => {
+    try {
+      const payload = mysteryBoxSchema.parse(req.body);
+      const totalProbability = payload.rewardTiers.reduce((acc, tier) => acc + tier.probability, 0);
+      if (Math.abs(totalProbability - 1) > 0.01) {
+        return res.status(400).json({ error: "Reward probabilities must sum to 1" });
+      }
+      const product = new Product({
+        vendorId: req.vendorDoc!._id,
+        name: payload.name,
+        description: payload.description,
+        priceCoins: payload.priceCoins,
+        guaranteedMinPoints: payload.guaranteedMinPoints,
+        rewardTiers: payload.rewardTiers,
+        type: "MYSTERY_BOX",
+        status: "PENDING",
+      });
+      await product.save();
+      res.json({ product });
+    } catch (error) {
+      console.error("Create product error", error);
+      res.status(400).json({ error: "Unable to create product" });
+    }
+  }
+);
+
+router.get(
+  "/vendors/products",
+  authMiddleware,
+  loadVendor,
+  requireApprovedVendor,
+  async (req, res) => {
+    const products = await Product.find({ vendorId: req.vendorDoc!._id }).sort({ createdAt: -1 }).lean();
+    res.json({ products });
+  }
+);
+
+router.get(
+  "/admin/products",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    await connectDB();
+    const products = await Product.find().sort({ createdAt: -1 }).lean();
+    res.json({ products });
+  }
+);
+
+router.patch(
+  "/admin/products/:id/status",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({ status: z.enum(["ACTIVE", "INACTIVE", "PENDING"]), notes: z.string().optional() });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const product = await Product.findById(req.params.id).exec();
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      product.status = payload.status;
+      await product.save();
+      res.json({ product });
+    } catch (error) {
+      console.error("Product status error", error);
+      res.status(400).json({ error: "Unable to update product status" });
+    }
+  }
+);
 
 router.get("/boxes", async (_req, res) => {
   await connectDB();
-  const boxes = await MysteryBox.find({ isActive: true }).lean();
-  res.json({ boxes });
+  const products = await Product.find({ type: "MYSTERY_BOX", status: "ACTIVE" })
+    .populate("vendorId", "name")
+    .lean();
+  res.json({
+    boxes: products.map((product) => ({
+      id: product._id.toString(),
+      boxId: product._id.toString(),
+      name: product.name,
+      priceCoins: product.priceCoins,
+      guaranteedMinPoints: product.guaranteedMinPoints,
+      rewardTiers: product.rewardTiers,
+      vendor: product.vendorId,
+    })),
+  });
 });
 
 router.post("/boxes/buy", authMiddleware, async (req, res) => {
@@ -54,31 +247,31 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
 
     const result = await withMongoSession(async (session) => {
       const userQuery = User.findById(req.userId);
-      const boxQuery = MysteryBox.findOne({ boxId, isActive: true });
+      const productQuery = Product.findOne({ _id: boxId, status: "ACTIVE", type: "MYSTERY_BOX" });
       if (session) {
         userQuery.session(session);
-        boxQuery.session(session);
+        productQuery.session(session);
       }
-      const [userDoc, boxDoc] = await Promise.all([userQuery, boxQuery]);
+      const [userDoc, product] = await Promise.all([userQuery, productQuery]);
 
       if (!userDoc) throw new Error("User not found");
-      if (!boxDoc) return { error: "Mystery box not found" } as const;
-      if (userDoc.coinsBalance < boxDoc.priceCoins) {
+      if (!product) return { error: "Mystery box not found" } as const;
+      if (userDoc.coinsBalance < product.priceCoins) {
         return { error: "Insufficient balance" } as const;
       }
 
       const purchase = new Purchase({
         purchaseId,
         userId: userDoc._id,
-        boxId: boxDoc.boxId,
-        priceCoins: boxDoc.priceCoins,
+        boxId,
+        priceCoins: product.priceCoins,
         status: "PENDING",
       });
       if (session) await purchase.save({ session });
       else await purchase.save();
 
-      userDoc.coinsBalance -= boxDoc.priceCoins;
-      const { rewardPoints, awardedTop, tier } = resolveReward(boxDoc, userDoc);
+      userDoc.coinsBalance -= product.priceCoins;
+      const { rewardPoints, awardedTop, tier } = resolveReward(product, userDoc);
       userDoc.pointsBalance += rewardPoints;
       if (awardedTop) {
         userDoc.lastTopWinAt = new Date();
@@ -87,17 +280,17 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
       const ledgerEntries = [
         {
           userId: userDoc._id,
-          deltaCoins: -boxDoc.priceCoins,
+          deltaCoins: -product.priceCoins,
           deltaPoints: 0,
           reason: "BOX_PURCHASE_DEBIT",
-          meta: { boxId: boxDoc.boxId, purchaseId },
+          meta: { productId: product._id, purchaseId },
         },
         {
           userId: userDoc._id,
           deltaCoins: 0,
           deltaPoints: rewardPoints,
           reason: "BOX_REWARD_CREDIT",
-          meta: { boxId: boxDoc.boxId, purchaseId, tierPoints: tier.points },
+          meta: { productId: product._id, purchaseId, tierPoints: tier.points },
         },
       ];
 
@@ -168,35 +361,41 @@ router.post("/admin/seed", async (req, res) => {
     return res.status(403).json({ error: "Not allowed" });
   }
   await connectDB();
-  const DEFAULT_BOX = {
-    boxId: "BOX_1000",
-    name: "Mystery Points Box",
-    priceCoins: 1000,
-    guaranteedMinPoints: 600,
-    rewardTiers: [
-      { points: 600, probability: 0.55 },
-      { points: 800, probability: 0.25 },
-      { points: 1000, probability: 0.15 },
-      { points: 3000, probability: 0.04 },
-      { points: 10000, probability: 0.01, isTop: true },
-    ],
-    isActive: true,
-  };
 
-  await MysteryBox.findOneAndUpdate(
-    { boxId: DEFAULT_BOX.boxId },
-    { $set: DEFAULT_BOX },
-    { upsert: true }
+  const user = await User.findOneAndUpdate(
+    { telegramId: "999999" },
+    { $setOnInsert: { coinsBalance: 10000, pointsBalance: 0, roles: ["customer", "vendor", "admin"] } },
+    { upsert: true, new: true }
   );
 
-  const telegramId = req.body?.telegramId;
-  if (telegramId) {
-    await User.findOneAndUpdate(
-      { telegramId },
-      { $set: { coinsBalance: 5000 }, $setOnInsert: { pointsBalance: 0 } },
-      { upsert: true }
-    );
+  let vendor = await Vendor.findOne({ ownerUserId: user._id }).exec();
+  if (!vendor) {
+    vendor = new Vendor({ ownerUserId: user._id, name: "Seed Vendor", status: "APPROVED" });
+    await vendor.save();
+  } else if (vendor.status !== "APPROVED") {
+    vendor.status = "APPROVED";
+    await vendor.save();
   }
+
+  await Product.findOneAndUpdate(
+    { name: "Mystery Points Box" },
+    {
+      vendorId: vendor._id,
+      description: "Seeded product",
+      priceCoins: 1000,
+      guaranteedMinPoints: 600,
+      rewardTiers: [
+        { points: 600, probability: 0.55 },
+        { points: 800, probability: 0.25 },
+        { points: 1000, probability: 0.15 },
+        { points: 3000, probability: 0.04 },
+        { points: 10000, probability: 0.01, isTop: true },
+      ],
+      type: "MYSTERY_BOX",
+      status: "ACTIVE",
+    },
+    { upsert: true, new: true }
+  );
 
   res.json({ ok: true });
 });

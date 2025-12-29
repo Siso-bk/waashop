@@ -8,6 +8,7 @@ export interface IUser extends Document {
   coinsBalance: number;
   pointsBalance: number;
   lastTopWinAt?: Date | null;
+  roles: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +22,7 @@ const UserSchema = new Schema<IUser>(
     coinsBalance: { type: Number, default: 0 },
     pointsBalance: { type: Number, default: 0 },
     lastTopWinAt: { type: Date },
+    roles: { type: [String], default: ["customer"] },
   },
   { timestamps: true }
 );

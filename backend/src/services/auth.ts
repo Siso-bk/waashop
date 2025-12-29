@@ -79,6 +79,15 @@ export const createSessionToken = (userId: string) =>
 export const verifySessionToken = (token: string) =>
   jwt.verify(token, env.JWT_SECRET) as SessionTokenPayload;
 
+const ensureRole = (user: IUser, role: string) => {
+  if (!user.roles) {
+    user.roles = [];
+  }
+  if (!user.roles.includes(role)) {
+    user.roles.push(role);
+  }
+};
+
 export const upsertTelegramUser = async (profile: TelegramWebAppUser) => {
   await connectDB();
   const telegramId = profile.id.toString();
@@ -99,6 +108,11 @@ export const upsertTelegramUser = async (profile: TelegramWebAppUser) => {
     user.username = profile.username || user.username;
   }
 
+  ensureRole(user, "customer");
+  if (env.ADMIN_TELEGRAM_IDS?.includes(telegramId)) {
+    ensureRole(user, "admin");
+  }
+
   await user.save();
   return user;
 };
@@ -112,4 +126,5 @@ export const serializeUser = (user: IUser) => ({
   coinsBalance: user.coinsBalance,
   pointsBalance: user.pointsBalance,
   lastTopWinAt: user.lastTopWinAt,
+  roles: user.roles || [],
 });

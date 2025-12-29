@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { verifySessionToken } from "../services/auth";
 import User, { IUser } from "../models/User";
+import Vendor, { IVendor } from "../models/Vendor";
 import { connectDB } from "../lib/db";
 
 declare global {
@@ -8,6 +9,7 @@ declare global {
     interface Request {
       userId?: string;
       userDoc?: IUser;
+      vendorDoc?: IVendor | null;
     }
   }
 }
@@ -33,4 +35,38 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     console.error("Auth middleware error", error);
     res.status(401).json({ error: "Invalid session" });
   }
+};
+
+export const requireRole =
+  (role: string) => (req: Request, res: Response, next: NextFunction) => {
+    const user = req.userDoc;
+    if (!user || !user.roles?.includes(role)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    next();
+  };
+
+export const loadVendor = async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  await connectDB();
+  const vendor = await Vendor.findOne({ ownerUserId: req.userId }).exec();
+  req.vendorDoc = vendor;
+  next();
+};
+
+export const requireApprovedVendor = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const vendor = req.vendorDoc;
+  if (!vendor) {
+    return res.status(403).json({ error: "Vendor profile required" });
+  }
+  if (vendor.status !== "APPROVED") {
+    return res.status(403).json({ error: `Vendor status: ${vendor.status}` });
+  }
+  next();
 };

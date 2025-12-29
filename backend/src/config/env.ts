@@ -18,6 +18,10 @@ export const env = {
   JWT_SECRET: required("JWT_SECRET"),
   WEBAPP_URL: process.env.WEBAPP_URL,
   CORS_ORIGIN: process.env.CORS_ORIGIN,
+  ADMIN_TELEGRAM_IDS: (process.env.ADMIN_TELEGRAM_IDS || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean),
 };
 
 export const isProd = env.NODE_ENV === "production";

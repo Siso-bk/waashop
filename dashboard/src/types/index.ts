@@ -1,0 +1,46 @@
+export interface UserProfile {
+  id: string;
+  telegramId: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  coinsBalance: number;
+  pointsBalance: number;
+  lastTopWinAt?: string;
+  roles: string[];
+}
+
+export interface VendorProfile {
+  _id: string;
+  ownerUserId: string;
+  name: string;
+  description?: string;
+  status: "PENDING" | "APPROVED" | "SUSPENDED" | "REJECTED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RewardTierDto {
+  points: number;
+  probability: number;
+  isTop?: boolean;
+}
+
+export interface ProductDto {
+  _id: string;
+  vendorId: string | { _id: string; name: string };
+  name: string;
+  description?: string;
+  type: "MYSTERY_BOX" | "STANDARD";
+  status: "DRAFT" | "PENDING" | "ACTIVE" | "INACTIVE";
+  priceCoins: number;
+  guaranteedMinPoints?: number;
+  rewardTiers?: RewardTierDto[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProfileResponse {
+  user: UserProfile;
+  vendor: VendorProfile | null;
+}
