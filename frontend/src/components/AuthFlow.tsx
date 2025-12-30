@@ -6,7 +6,6 @@ import { RegisterForm } from "@/components/RegisterForm";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL;
-const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL;
 
 type Phase = "email" | "login" | "register";
 
