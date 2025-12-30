@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { TelegramViewport } from "@/components/TelegramViewport";
 
 export const metadata: Metadata = {
   title: "Waashop",
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-slate-50 antialiased">
         <div className="min-h-screen">
+          <TelegramViewport />
           <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
               <Link href="/" className="text-lg font-semibold text-indigo-600">
