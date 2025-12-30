@@ -59,12 +59,15 @@ export function AuthFlow() {
     if (!PAI_BASE_URL || typeof window === "undefined") {
       return;
     }
+    const redirectTarget = `${window.location.origin}/login`;
     try {
       const target = new URL(PAI_BASE_URL);
-      target.searchParams.set("redirect", window.location.origin);
+      target.searchParams.set("redirect", redirectTarget);
+      target.searchParams.set("client", "waashop");
       window.location.href = target.toString();
     } catch {
-      window.location.href = PAI_BASE_URL;
+      const fallback = `${PAI_BASE_URL}?redirect=${encodeURIComponent(redirectTarget)}`;
+      window.location.href = fallback;
     }
   }, []);
 
