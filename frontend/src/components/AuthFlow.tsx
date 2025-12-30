@@ -5,6 +5,7 @@ import { LoginForm } from "@/components/LoginForm";
 import { RegisterForm } from "@/components/RegisterForm";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL;
 
 type Phase = "email" | "login" | "register";
 
@@ -91,6 +92,16 @@ export function AuthFlow() {
         </button>
       </div>
       {phase === "login" ? <LoginForm email={email} /> : <RegisterForm email={email} />}
+      {PAI_BASE_URL && (
+        <a
+          href={PAI_BASE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
+        >
+          Login with PAI
+        </a>
+      )}
     </div>
   );
 }
