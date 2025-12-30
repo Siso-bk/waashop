@@ -1,4 +1,4 @@
-# Mystery Wallet
+# Waashop
 
 An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-app coins on mystery boxes, receive guaranteed points, and every purchase is processed server-side with crypto-secure randomness and Mongo-backed ledgers.
 

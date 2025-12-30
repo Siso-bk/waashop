@@ -10,8 +10,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const box = await getBoxByBoxId(params.boxId);
-  if (!box) return { title: "Mystery Box" };
-  return { title: `${box.name} | Mystery Wallet` };
+  if (!box) return { title: "Waashop Mystery Box" };
+  return { title: `${box.name} | Waashop` };
 }
 
 export default async function BoxDetails({ params }: Props) {

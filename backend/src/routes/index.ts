@@ -493,7 +493,7 @@ router.post("/telegram/webhook", async (req, res) => {
           keyboard: [
             [
               {
-                text: "Open Mystery Wallet",
+                text: "Open Waashop",
                 web_app: { url: env.WEBAPP_URL },
               },
             ],
@@ -504,7 +504,7 @@ router.post("/telegram/webhook", async (req, res) => {
       : undefined;
 
     const welcomeText =
-      "Welcome to Mystery Wallet!\nTap the button to launch the Mini App and start opening boxes.";
+      "Welcome to Waashop!\nTap the button to launch the Mini App and start shopping curated drops.";
 
     const apiUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
     await fetch(apiUrl, {
