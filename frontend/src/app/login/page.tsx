@@ -1,9 +1,6 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireToken } from "@/lib/session";
 import { AuthFlow } from "@/components/AuthFlow";
-import { backendFetch } from "@/lib/backendClient";
-import { SESSION_COOKIE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -21,24 +18,22 @@ const extractPaiToken = (params?: SearchParams): string | null => {
 };
 
 export default async function LoginPage({ searchParams }: { searchParams?: SearchParams }) {
-  let paiError: string | null = null;
   const paiToken = extractPaiToken(searchParams);
+  const redirectParam =
+    typeof searchParams?.redirect === "string" && searchParams.redirect.length > 0
+      ? searchParams.redirect
+      : undefined;
+  const errorMessage =
+    typeof searchParams?.error === "string" && searchParams.error.length > 0
+      ? searchParams.error
+      : null;
 
   if (paiToken) {
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, paiToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-    try {
-      await backendFetch("/api/me");
-      redirect("/");
-    } catch (error) {
-      cookieStore.delete(SESSION_COOKIE);
-      paiError = error instanceof Error ? error.message : "Unable to sync Personal AI session";
+    const params = new URLSearchParams({ token: paiToken });
+    if (redirectParam) {
+      params.set("redirect", redirectParam);
     }
+    redirect(`/api/auth/pai?${params.toString()}`);
   }
 
   try {
@@ -50,9 +45,9 @@ export default async function LoginPage({ searchParams }: { searchParams?: Searc
 
   return (
     <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      {paiError && (
+      {errorMessage && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-          {paiError}
+          {errorMessage}
         </div>
       )}
       <AuthFlow />

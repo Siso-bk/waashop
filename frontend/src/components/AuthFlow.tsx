@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { LoginForm } from "@/components/LoginForm";
 import { RegisterForm } from "@/components/RegisterForm";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL;
 
 type Phase = "email" | "login" | "register";
 
@@ -55,22 +54,6 @@ export function AuthFlow() {
     setError(null);
   };
 
-  const handlePaiLaunch = useCallback(() => {
-    if (!PAI_BASE_URL || typeof window === "undefined") {
-      return;
-    }
-    const redirectTarget = `${window.location.origin}/login`;
-    try {
-      const target = new URL(PAI_BASE_URL);
-      target.searchParams.set("redirect", redirectTarget);
-      target.searchParams.set("client", "waashop");
-      window.location.href = target.toString();
-    } catch {
-      const fallback = `${PAI_BASE_URL}?redirect=${encodeURIComponent(redirectTarget)}`;
-      window.location.href = fallback;
-    }
-  }, []);
-
   if (phase === "email") {
     return (
       <form onSubmit={handleEmailSubmit} className="space-y-4 rounded-2xl bg-white/80 p-4 shadow-inner">
@@ -95,18 +78,8 @@ export function AuthFlow() {
         >
           {loading ? "Checking..." : "Continue"}
         </button>
-        {PAI_BASE_URL && (
-          <button
-            type="button"
-            onClick={handlePaiLaunch}
-            className="flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
-          >
-            Use Personal AI Portal
-          </button>
-        )}
         <p className="text-xs text-slate-500">
-          Returning shoppers can skip the form by signing in through Personal AI. After it redirects back here you’ll land
-          on your Waashop home feed.
+          Use your Personal AI credentials here—we authenticate and sync balances without leaving Waashop.
         </p>
       </form>
     );
