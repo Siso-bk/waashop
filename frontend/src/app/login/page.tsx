@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Searc
   const paiToken = extractPaiToken(searchParams);
 
   if (paiToken) {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set(SESSION_COOKIE, paiToken, {
       httpOnly: true,
       sameSite: "lax",
