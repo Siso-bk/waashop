@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 
-const PAI_BASE_URL = env.NEXT_PUBLIC_PAI_BASE_URL || env.API_BASE_URL;
+const PAI_BASE_URL = env.PAI_BASE_URL;
 
 const parseJson = async <T>(response: Response) => {
   if (!response.ok) {
@@ -12,12 +12,11 @@ const parseJson = async <T>(response: Response) => {
 };
 
 export const paiFetch = async <T>(path: string, init?: RequestInit) => {
-  if (!PAI_BASE_URL) {
-    throw new Error("Missing NEXT_PUBLIC_PAI_BASE_URL");
-  }
   const url = path.startsWith("http") ? path : `${PAI_BASE_URL}${path}`;
   const headers = new Headers(init?.headers);
-  headers.set("Content-Type", "application/json");
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
   const response = await fetch(url, {
     ...init,
     headers,

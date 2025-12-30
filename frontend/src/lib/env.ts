@@ -7,9 +7,17 @@ const apiBase =
     throw new Error("Missing API_BASE_URL or NEXT_PUBLIC_API_BASE_URL");
   })();
 
+const paiBase =
+  optional("PAI_BASE_URL") ||
+  optional("NEXT_PUBLIC_PAI_BASE_URL") ||
+  (() => {
+    throw new Error("Missing PAI_BASE_URL or NEXT_PUBLIC_PAI_BASE_URL");
+  })();
+
 export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   API_BASE_URL: apiBase,
   NEXT_PUBLIC_API_BASE_URL: optional("NEXT_PUBLIC_API_BASE_URL") || apiBase,
-  NEXT_PUBLIC_PAI_BASE_URL: optional("NEXT_PUBLIC_PAI_BASE_URL") || undefined,
+  PAI_BASE_URL: paiBase,
+  NEXT_PUBLIC_PAI_BASE_URL: optional("NEXT_PUBLIC_PAI_BASE_URL") || paiBase,
 };

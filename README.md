@@ -69,6 +69,13 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 4. Waashop immediately calls `/api/me` on the backend. If the token is a Waashop JWT we issued earlier, it verifies locally; otherwise it forwards the token to `PAI_BASE_URL/api/me`, upserts the user by email, and returns the Waashop profile.
 5. With the session active, subsequent requests (Mini App, dashboard, vendor portal) include `Authorization: Bearer <token>` when calling the backend.
 
+> **Personal AI portal redirect**
+>
+> If you prefer to send shoppers through the hosted Personal AI experience, configure PAI to redirect back to
+> `https://waashop.vercel.app/login?token=<PAI_JWT>` (or `pai_token`). Waashop’s login page will detect the token,
+> store it in the session cookie, call `/api/me` to sync balances, and finally redirect to `/`. Without that redirect
+> parameter Waashop cannot capture the token, so the built-in forms remain the fallback.
+
 ## Business Logic Highlights
 - **Transparent rewards**: Each mystery box exposes its tier probabilities; the API enforces crypto-secure randomness and guarantees a minimum point payout.
 - **Top-tier cooldown**: Users can only hit the top tier every 7 days; otherwise they’re downgraded to the next best tier.

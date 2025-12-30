@@ -73,9 +73,9 @@ export function AuthFlow() {
 
   if (phase === "email") {
     return (
-      <form onSubmit={handleEmailSubmit} className="space-y-4">
+      <form onSubmit={handleEmailSubmit} className="space-y-4 rounded-2xl bg-white/80 p-4 shadow-inner">
         <div>
-          <label htmlFor="auth-email" className="text-sm font-medium text-slate-600">
+          <label htmlFor="auth-email" className="text-sm font-semibold text-slate-700">
             Email address
           </label>
           <input
@@ -83,7 +83,7 @@ export function AuthFlow() {
             name="email"
             type="email"
             required
-            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:outline-none"
             placeholder="you@example.com"
           />
         </div>
@@ -91,10 +91,23 @@ export function AuthFlow() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
+          className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
         >
           {loading ? "Checking..." : "Continue"}
         </button>
+        {PAI_BASE_URL && (
+          <button
+            type="button"
+            onClick={handlePaiLaunch}
+            className="flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
+          >
+            Use Personal AI Portal
+          </button>
+        )}
+        <p className="text-xs text-slate-500">
+          Returning shoppers can skip the form by signing in through Personal AI. After it redirects back here you’ll land
+          on your Waashop home feed.
+        </p>
       </form>
     );
   }
@@ -108,15 +121,6 @@ export function AuthFlow() {
         </button>
       </div>
       {phase === "login" ? <LoginForm email={email} /> : <RegisterForm email={email} />}
-      {PAI_BASE_URL && (
-        <button
-          type="button"
-          onClick={handlePaiLaunch}
-          className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
-        >
-          Login with PAI
-        </button>
-      )}
     </div>
   );
 }
