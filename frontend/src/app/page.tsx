@@ -15,7 +15,7 @@ export default async function HomePage() {
             <p className="text-sm uppercase tracking-wide text-white/70">Mystery Boxes</p>
             <h1 className="text-3xl font-bold">Open boxes. Earn guaranteed points.</h1>
             <p className="mt-2 text-sm text-white/80">
-              Sign in with your Personal AI account to sync purchases across Telegram, web, and mobile.
+              Sign in with your Personal AI account to keep your wallet and purchases synced everywhere.
             </p>
           </div>
           <div className="rounded-2xl bg-white/10 p-4 text-right">
