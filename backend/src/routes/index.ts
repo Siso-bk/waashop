@@ -52,7 +52,7 @@ router.post("/auth/forgot", async (req, res) => {
   }
   try {
     const { email } = schema.parse(req.body);
-    const response = await fetch(`${env.PAI_BASE_URL}/api/v1/auth/forgot`, {
+    const response = await fetch(`${env.PAI_BASE_URL}/api/auth/forgot`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -77,7 +77,7 @@ router.post("/auth/reset", async (req, res) => {
   }
   try {
     const payload = schema.parse(req.body);
-    const response = await fetch(`${env.PAI_BASE_URL}/api/v1/auth/reset`, {
+    const response = await fetch(`${env.PAI_BASE_URL}/api/auth/reset`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

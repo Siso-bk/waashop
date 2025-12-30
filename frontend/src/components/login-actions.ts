@@ -40,7 +40,7 @@ export const loginAction = async (_prev: ActionState, formData: FormData): Promi
   }
 
   try {
-    const { token } = await paiFetch<{ token: string; user: unknown }>("/api/v1/auth/login", {
+    const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
@@ -61,7 +61,7 @@ export const registerAction = async (_prev: ActionState, formData: FormData): Pr
   }
 
   try {
-    const { token } = await paiFetch<{ token: string; user: unknown }>("/api/v1/auth/register", {
+    const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     });
