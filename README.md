@@ -3,11 +3,9 @@
 An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-app coins on mystery boxes, receive guaranteed points, and every purchase is processed server-side with crypto-secure randomness and Mongo-backed ledgers.
 
 ## Monorepo Structure
-| Path | Description |
-| --- | --- |
-| `/frontend` | Next.js 16 App Router frontend (TypeScript + Tailwind). Fetches data from the standalone API and handles the Mini App UX. |
-| `/backend` | Express + TypeScript backend. Hosts the REST API, Telegram webhook, Mongoose models, reward engine, and business logic. Deploy this service to Render (or similar). |
-| `/dashboard` | Next.js portal for admins & vendors. Uses the same API but provides management tooling (vendor onboarding, approvals, mystery-box submissions). |
+| `/frontend` | Shopper-facing Next.js app (Mini App + web). Handles PAI authentication, wallet UI, and mystery box purchases. |
+| `/backend` | Express + TypeScript API (Render). Hosts auth bridges, product catalog, reward engine, and Telegram webhook. |
+| `/dashboard` | Next.js portal for admins & vendors (Vercel). Provides vendor onboarding, approvals, and submissions using the same API. |
 
 ## Frontend Setup (Next.js)
 1. Install deps & start dev server:

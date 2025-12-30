@@ -23,6 +23,7 @@ export const env = {
     .map((id) => id.trim())
     .filter(Boolean),
   PAI_BASE_URL: process.env.PAI_BASE_URL,
+  PAI_API_KEY: process.env.PAI_API_KEY,
 };
 
 export const isProd = env.NODE_ENV === "production";

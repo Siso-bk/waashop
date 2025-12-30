@@ -45,10 +45,82 @@ router.post("/auth/email-status", async (req, res) => {
   }
 });
 
+router.post("/auth/forgot", async (req, res) => {
+  const schema = z.object({ email: z.string().email() });
+  if (!env.PAI_BASE_URL) {
+    return res.status(400).json({ error: "PAI integration not configured" });
+  }
+  try {
+    const { email } = schema.parse(req.body);
+    const response = await fetch(`${env.PAI_BASE_URL}/api/v1/auth/forgot`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ identifier: email }),
+    });
+    const data = (await response.json()) as { error?: string; message?: string };
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error || data.message || "Password reset failed" });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error("Forgot password error", error);
+    res.status(400).json({ error: "Unable to request password reset" });
+  }
+});
+
+router.post("/auth/reset", async (req, res) => {
+  const schema = z.object({ token: z.string().min(1), password: z.string().min(6) });
+  if (!env.PAI_BASE_URL) {
+    return res.status(400).json({ error: "PAI integration not configured" });
+  }
+  try {
+    const payload = schema.parse(req.body);
+    const response = await fetch(`${env.PAI_BASE_URL}/api/v1/auth/reset`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = (await response.json()) as { error?: string; message?: string };
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error || data.message || "Reset failed" });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error("Reset password error", error);
+    res.status(400).json({ error: "Unable to reset password" });
+  }
+});
+
 router.get("/me", authMiddleware, async (req, res) => {
   const user = req.userDoc!;
   const vendor = await Vendor.findOne({ ownerUserId: req.userId }).lean();
   res.json({ user: serializeUser(user), vendor });
+});
+
+router.get("/profile", authMiddleware, async (req, res) => {
+  res.json({ profile: serializeUser(req.userDoc!) });
+});
+
+router.patch("/profile", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    firstName: z.string().max(100).optional(),
+    lastName: z.string().max(100).optional(),
+    username: z.string().max(100).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    const user = req.userDoc!;
+    Object.assign(user, payload);
+    await user.save();
+    res.json({ profile: serializeUser(user) });
+  } catch (error) {
+    console.error("Profile update error", error);
+    res.status(400).json({ error: "Unable to update profile" });
+  }
 });
 
 /** Vendor onboarding */
