@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { LoginForm } from "@/components/LoginForm";
 import { RegisterForm } from "@/components/RegisterForm";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL;
 const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL;
 
 type Phase = "email" | "login" | "register";
@@ -83,6 +84,19 @@ export function AuthFlow() {
     );
   }
 
+  const handlePaiLaunch = useCallback(() => {
+    if (!PAI_BASE_URL || typeof window === "undefined") {
+      return;
+    }
+    try {
+      const target = new URL(PAI_BASE_URL);
+      target.searchParams.set("redirect", window.location.origin);
+      window.location.href = target.toString();
+    } catch {
+      window.location.href = PAI_BASE_URL;
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between text-sm text-slate-500">
@@ -93,14 +107,13 @@ export function AuthFlow() {
       </div>
       {phase === "login" ? <LoginForm email={email} /> : <RegisterForm email={email} />}
       {PAI_BASE_URL && (
-        <a
-          href={PAI_BASE_URL}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          type="button"
+          onClick={handlePaiLaunch}
           className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
         >
           Login with PAI
-        </a>
+        </button>
       )}
     </div>
   );
