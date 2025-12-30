@@ -1,12 +1,13 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { registerAction } from "@/components/login-actions";
 
 const initialState = { error: "" };
 
 export function RegisterForm({ email }: { email: string }) {
-  const [state, action] = useFormState(registerAction, initialState);
+  const [state, action] = useActionState(registerAction, initialState);
   const { pending } = useFormStatus();
 
   return (

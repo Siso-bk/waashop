@@ -1,12 +1,13 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { createVendorProductAction } from "@/app/vendor/actions";
 
 const initialState = { error: "" };
 
 export function VendorProductForm({ disabled }: { disabled?: boolean }) {
-  const [state, action] = useFormState(createVendorProductAction, initialState);
+  const [state, action] = useActionState(createVendorProductAction, initialState);
   const { pending } = useFormStatus();
 
   return (

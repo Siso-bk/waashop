@@ -1,13 +1,14 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { submitVendorProfileAction } from "@/app/vendor/actions";
 import { VendorProfile } from "@/types";
 
 const initialState = { error: "" };
 
 export function VendorProfileForm({ vendor }: { vendor: VendorProfile | null }) {
-  const [state, action] = useFormState(submitVendorProfileAction, initialState);
+  const [state, action] = useActionState(submitVendorProfileAction, initialState);
   const { pending } = useFormStatus();
 
   return (
