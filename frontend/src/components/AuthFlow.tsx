@@ -55,6 +55,19 @@ export function AuthFlow() {
     setError(null);
   };
 
+  const handlePaiLaunch = useCallback(() => {
+    if (!PAI_BASE_URL || typeof window === "undefined") {
+      return;
+    }
+    try {
+      const target = new URL(PAI_BASE_URL);
+      target.searchParams.set("redirect", window.location.origin);
+      window.location.href = target.toString();
+    } catch {
+      window.location.href = PAI_BASE_URL;
+    }
+  }, []);
+
   if (phase === "email") {
     return (
       <form onSubmit={handleEmailSubmit} className="space-y-4">
@@ -82,19 +95,6 @@ export function AuthFlow() {
       </form>
     );
   }
-
-  const handlePaiLaunch = useCallback(() => {
-    if (!PAI_BASE_URL || typeof window === "undefined") {
-      return;
-    }
-    try {
-      const target = new URL(PAI_BASE_URL);
-      target.searchParams.set("redirect", window.location.origin);
-      window.location.href = target.toString();
-    } catch {
-      window.location.href = PAI_BASE_URL;
-    }
-  }, []);
 
   return (
     <div className="space-y-4">
