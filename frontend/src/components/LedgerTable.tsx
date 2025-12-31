@@ -12,14 +12,14 @@ const formatDelta = (value: number, suffix: string) => {
 
 export function LedgerTable({ entries }: Props) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+        <thead className="bg-black text-xs uppercase tracking-[0.3em] text-white/70">
           <tr>
-            <th className="px-4 py-3 text-left">Reason</th>
-            <th className="px-4 py-3 text-right">Coins</th>
-            <th className="px-4 py-3 text-right">Points</th>
-            <th className="px-4 py-3 text-right">Date</th>
+            <th className="px-4 py-3 text-left font-normal">Reason</th>
+            <th className="px-4 py-3 text-right font-normal">Coins</th>
+            <th className="px-4 py-3 text-right font-normal">Points</th>
+            <th className="px-4 py-3 text-right font-normal">Date</th>
           </tr>
         </thead>
         <tbody>
@@ -31,16 +31,17 @@ export function LedgerTable({ entries }: Props) {
             </tr>
           )}
           {entries.map((entry) => (
-            <tr key={entry.id} className="border-t border-gray-50">
-              <td className="px-4 py-3 font-medium text-gray-800">{entry.reason}</td>
-              <td className="px-4 py-3 text-right text-gray-600">
-                {formatDelta(entry.deltaCoins, "coins")}
-              </td>
-              <td className="px-4 py-3 text-right text-gray-600">
-                {formatDelta(entry.deltaPoints, "pts")}
-              </td>
+            <tr key={entry.id} className="border-t border-black/5">
+              <td className="px-4 py-3 font-medium text-black">{entry.reason}</td>
+              <td className="px-4 py-3 text-right text-gray-600">{formatDelta(entry.deltaCoins, "coins")}</td>
+              <td className="px-4 py-3 text-right text-gray-600">{formatDelta(entry.deltaPoints, "pts")}</td>
               <td className="px-4 py-3 text-right text-gray-500">
-                {new Date(entry.createdAt).toLocaleString()}
+                {new Date(entry.createdAt).toLocaleString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </td>
             </tr>
           ))}

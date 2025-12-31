@@ -7,26 +7,26 @@ interface Props {
 
 export function RewardTable({ tiers, guaranteedMin }: Props) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
       <div className="flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold text-gray-800">Reward Table</h3>
+        <h3 className="text-sm font-semibold text-black">Reward table</h3>
         <p className="text-xs text-gray-500">Guaranteed: {guaranteedMin} pts</p>
       </div>
-      <div className="mt-3 overflow-hidden rounded-lg border border-gray-100">
+      <div className="mt-3 overflow-hidden rounded-xl border border-black/10">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+          <thead className="bg-black text-xs uppercase tracking-[0.3em] text-white/80">
             <tr>
-              <th className="px-3 py-2">Points</th>
-              <th className="px-3 py-2">Probability</th>
-              <th className="px-3 py-2">Tier</th>
+              <th className="px-3 py-3 font-normal">Points</th>
+              <th className="px-3 py-3 font-normal">Probability</th>
+              <th className="px-3 py-3 font-normal">Tier</th>
             </tr>
           </thead>
           <tbody>
             {tiers.map((tier) => (
-              <tr key={`${tier.points}-${tier.probability}`} className="odd:bg-white even:bg-gray-50">
-                <td className="px-3 py-2 font-medium text-gray-900">{tier.points}</td>
-                <td className="px-3 py-2 text-gray-600">{(tier.probability * 100).toFixed(2)}%</td>
-                <td className="px-3 py-2 text-gray-600">{tier.isTop ? "Top" : "Standard"}</td>
+              <tr key={`${tier.points}-${tier.probability}`} className="border-b border-black/5">
+                <td className="px-3 py-3 font-medium text-black">{tier.points}</td>
+                <td className="px-3 py-3 text-gray-600">{(tier.probability * 100).toFixed(2)}%</td>
+                <td className="px-3 py-3 text-gray-600">{tier.isTop ? "Top" : "Standard"}</td>
               </tr>
             ))}
           </tbody>

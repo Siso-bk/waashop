@@ -6,7 +6,7 @@ export default async function WalletPage() {
   const user = await getSessionUser();
   if (!user) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-6 text-sm text-gray-600">
+      <div className="rounded-2xl border border-dashed border-black/20 bg-white p-6 text-sm text-gray-600">
         Sign in to view your wallet history.
       </div>
     );
@@ -16,9 +16,10 @@ export default async function WalletPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-gray-900">Wallet</h1>
-        <p className="text-sm text-gray-500">Track every debit and credit for transparency.</p>
+      <header className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Wallet</p>
+        <h1 className="text-2xl font-semibold text-black">Balances & ledger</h1>
+        <p className="text-sm text-gray-600">Track every debit and credit in one place.</p>
       </header>
       <BalancePanel coins={user.coinsBalance} points={user.pointsBalance} />
       <LedgerTable entries={entries} />

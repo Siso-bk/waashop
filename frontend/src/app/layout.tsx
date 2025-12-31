@@ -26,19 +26,20 @@ export default function RootLayout({
       <body className="bg-[#f5f5f2] text-[#0b0b0b] antialiased">
         <div className="min-h-screen">
           <TelegramViewport />
-          <header className="border-b border-black/10 bg-white">
+          <header className="border-b border-black/10 bg-white/90 backdrop-blur">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
-              <Link href="/" className="text-lg font-semibold text-black">
+              <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-black">
+                <span className="inline-flex h-2 w-8 rounded-full bg-black" aria-hidden />
                 Waashop
               </Link>
-              <nav className="flex gap-4 text-sm text-gray-600">
+              <nav className="flex items-center gap-5 text-sm text-gray-600">
                 <Link href="/" className="hover:text-black">
-                  Home
+                  Drops
                 </Link>
                 <Link href="/wallet" className="hover:text-black">
                   Wallet
                 </Link>
-                <Link href="/login" className="hover:text-black">
+                <Link href="/login" className="hidden rounded-full border border-black px-3 py-1 text-black transition hover:bg-black hover:text-white sm:inline-flex">
                   Sign in
                 </Link>
               </nav>

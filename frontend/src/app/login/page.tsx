@@ -46,9 +46,6 @@ export default async function LoginPage({ searchParams }: { searchParams?: Searc
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="space-y-4 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Waashop Sign-in</p>
-        <h1 className="text-3xl font-semibold text-slate-900">One login for every Waashop surface.</h1>
-        <p className="text-sm text-slate-600">Enter your email. We’ll direct you to the right step automatically.</p>
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Waashop Sign-in</p>
         <h1 className="text-3xl font-semibold text-black">One login for every Waashop surface.</h1>
         <p className="text-sm text-gray-600">Enter your email. We’ll guide you to the right step automatically.</p>
