@@ -25,16 +25,16 @@ export default async function BoxDetails({ params }: Props) {
       <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
         ← Back to boxes
       </Link>
-      <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="rounded-3xl border border-black/10 bg-white p-8 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs uppercase text-gray-500">Box</p>
-            <h1 className="text-3xl font-semibold text-gray-900">{box.name}</h1>
-            <p className="text-sm text-gray-500">{box.priceCoins.toLocaleString()} coins</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Box</p>
+            <h1 className="text-3xl font-semibold text-black">{box.name}</h1>
+            <p className="text-sm text-gray-600">{box.priceCoins.toLocaleString()} coins</p>
           </div>
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-6 py-4 text-right">
-            <p className="text-xs uppercase text-indigo-500">Guaranteed minimum</p>
-            <p className="text-2xl font-bold text-indigo-700">{box.guaranteedMinPoints} pts</p>
+          <div className="rounded-2xl border border-black/10 bg-black px-6 py-4 text-right text-white">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/60">Guaranteed minimum</p>
+            <p className="text-2xl font-semibold">{box.guaranteedMinPoints} pts</p>
           </div>
         </div>
         <p className="mt-4 text-sm text-gray-500">

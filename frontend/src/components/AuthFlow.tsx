@@ -50,7 +50,7 @@ type VerifyResponse = {
 
 const callPai = async <T,>(path: string, payload: Record<string, unknown>): Promise<T> => {
   if (!PAI_BASE_URL) {
-    throw new Error("Missing Personal AI base URL.");
+    throw new Error("Missing auth base URL.");
   }
   const response = await fetch(`${PAI_BASE_URL}${path}`, {
     method: "POST",
@@ -60,7 +60,7 @@ const callPai = async <T,>(path: string, payload: Record<string, unknown>): Prom
   });
   const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string } & T;
   if (!response.ok) {
-    throw new Error(data.error || data.message || "Unable to continue with Personal AI.");
+    throw new Error(data.error || data.message || "Unable to continue.");
   }
   return data;
 };
@@ -179,24 +179,24 @@ export function AuthFlow() {
   const currentStep = sequence.indexOf(phase) + 1;
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-400">
+    <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-400">
         <span>
           Step {currentStep} of {sequence.length}
         </span>
-        <button type="button" onClick={reset} className="text-indigo-600 hover:text-indigo-500">
+        <button type="button" onClick={reset} className="text-black underline-offset-4 hover:underline">
           Reset
         </button>
       </div>
       <div className="mt-4 space-y-2">
-        <h2 className="text-xl font-semibold text-slate-900">{phaseCopy[phase].heading}</h2>
-          <p className="text-sm text-slate-600">{phaseCopy[phase].description}</p>
+        <h2 className="text-xl font-semibold text-black">{phaseCopy[phase].heading}</h2>
+        <p className="text-sm text-gray-600">{phaseCopy[phase].description}</p>
       </div>
 
       {phase === "email" ? (
         <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="auth-email" className="text-sm font-semibold text-slate-700">
+            <label htmlFor="auth-email" className="text-sm font-semibold text-gray-700">
               Email address
             </label>
             <input
@@ -204,7 +204,7 @@ export function AuthFlow() {
               name="email"
               type="email"
               required
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-gray-300 bg-white px-3 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-black focus:outline-none"
               placeholder="you@example.com"
             />
           </div>
@@ -216,19 +216,19 @@ export function AuthFlow() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
+            className="w-full rounded-full bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
             {loading ? "Checking..." : "Continue"}
           </button>
-          </form>
-        ) : (
+        </form>
+      ) : (
         <div className="mt-6 space-y-4">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-600">
-            <p className="font-semibold text-slate-800">{email}</p>
+          <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-700">
+            <p className="font-semibold text-gray-900">{email}</p>
             <p className="mt-1">{phase === "login" ? "Account verified." : "Final step before shopping."}</p>
           </div>
           {status && (
-            <p className="text-xs text-slate-500" role="status">
+            <p className="text-xs text-gray-500" role="status">
               {status}
             </p>
           )}
@@ -237,7 +237,7 @@ export function AuthFlow() {
           ) : phase === "verify" ? (
             <form onSubmit={handleVerifySubmit} className="space-y-4" noValidate>
               <div>
-                <label htmlFor="verification-code" className="text-sm font-medium text-slate-600">
+                <label htmlFor="verification-code" className="text-sm font-medium text-gray-700">
                   Verification code
                 </label>
                 <input
@@ -249,7 +249,7 @@ export function AuthFlow() {
                   required
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 text-center text-sm tracking-[0.45em] focus:border-indigo-500 focus:outline-none"
+                  className="mt-2 w-full rounded-2xl border border-gray-300 px-3 py-2 text-center text-sm tracking-[0.45em] focus:border-black focus:outline-none"
                   placeholder="123456"
                 />
               </div>
@@ -262,7 +262,7 @@ export function AuthFlow() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
+                  className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
                 >
                   {loading ? "Verifying…" : "Verify code"}
                 </button>
@@ -270,14 +270,14 @@ export function AuthFlow() {
                   type="button"
                   onClick={handleResend}
                   disabled={resendLoading}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {resendLoading ? "Sending…" : "Resend"}
                 </button>
               </div>
-              {resendMessage && <p className="text-xs text-slate-500">{resendMessage}</p>}
+              {resendMessage && <p className="text-xs text-gray-500">{resendMessage}</p>}
               {devCode && (
-                <p className="text-xs text-amber-600">
+                <p className="text-xs text-gray-500">
                   Dev code: <strong>{devCode}</strong>
                 </p>
               )}

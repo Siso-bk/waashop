@@ -23,22 +23,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-slate-50 antialiased">
+      <body className="bg-[#f5f5f2] text-[#0b0b0b] antialiased">
         <div className="min-h-screen">
           <TelegramViewport />
-          <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
+          <header className="border-b border-black/10 bg-white">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
-              <Link href="/" className="text-lg font-semibold text-indigo-600">
+              <Link href="/" className="text-lg font-semibold text-black">
                 Waashop
               </Link>
-              <nav className="flex gap-4 text-sm text-slate-600">
-                <Link href="/" className="hover:text-indigo-600">
+              <nav className="flex gap-4 text-sm text-gray-600">
+                <Link href="/" className="hover:text-black">
                   Home
                 </Link>
-                <Link href="/wallet" className="hover:text-indigo-600">
+                <Link href="/wallet" className="hover:text-black">
                   Wallet
                 </Link>
-                <Link href="/login" className="hover:text-indigo-600">
+                <Link href="/login" className="hover:text-black">
                   Sign in
                 </Link>
               </nav>

@@ -49,8 +49,11 @@ export default async function LoginPage({ searchParams }: { searchParams?: Searc
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Waashop Sign-in</p>
         <h1 className="text-3xl font-semibold text-slate-900">One login for every Waashop surface.</h1>
         <p className="text-sm text-slate-600">Enter your email. We’ll direct you to the right step automatically.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Waashop Sign-in</p>
+        <h1 className="text-3xl font-semibold text-black">One login for every Waashop surface.</h1>
+        <p className="text-sm text-gray-600">Enter your email. We’ll guide you to the right step automatically.</p>
       </div>
-      <section className="mt-8 rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+      <section className="mt-8 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
         {errorMessage && (
           <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-600" role="alert">
             {errorMessage}

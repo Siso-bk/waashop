@@ -36,9 +36,9 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
     <form action={action} className="space-y-4">
       <input type="hidden" name="email" value={email} />
       <input type="hidden" name="preToken" value={preToken} />
-      <div className="text-sm text-slate-500">Registering as {email}</div>
+      <div className="text-sm text-gray-500">Registering as {email}</div>
       <div>
-        <label htmlFor="name" className="text-sm font-medium text-slate-600">
+        <label htmlFor="name" className="text-sm font-medium text-gray-700">
           Full name
         </label>
         <input
@@ -46,12 +46,12 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
           name="name"
           type="text"
           required
-          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
           placeholder="Jane Doe"
         />
       </div>
       <div>
-        <label htmlFor="register-password" className="text-sm font-medium text-slate-600">
+        <label htmlFor="register-password" className="text-sm font-medium text-gray-700">
           Password
         </label>
         <input
@@ -59,7 +59,7 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
           name="password"
           type="password"
           required
-          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
           placeholder="Create a secure password"
         />
       </div>
@@ -76,7 +76,7 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-400"
+        className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {pending ? "Creating account..." : "Create account"}
       </button>

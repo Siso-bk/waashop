@@ -13,9 +13,9 @@ export function LoginForm({ email }: { email: string }) {
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="email" value={email} />
-      <div className="text-sm text-slate-500">Signing in as {email}</div>
+      <div className="text-sm text-gray-500">Signing in as {email}</div>
       <div>
-        <label htmlFor="password" className="text-sm font-medium text-slate-600">
+        <label htmlFor="password" className="text-sm font-medium text-gray-700">
           Password
         </label>
         <input
@@ -23,7 +23,7 @@ export function LoginForm({ email }: { email: string }) {
           name="password"
           type="password"
           required
-          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
           placeholder="••••••••"
         />
       </div>
@@ -31,7 +31,7 @@ export function LoginForm({ email }: { email: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
+        className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {pending ? "Signing in..." : "Sign in"}
       </button>

@@ -85,23 +85,23 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
       <button
         onClick={handleBuy}
         disabled={disabled || isLoading}
-        className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {isLoading ? "Processing..." : `Open for ${box.priceCoins} coins`}
       </button>
       {error && <p className="text-sm text-red-500">{error}</p>}
       {result && showResult && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
-            <p className="text-xs uppercase text-gray-400">Mystery Reward</p>
-            <p className="mt-2 text-3xl font-bold text-indigo-600 animate-pulse">
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-w-sm rounded-3xl border border-white/10 bg-black p-6 text-center text-white shadow-xl">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/60">Mystery reward</p>
+            <p className="mt-2 text-4xl font-semibold animate-pulse">
               +{result.rewardPoints} pts
             </p>
-            {result.tier?.isTop && <p className="mt-1 text-amber-600">Top tier unlocked!</p>}
-            <p className="mt-2 text-xs text-gray-500">Purchase #{result.purchaseId}</p>
+            {result.tier?.isTop && <p className="mt-1 text-white/70">Top tier unlocked</p>}
+            <p className="mt-2 text-xs text-white/60">Purchase #{result.purchaseId}</p>
             <button
               onClick={() => setShowResult(false)}
-              className="mt-4 w-full rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500"
+              className="mt-4 w-full rounded-full border border-white px-4 py-2 text-sm font-semibold text-white hover:bg-white hover:text-black"
             >
               Close
             </button>

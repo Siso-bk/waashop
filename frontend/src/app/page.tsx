@@ -10,85 +10,87 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Waashop</p>
-            <h1 className="text-3xl font-semibold text-slate-900">Mystery drops. Transparent odds. One wallet.</h1>
-            <p className="text-sm text-slate-600">
-              See the guaranteed minimum and ledger impact before every purchase. Sign in once and shop anywhere—Telegram
-              Mini App, desktop web, or dashboard.
+      <section className="rounded-[32px] border border-black/10 bg-black px-6 py-10 text-white sm:px-10">
+        <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Waashop</p>
+            <h1 className="text-4xl font-semibold leading-tight">
+              Mystery drops with honest odds and a wallet that travels with you.
+            </h1>
+            <p className="text-sm text-white/70">
+              See the guaranteed minimum, ledger impact, and cooldown before you tap buy. Once you&apos;re signed in, the
+              Mini App, desktop web, and dashboard all stay in sync.
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href={isAuthenticated ? "/boxes/BOX_1000" : "/login"}
-                className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
               >
                 {isAuthenticated ? "Continue shopping" : "Sign in"}
               </Link>
               <Link
                 href="/wallet"
-                className="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:border-slate-300"
+                className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
               >
                 Wallet & ledger
               </Link>
             </div>
+            <div className="grid gap-4 pt-4 text-xs text-white/70 sm:grid-cols-3">
+              <div>
+                <p className="uppercase tracking-[0.3em] text-white/50">Drops</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{boxes.length || "—"}</p>
+              </div>
+              <div>
+                <p className="uppercase tracking-[0.3em] text-white/50">Guaranteed min</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{boxes[0]?.guaranteedMinPoints ?? 600} pts</p>
+              </div>
+              <div>
+                <p className="uppercase tracking-[0.3em] text-white/50">Ledger</p>
+                <p className="mt-2 text-2xl font-semibold text-white">Instant · tamperproof</p>
+              </div>
+            </div>
           </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="rounded-3xl border border-white/15 bg-white/5 p-6 backdrop-blur">
+            <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/60">
               <span>Status</span>
-              <span className="font-semibold text-slate-900">
-                {user ? `Hi, ${user.firstName || "Waashop shopper"}` : "Not connected"}
-              </span>
+              <span className="font-semibold text-white">{user ? `Hi, ${user.firstName || "Shopper"}` : "Guest"}</span>
             </div>
             <div className="mt-4">
               {user ? (
-                <BalancePanel coins={user.coinsBalance} points={user.pointsBalance} />
+                <BalancePanel coins={user.coinsBalance} points={user.pointsBalance} tone="dark" />
               ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+                <div className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm text-white/80">
                   Sign in to load your wallet instantly.
                 </div>
               )}
-            </div>
-            <div className="mt-5 grid gap-3 text-xs text-slate-500 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/60 bg-white px-4 py-3">
-                <p>Guaranteed minimum</p>
-                <p className="mt-1 text-base font-semibold text-slate-900">
-                  {boxes[0]?.guaranteedMinPoints ?? 600} pts
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/60 bg-white px-4 py-3">
-                <p>Ledger status</p>
-                <p className="mt-1 text-base font-semibold text-slate-900">Instant + tamperproof</p>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">
-        <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">New shoppers</p>
-          <h2 className="mt-2 text-lg font-semibold text-slate-900">Create once, shop everywhere.</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Verify your email, set a password, and your session stays synced across Mini App, desktop, and dashboard.
+        <article className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">New shoppers</p>
+          <h2 className="mt-2 text-lg font-semibold text-black">Create once, shop everywhere.</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Verify your email, set a password, and your identity stays consistent across every surface.
           </p>
           <Link
             href={isAuthenticated ? "/wallet" : "/login"}
-            className="mt-4 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+            className="mt-4 inline-flex items-center justify-center rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80"
           >
             {isAuthenticated ? "View wallet" : "Create profile"}
           </Link>
         </article>
-        <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Returning</p>
-          <h2 className="mt-2 text-lg font-semibold text-slate-900">Sign in and resume instantly.</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Tokens rotate every 7 days and Waashop validates them before loading balances or vendor access.
+        <article className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Returning</p>
+          <h2 className="mt-2 text-lg font-semibold text-black">Sign in and resume instantly.</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Sessions rotate every seven days and Waashop validates them before loading balances or vendor access.
           </p>
           <Link
             href={isAuthenticated ? "/boxes/BOX_1000" : "/login"}
-            className="mt-4 inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300"
+            className="mt-4 inline-flex items-center justify-center rounded-full border border-black px-4 py-2 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
           >
             {isAuthenticated ? "Open featured box" : "Sign in"}
           </Link>
@@ -98,11 +100,14 @@ export default async function HomePage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Boxes</p>
-            <h2 className="text-2xl font-semibold text-slate-900">Live drops</h2>
-            <p className="text-sm text-slate-600">Inspect the tiers, then draw with server-grade randomness.</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Boxes</p>
+            <h2 className="text-2xl font-semibold text-black">Live drops</h2>
+            <p className="text-sm text-gray-600">Inspect tiers, review ledger impact, then draw.</p>
           </div>
-          <Link href="/wallet" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+          <Link
+            href="/wallet"
+            className="text-sm font-semibold text-black underline decoration-black/30 underline-offset-4"
+          >
             Wallet & ledger
           </Link>
         </div>
@@ -110,24 +115,27 @@ export default async function HomePage() {
           {boxes.map((box) => (
             <article
               key={box.boxId}
-              className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
+              className="flex flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
             >
-              <div className="flex items-center justify-between text-xs text-slate-500">
+              <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>Box {box.boxId}</span>
-                <span className="rounded-full bg-indigo-50 px-3 py-1 font-semibold text-indigo-600">
+                <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
                   {box.priceCoins.toLocaleString()} coins
                 </span>
               </div>
-              <h3 className="mt-3 text-xl font-semibold text-slate-900">{box.name}</h3>
-              <p className="text-sm text-slate-600">
+              <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
+              <p className="text-sm text-gray-600">
                 Guaranteed {box.guaranteedMinPoints} pts · crypto-secure randomness · top tier cooldown
               </p>
               <div className="mt-4">
                 <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinPoints} />
               </div>
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
                 <span>Server draw + automatic ledger entries</span>
-                <Link href={`/boxes/${box.boxId}`} className="font-semibold text-indigo-600">
+                <Link
+                  href={`/boxes/${box.boxId}`}
+                  className="font-semibold text-black underline decoration-black/15 underline-offset-4"
+                >
                   Details
                 </Link>
               </div>
@@ -137,25 +145,25 @@ export default async function HomePage() {
             </article>
           ))}
           {!boxes.length && (
-            <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+            <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
               No boxes available right now. Follow Waashop announcements for the next drop.
             </div>
           )}
         </div>
       </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-slate-900/95 p-6 text-white sm:p-8">
+      <section className="rounded-3xl border border-black bg-black p-6 text-white sm:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Vendors</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/50">Vendors</p>
             <h3 className="text-xl font-semibold">Drop products on Waashop</h3>
-            <p className="text-sm text-slate-200">
-              One approval unlocks inventory management, payouts, and analytics with Personal AI authentication baked in.
+            <p className="text-sm text-white/80">
+              One approval unlocks inventory management, payouts, and analytics across every touchpoint.
             </p>
           </div>
           <Link
             href="/login?vendor=1"
-            className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+            className="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
           >
             Start vendor application
           </Link>
