@@ -16,20 +16,20 @@ const phaseCopy: Record<
   }
 > = {
   email: {
-    heading: "Let’s find your account",
-    description: "Enter your Personal AI email to continue. We’ll guide you to the right step automatically.",
+    heading: "Find your account",
+    description: "Enter your Personal AI email to continue.",
   },
   login: {
     heading: "Welcome back",
-    description: "Confirm your Personal AI password to sync coins, ledger entries, and vendor access.",
+    description: "Confirm your password to sync balances.",
   },
   verify: {
-    heading: "Check your inbox",
-    description: "Enter the six-digit code we sent to verify your email before creating a profile.",
+    heading: "Verify email",
+    description: "Enter the six-digit code we just sent.",
   },
   details: {
-    heading: "Create your Waashop profile",
-    description: "Finish with a name and password. Personal AI keeps this identity consistent everywhere.",
+    heading: "Create your profile",
+    description: "Finish with a name and password.",
   },
 };
 
@@ -190,7 +190,7 @@ export function AuthFlow() {
       </div>
       <div className="mt-4 space-y-2">
         <h2 className="text-xl font-semibold text-slate-900">{phaseCopy[phase].heading}</h2>
-        <p className="text-sm text-slate-600">{phaseCopy[phase].description}</p>
+          <p className="text-sm text-slate-600">{phaseCopy[phase].description}</p>
       </div>
 
       {phase === "email" ? (
@@ -220,19 +220,12 @@ export function AuthFlow() {
           >
             {loading ? "Checking..." : "Continue"}
           </button>
-          <p className="text-xs text-slate-500">
-            We’ll never share or reuse this email outside Personal AI. Sign in once, stay connected everywhere.
-          </p>
-        </form>
-      ) : (
+          </form>
+        ) : (
         <div className="mt-6 space-y-4">
           <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-600">
             <p className="font-semibold text-slate-800">{email}</p>
-            <p className="mt-1">
-              {phase === "login"
-                ? "Your account is verified. Enter your password to continue."
-                : "Complete these final steps to unlock Waashop."}
-            </p>
+            <p className="mt-1">{phase === "login" ? "Account verified." : "Final step before shopping."}</p>
           </div>
           {status && (
             <p className="text-xs text-slate-500" role="status">
