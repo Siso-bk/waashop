@@ -17,7 +17,7 @@ const phaseCopy: Record<
 > = {
   email: {
     heading: "Find your account",
-    description: "Enter your Personal AI email to continue.",
+    description: "Enter your email to continue.",
   },
   login: {
     heading: "Welcome back",

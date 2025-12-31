@@ -14,17 +14,17 @@ export default async function HomePage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Waashop</p>
-            <h1 className="text-3xl font-semibold text-slate-900">Mystery drops. Transparent odds. Personal AI security.</h1>
+            <h1 className="text-3xl font-semibold text-slate-900">Mystery drops. Transparent odds. One wallet.</h1>
             <p className="text-sm text-slate-600">
-              See the guaranteed minimum and ledger impact before every purchase. Sign in once with Personal AI and shop
-              anywhere—Telegram Mini App, desktop web, or dashboard.
+              See the guaranteed minimum and ledger impact before every purchase. Sign in once and shop anywhere—Telegram
+              Mini App, desktop web, or dashboard.
             </p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Link
                 href={isAuthenticated ? "/boxes/BOX_1000" : "/login"}
                 className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
               >
-                {isAuthenticated ? "Continue shopping" : "Sign in with Personal AI"}
+                {isAuthenticated ? "Continue shopping" : "Sign in"}
               </Link>
               <Link
                 href="/wallet"
@@ -46,7 +46,7 @@ export default async function HomePage() {
                 <BalancePanel coins={user.coinsBalance} points={user.pointsBalance} />
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
-                  Connect with Personal AI to load your wallet instantly.
+                  Sign in to load your wallet instantly.
                 </div>
               )}
             </div>
@@ -71,7 +71,7 @@ export default async function HomePage() {
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">New shoppers</p>
           <h2 className="mt-2 text-lg font-semibold text-slate-900">Create once, shop everywhere.</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Verify your email, set a password, and Personal AI syncs it across Mini App, desktop, and dashboard.
+            Verify your email, set a password, and your session stays synced across Mini App, desktop, and dashboard.
           </p>
           <Link
             href={isAuthenticated ? "/wallet" : "/login"}
@@ -84,7 +84,7 @@ export default async function HomePage() {
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Returning</p>
           <h2 className="mt-2 text-lg font-semibold text-slate-900">Sign in and resume instantly.</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Personal AI tokens rotate every 7 days—Waashop validates them before loading your wallet or vendor access.
+            Tokens rotate every 7 days and Waashop validates them before loading balances or vendor access.
           </p>
           <Link
             href={isAuthenticated ? "/boxes/BOX_1000" : "/login"}
