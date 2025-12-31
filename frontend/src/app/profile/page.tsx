@@ -23,8 +23,8 @@ export default async function ProfilePage() {
           <dd className="mt-1 text-black">{user.email}</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-[0.3em] text-gray-400">Roles</dt>
-          <dd className="mt-1 text-black">{(user.roles || []).join(", ") || "Customer"}</dd>
+          <dt className="text-xs uppercase tracking-[0.3em] text-gray-400">Status</dt>
+          <dd className="mt-1 text-black">Customer</dd>
         </div>
       </dl>
       <p className="text-xs text-gray-500">Profile editing coming soon.</p>
