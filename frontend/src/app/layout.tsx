@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className="bg-[#f5f5f2] text-[#0b0b0b] antialiased">
         <div className="min-h-screen">
           <TelegramViewport />
-          <header className="border-b border-black/10 bg-white/90 backdrop-blur">
+          <header className="sticky top-0 z-40 border-b border-black/10 bg-white/90 backdrop-blur">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
               <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-black">
                 <span className="inline-flex h-2 w-8 rounded-full bg-black" aria-hidden />

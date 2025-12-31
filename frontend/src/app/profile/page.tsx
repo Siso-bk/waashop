@@ -27,7 +27,17 @@ export default async function ProfilePage() {
           <dd className="mt-1 text-black">Customer</dd>
         </div>
       </dl>
-      <p className="text-xs text-gray-500">Profile editing coming soon.</p>
+      <div className="grid gap-3 text-sm text-gray-600 sm:grid-cols-3">
+        <button className="rounded-2xl border border-black px-4 py-2 text-black transition hover:bg-black hover:text-white">
+          Edit profile
+        </button>
+        <button className="rounded-2xl border border-black px-4 py-2 text-black transition hover:bg-black hover:text-white">
+          Logout
+        </button>
+        <button className="rounded-2xl border border-red-500 px-4 py-2 text-red-600 transition hover:bg-red-600 hover:text-white">
+          Delete account
+        </button>
+      </div>
     </div>
   );
 }

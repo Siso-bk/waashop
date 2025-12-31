@@ -7,11 +7,19 @@ export default async function ShopPage() {
   const [boxes, user] = await Promise.all([getActiveBoxes(), getSessionUser()]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <header className="space-y-1">
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Shop</p>
         <h1 className="text-2xl font-semibold text-black">Play drops</h1>
         <p className="text-sm text-gray-600">Browse every live box with transparent tiers and instant ledger sync.</p>
+        {!user && (
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center rounded-full border border-black px-4 py-2 text-xs font-semibold text-black hover:bg-black hover:text-white"
+          >
+            Sign in to play
+          </Link>
+        )}
       </header>
       <div className="grid gap-6 lg:grid-cols-2">
         {boxes.map((box) => (

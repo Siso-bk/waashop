@@ -30,12 +30,6 @@ export function MobileNav() {
                 isActive ? "text-black" : "text-gray-500"
               }`}
             >
-              <span
-                className={`h-1 w-6 rounded-full ${
-                  isActive ? "bg-black" : "bg-transparent"
-                }`}
-                aria-hidden
-              />
               {link.label}
             </Link>
           );
