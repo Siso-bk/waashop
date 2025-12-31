@@ -486,36 +486,46 @@ router.post("/admin/seed", async (req, res) => {
 });
 
 router.post("/telegram/webhook", async (req, res) => {
-  const message = req.body?.message;
-  if (message?.text?.startsWith("/start")) {
-    const keyboard = env.WEBAPP_URL
-      ? {
-          keyboard: [
-            [
-              {
-                text: "Open Waashop",
-                web_app: { url: env.WEBAPP_URL },
-              },
-            ],
-          ],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        }
-      : undefined;
+  const update = req.body || {};
+  const message = update.message || update.callback_query?.message;
+  const text: string | undefined = update.message?.text || update.callback_query?.data;
+  const isStartCommand = typeof text === "string" && text.startsWith("/start");
 
-    const welcomeText =
-      "Welcome to Waashop!\nTap the button to launch the Mini App and start shopping curated drops.";
+  if (isStartCommand && message?.chat?.id) {
+    if (!env.TELEGRAM_BOT_TOKEN) {
+      console.error("Missing TELEGRAM_BOT_TOKEN. Unable to respond to /start.");
+    } else {
+      const webAppUrl = env.WEBAPP_URL;
+      const keyboard =
+        webAppUrl && webAppUrl.startsWith("http")
+          ? {
+              keyboard: [
+                [
+                  {
+                    text: "Open Waashop",
+                    web_app: { url: webAppUrl },
+                  },
+                ],
+              ],
+              resize_keyboard: true,
+            }
+          : undefined;
 
-    const apiUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-    await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: message.chat.id,
-        text: welcomeText,
-        reply_markup: keyboard,
-      }),
-    }).catch((error) => console.error("Telegram sendMessage error", error));
+      const welcomeText = webAppUrl
+        ? "Welcome to Waashop!\nTap the button below to launch the Mini App and start shopping curated drops."
+        : "Welcome to Waashop!\nVisit waashop.ai to open the Mini App and start shopping curated drops.";
+
+      const apiUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+      void fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: message.chat.id,
+          text: welcomeText,
+          reply_markup: keyboard,
+        }),
+      }).catch((error) => console.error("Telegram sendMessage error", error));
+    }
   }
 
   res.json({ ok: true });

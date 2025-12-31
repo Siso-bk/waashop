@@ -6,46 +6,74 @@ import { RewardTable } from "@/components/RewardTable";
 
 export default async function HomePage() {
   const [user, boxes] = await Promise.all([getSessionUser(), getActiveBoxes()]);
+  const isAuthenticated = Boolean(user);
+
+  const heroStats = [
+    { label: "Active drops", value: boxes.length ? `${boxes.length}` : "Launching daily" },
+    { label: "Guaranteed minimum", value: `${boxes[0]?.guaranteedMinPoints ?? 600} pts` },
+    { label: "Ledger entries", value: "Instant + tamperproof" },
+  ];
+
+  const shopperTracks = [
+    {
+      title: "New to Waashop",
+      description: "Verify your email with Personal AI, set a password once, and unlock coins + vendor perks instantly.",
+      cta: isAuthenticated ? { href: "/wallet", label: "View wallet" } : { href: "/login", label: "Create profile" },
+      highlights: ["Code-protected signup", "Server-issued JWT", "Unified across Mini App + dashboard"],
+    },
+    {
+      title: "Returning shopper",
+      description:
+        "Sign in with your Personal AI password and we’ll sync wallet balances, ledgers, and vendor access automatically.",
+      cta: isAuthenticated
+        ? { href: "/boxes/BOX_1000", label: "Resume shopping" }
+        : { href: "/login", label: "Sign in" },
+      highlights: ["7-day rotating tokens", "Waashop ↔ Telegram sync", "Audit-ready ledgers"],
+    },
+  ];
 
   return (
-    <div className="space-y-10">
-      <section className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm sm:p-10">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <div className="flex-1 space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Waashop</p>
-            <h1 className="text-3xl font-bold text-slate-900">Shop curated mystery drops with instant payouts.</h1>
-            <p className="text-sm text-slate-600">
-              Each box shows the guaranteed minimum, exact reward odds, and wallet impact before you buy. Coins debit and
-              reward points credit the moment the draw is complete.
-            </p>
-            <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-100 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-slate-400">Wallet sync</p>
-                <p className="font-semibold text-slate-900">
-                  {user ? "Connected via Personal AI" : "Sign in to load balances"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-slate-100 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-slate-400">Fairness</p>
-                <p className="font-semibold text-slate-900">Server RNG · top prize cooldown</p>
-              </div>
+    <div className="space-y-12">
+      <section className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-white via-indigo-50/80 to-slate-100 p-6 shadow-lg shadow-indigo-100/50 sm:p-10">
+        <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">Waashop</p>
+              <h1 className="text-4xl font-semibold text-slate-900">
+                Mystery drops engineered for transparency, instant payouts, and Personal AI identity.
+              </h1>
+              <p className="text-sm text-slate-600">
+                Every box publishes its odds, guaranteed minimum, and ledger impact before you tap buy. Personal AI keeps
+                your session synced everywhere—Telegram Mini App, desktop, and the vendor dashboard.
+              </p>
+            </div>
+            <div className="grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
+              {heroStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-2xl border border-white/60 bg-white/80 px-5 py-4 backdrop-blur supports-[backdrop-filter]:bg-white/70"
+                >
+                  <p className="text-xs uppercase tracking-wide text-slate-400">{stat.label}</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">{stat.value}</p>
+                </div>
+              ))}
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
-                href={user ? "/boxes/BOX_1000" : "/login"}
-                className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow transition hover:bg-indigo-500"
+                href={isAuthenticated ? "/boxes/BOX_1000" : "/login"}
+                className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-slate-900/10 transition hover:bg-slate-800"
               >
-                {user ? "Open featured box" : "Sign in with Personal AI"}
+                {isAuthenticated ? "Continue shopping" : "Sign in with Personal AI"}
               </Link>
               <Link
                 href="/wallet"
-                className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:border-slate-300"
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:border-slate-400"
               >
                 View wallet & ledger
               </Link>
             </div>
           </div>
-          <div className="flex-1 rounded-3xl bg-slate-50 p-6">
+          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-xl shadow-indigo-100/70">
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span>Status</span>
               <span className="font-semibold text-slate-900">
@@ -56,34 +84,65 @@ export default async function HomePage() {
               {user ? (
                 <BalancePanel coins={user.coinsBalance} points={user.pointsBalance} />
               ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
-                  Connect through Personal AI to unlock your coins, points, and vendor perks.
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+                  Sign in to load your coins, auto-sync ledger entries, and unlock vendor perks without leaving Waashop.
                 </div>
               )}
             </div>
-            <div className="mt-6 space-y-3 text-xs text-slate-500">
-              <div className="flex items-center justify-between rounded-2xl border border-white/60 bg-white px-4 py-3">
-                <span>Guaranteed minimum</span>
-                <span className="font-semibold text-slate-900">
+            <div className="mt-6 grid gap-4 text-xs text-slate-500 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3">
+                <p>Guaranteed minimum</p>
+                <p className="mt-1 text-base font-semibold text-slate-900">
                   {boxes[0]?.guaranteedMinPoints ?? 600} pts
-                </span>
+                </p>
               </div>
-              <div className="flex items-center justify-between rounded-2xl border border-white/60 bg-white px-4 py-3">
-                <span>Purchase protection</span>
-                <span className="font-semibold text-slate-900">Idempotent ledger</span>
+              <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3">
+                <p>Purchase protection</p>
+                <p className="mt-1 text-base font-semibold text-slate-900">Idempotent ledger + cooldown</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className="grid gap-6 lg:grid-cols-2">
+        {shopperTracks.map((track) => (
+          <article
+            key={track.title}
+            className="flex flex-col rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm shadow-indigo-100/40"
+          >
+            <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-400">
+              <span>{track.title}</span>
+              <span>Personal AI security</span>
+            </div>
+            <h3 className="mt-4 text-2xl font-semibold text-slate-900">{track.description}</h3>
+            <ul className="mt-4 space-y-2 text-sm text-slate-600">
+              {track.highlights.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-indigo-500" aria-hidden />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 flex-1" />
+            <Link
+              href={track.cta.href}
+              className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-500"
+            >
+              {track.cta.label}
+            </Link>
+          </article>
+        ))}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Boxes</p>
-            <h2 className="text-2xl font-semibold text-slate-900">Live drops</h2>
+            <h2 className="text-3xl font-semibold text-slate-900">Live drops</h2>
+            <p className="text-sm text-slate-600">Tap a box to inspect the precise reward tiers before committing.</p>
           </div>
-          <Link href="/wallet" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+          <Link href="/wallet" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
             Wallet & ledger
           </Link>
         </div>
@@ -91,7 +150,7 @@ export default async function HomePage() {
           {boxes.map((box) => (
             <article
               key={box.boxId}
-              className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
+              className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl"
             >
               <div className="flex items-center justify-between text-xs text-slate-500">
                 <span>Box {box.boxId}</span>
@@ -125,24 +184,25 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-slate-900/95 p-6 text-white sm:p-10">
+      <section className="rounded-[32px] border border-slate-200 bg-slate-900/95 p-6 text-white shadow-lg sm:p-10">
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Vendors</p>
-            <h3 className="text-xl font-semibold">Drop products on Waashop</h3>
+            <h3 className="text-2xl font-semibold">Drop products on Waashop</h3>
             <p className="text-sm text-slate-200">
-              Submit your catalog, get approved once, and manage stock, pricing, and payouts in the dashboard.
+              Submit once, get approved, and manage pricing, supply, and analytics from the dashboard with Personal AI
+              authentication included.
             </p>
           </div>
-          <div className="space-y-2 text-sm text-slate-200">
-            <p>• Transparent cooldown + RNG enforcement</p>
-            <p>• Built-in ledger & dispute trail</p>
-            <p>• Works on web, mobile, and Telegram Mini Apps</p>
-          </div>
+          <ul className="space-y-2 text-sm text-slate-200">
+            <li>• Transparent cooldown + RNG enforcement</li>
+            <li>• Built-in ledger & dispute trail</li>
+            <li>• Works on web, mobile, and Telegram Mini Apps</li>
+          </ul>
           <div className="space-y-3">
             <Link
               href="/login?vendor=1"
-              className="inline-flex w-full items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
             >
               Start vendor application
             </Link>
