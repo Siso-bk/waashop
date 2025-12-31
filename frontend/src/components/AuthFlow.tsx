@@ -8,13 +8,6 @@ const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL;
 
 type Phase = "email" | "login" | "verify" | "details";
 
-const steps: Array<{ id: Phase; title: string; detail: string }> = [
-  { id: "email", title: "Identify account", detail: "Check if your Personal AI email already exists on Waashop." },
-  { id: "login", title: "Authenticate", detail: "Existing users confirm their password securely." },
-  { id: "verify", title: "Verify email", detail: "New shoppers confirm the six-digit code sent to their inbox." },
-  { id: "details", title: "Create profile", detail: "Finish your Waashop profile with a name and password." },
-];
-
 const phaseCopy: Record<
   Phase,
   {
@@ -24,20 +17,19 @@ const phaseCopy: Record<
 > = {
   email: {
     heading: "Let’s find your account",
-    description: "We’ll detect whether you already shop on Waashop or need a new profile.",
+    description: "Enter your Personal AI email to continue. We’ll guide you to the right step automatically.",
   },
   login: {
     heading: "Welcome back",
-    description: "Confirm your Personal AI password to sync your wallet, orders, and vendor access.",
+    description: "Confirm your Personal AI password to sync coins, ledger entries, and vendor access.",
   },
   verify: {
-    heading: "Verify your inbox",
-    description: "Enter the six-digit code Personal AI emailed you. This keeps your identity secure across channels.",
+    heading: "Check your inbox",
+    description: "Enter the six-digit code we sent to verify your email before creating a profile.",
   },
   details: {
     heading: "Create your Waashop profile",
-    description:
-      "Set a secure password once. Personal AI keeps this identity consistent across Mini App, web, and dashboard.",
+    description: "Finish with a name and password. Personal AI keeps this identity consistent everywhere.",
   },
 };
 
@@ -99,7 +91,7 @@ export function AuthFlow() {
   const requestPreSignup = async (normalizedEmail: string) => {
     const data = await callPai<PreSignupResponse>("/api/auth/pre-signup", { email: normalizedEmail });
     setPhase("verify");
-    setStatus(data.message || "Check your inbox for a six-digit code.");
+    setStatus(data.message || "We emailed you a six-digit code.");
     setDevCode(data.devVerificationCode || null);
     setCode("");
     setPreToken(null);
@@ -183,151 +175,125 @@ export function AuthFlow() {
     }
   };
 
-  const activeIndex = steps.findIndex((step) => step.id === phase);
+  const sequence: Phase[] = ["email", "login", "verify", "details"];
+  const currentStep = sequence.indexOf(phase) + 1;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3" aria-live="polite">
-        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">
-          <span>
-            Step {activeIndex + 1} of {steps.length}
-          </span>
-          <button onClick={reset} className="text-indigo-500 hover:text-indigo-700">
-            Reset
-          </button>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-4">
-          {steps.map((step, index) => {
-            const isActive = index === activeIndex;
-            const isComplete = index < activeIndex;
-            return (
-              <div
-                key={step.id}
-                aria-current={isActive ? "step" : undefined}
-                className={`rounded-2xl border px-4 py-3 text-xs ${
-                  isActive
-                    ? "border-indigo-200 bg-indigo-50 text-indigo-900"
-                    : isComplete
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                    : "border-slate-200 bg-white text-slate-500"
-                }`}
-              >
-                <p className="font-semibold">{step.title}</p>
-                <p className="mt-1 text-[11px] leading-relaxed">{step.detail}</p>
-              </div>
-            );
-          })}
-        </div>
+    <div className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-400">
+        <span>
+          Step {currentStep} of {sequence.length}
+        </span>
+        <button type="button" onClick={reset} className="text-indigo-600 hover:text-indigo-500">
+          Reset
+        </button>
+      </div>
+      <div className="mt-4 space-y-2">
+        <h2 className="text-xl font-semibold text-slate-900">{phaseCopy[phase].heading}</h2>
+        <p className="text-sm text-slate-600">{phaseCopy[phase].description}</p>
       </div>
 
-      <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-            {phase === "email" ? "Identify" : phase === "login" ? "Authenticate" : phase === "verify" ? "Verify" : "Enroll"}
-          </p>
-          <h2 className="text-xl font-semibold text-slate-900">{phaseCopy[phase].heading}</h2>
-          <p className="text-sm text-slate-600">{phaseCopy[phase].description}</p>
-        </div>
-
-        {phase === "email" ? (
-          <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
-            <div>
-              <label htmlFor="auth-email" className="text-sm font-semibold text-slate-700">
-                Email address
-              </label>
-              <input
-                id="auth-email"
-                name="email"
-                type="email"
-                required
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:outline-none"
-                placeholder="you@example.com"
-              />
-            </div>
-            {error && (
-              <p className="text-sm text-red-500" role="alert">
-                {error}
-              </p>
-            )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
-            >
-              {loading ? "Checking..." : "Continue"}
-            </button>
-            <p className="text-xs text-slate-500">
-              Use your Personal AI credentials once—we keep the session synced across Mini App, desktop, and dashboard.
-            </p>
-          </form>
-        ) : (
-          <div className="mt-6 space-y-3">
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-xs text-slate-600">
-              <p className="font-semibold text-slate-800">{email}</p>
-              <p className="mt-1">Your identity is verified via Personal AI. Complete this step to unlock Waashop.</p>
-            </div>
-            {phase !== "verify" && status && (
-              <p className="text-xs text-slate-500" role="status">
-                {status}
-              </p>
-            )}
-            {phase === "login" ? (
-              <LoginForm email={email} />
-            ) : phase === "verify" ? (
-              <form onSubmit={handleVerifySubmit} className="space-y-4" noValidate>
-                <div>
-                  <label htmlFor="verification-code" className="text-sm font-medium text-slate-600">
-                    Verification code
-                  </label>
-                  <input
-                    id="verification-code"
-                    name="code"
-                    inputMode="numeric"
-                    pattern="\d{6}"
-                    maxLength={6}
-                    required
-                    value={code}
-                    onChange={(event) => setCode(event.target.value)}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm tracking-[0.35em] focus:border-indigo-500 focus:outline-none"
-                    placeholder="123456"
-                  />
-                </div>
-                {error && (
-                  <p className="text-sm text-red-500" role="alert">
-                    {error}
-                  </p>
-                )}
-                {status && <p className="text-xs text-slate-500">{status}</p>}
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
-                  >
-                    {loading ? "Verifying…" : "Verify code"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    disabled={resendLoading}
-                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {resendLoading ? "Sending…" : "Resend code"}
-                  </button>
-                </div>
-                {resendMessage && <p className="text-xs text-slate-500">{resendMessage}</p>}
-                {devCode && (
-                  <p className="text-xs text-amber-600">
-                    Dev code: <strong>{devCode}</strong>
-                  </p>
-                )}
-              </form>
-            ) : (
-              <RegisterForm email={email} preToken={preToken} onBack={() => setPhase("verify")} />
-            )}
+      {phase === "email" ? (
+        <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
+          <div>
+            <label htmlFor="auth-email" className="text-sm font-semibold text-slate-700">
+              Email address
+            </label>
+            <input
+              id="auth-email"
+              name="email"
+              type="email"
+              required
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
+              placeholder="you@example.com"
+            />
           </div>
-        )}
-      </div>
+          {error && (
+            <p className="text-sm text-red-500" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
+          >
+            {loading ? "Checking..." : "Continue"}
+          </button>
+          <p className="text-xs text-slate-500">
+            We’ll never share or reuse this email outside Personal AI. Sign in once, stay connected everywhere.
+          </p>
+        </form>
+      ) : (
+        <div className="mt-6 space-y-4">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+            <p className="font-semibold text-slate-800">{email}</p>
+            <p className="mt-1">
+              {phase === "login"
+                ? "Your account is verified. Enter your password to continue."
+                : "Complete these final steps to unlock Waashop."}
+            </p>
+          </div>
+          {status && (
+            <p className="text-xs text-slate-500" role="status">
+              {status}
+            </p>
+          )}
+          {phase === "login" ? (
+            <LoginForm email={email} />
+          ) : phase === "verify" ? (
+            <form onSubmit={handleVerifySubmit} className="space-y-4" noValidate>
+              <div>
+                <label htmlFor="verification-code" className="text-sm font-medium text-slate-600">
+                  Verification code
+                </label>
+                <input
+                  id="verification-code"
+                  name="code"
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  required
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 text-center text-sm tracking-[0.45em] focus:border-indigo-500 focus:outline-none"
+                  placeholder="123456"
+                />
+              </div>
+              {error && (
+                <p className="text-sm text-red-500" role="alert">
+                  {error}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
+                >
+                  {loading ? "Verifying…" : "Verify code"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendLoading}
+                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {resendLoading ? "Sending…" : "Resend"}
+                </button>
+              </div>
+              {resendMessage && <p className="text-xs text-slate-500">{resendMessage}</p>}
+              {devCode && (
+                <p className="text-xs text-amber-600">
+                  Dev code: <strong>{devCode}</strong>
+                </p>
+              )}
+            </form>
+          ) : (
+            <RegisterForm email={email} preToken={preToken} onBack={() => setPhase("verify")} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
