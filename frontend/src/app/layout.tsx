@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { TelegramViewport } from "@/components/TelegramViewport";
+import { MobileNav } from "@/components/MobileNav";
 
 export const metadata: Metadata = {
   title: "Waashop",
@@ -32,20 +33,33 @@ export default function RootLayout({
                 <span className="inline-flex h-2 w-8 rounded-full bg-black" aria-hidden />
                 Waashop
               </Link>
-              <nav className="flex items-center gap-5 text-sm text-gray-600">
-                <Link href="/" className="hover:text-black">
-                  Drops
-                </Link>
-                <Link href="/wallet" className="hover:text-black">
-                  Wallet
-                </Link>
-                <Link href="/login" className="hidden rounded-full border border-black px-3 py-1 text-black transition hover:bg-black hover:text-white sm:inline-flex">
-                  Sign in
-                </Link>
-              </nav>
+              <div className="flex items-center gap-6">
+                <nav className="hidden items-center gap-5 text-sm text-gray-600 sm:flex">
+                  <Link href="/" className="hover:text-black">
+                    Drops
+                  </Link>
+                  <Link href="/shop" className="hover:text-black">
+                    Shop
+                  </Link>
+                  <Link href="/wallet" className="hover:text-black">
+                    Wallet
+                  </Link>
+                  <Link href="/login" className="rounded-full border border-black px-3 py-1 text-black transition hover:bg-black hover:text-white">
+                    Sign in
+                  </Link>
+                </nav>
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-black hover:bg-black hover:text-white"
+                >
+                  &#128276;
+                </button>
+              </div>
             </div>
           </header>
-          <main className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-10">{children}</main>
+          <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-8 sm:pb-10 sm:pt-10">{children}</main>
+          <MobileNav />
         </div>
       </body>
     </html>
