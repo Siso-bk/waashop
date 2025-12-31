@@ -6,13 +6,36 @@ import { registerAction } from "@/components/login-actions";
 
 const initialState = { error: "" };
 
-export function RegisterForm({ email }: { email: string }) {
+type RegisterFormProps = {
+  email: string;
+  preToken: string | null;
+  onBack?: () => void;
+};
+
+export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
   const [state, action] = useActionState(registerAction, initialState);
   const { pending } = useFormStatus();
+
+  if (!preToken) {
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+        Verification expired.{" "}
+        <button
+          type="button"
+          onClick={onBack}
+          className="font-semibold text-amber-900 underline underline-offset-2"
+        >
+          Restart verification
+        </button>
+        .
+      </div>
+    );
+  }
 
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="preToken" value={preToken} />
       <div className="text-sm text-slate-500">Registering as {email}</div>
       <div>
         <label htmlFor="name" className="text-sm font-medium text-slate-600">
@@ -41,6 +64,15 @@ export function RegisterForm({ email }: { email: string }) {
         />
       </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-xs font-semibold text-slate-500 underline underline-offset-2"
+        >
+          Enter a different code
+        </button>
+      )}
       <button
         type="submit"
         disabled={pending}
