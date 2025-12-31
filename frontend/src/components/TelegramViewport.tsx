@@ -17,7 +17,12 @@ export function TelegramViewport() {
   useEffect(() => {
     const webApp = window.Telegram?.WebApp;
     if (webApp && !webApp.isExpanded) {
-      webApp.expand();
+      try {
+        webApp.ready?.();
+        webApp.expand();
+      } catch {
+        // ignore
+      }
     }
   }, []);
 
