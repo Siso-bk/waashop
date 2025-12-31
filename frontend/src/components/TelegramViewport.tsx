@@ -2,13 +2,16 @@
 
 import { useEffect } from "react";
 
+type TelegramWebApp = {
+  isExpanded?: boolean;
+  expand: () => void;
+  ready?: () => void;
+};
+
 declare global {
   interface Window {
     Telegram?: {
-      WebApp?: {
-        isExpanded?: boolean;
-        expand: () => void;
-      };
+      WebApp?: TelegramWebApp;
     };
   }
 }
@@ -18,7 +21,7 @@ export function TelegramViewport() {
     const webApp = window.Telegram?.WebApp;
     if (webApp && !webApp.isExpanded) {
       try {
-        webApp.ready?.();
+        if (typeof webApp.ready === "function") webApp.ready();
         webApp.expand();
       } catch {
         // ignore
