@@ -7,7 +7,13 @@ import { registerAction, type ActionState } from "@/components/login-actions";
 
 const initialState: ActionState = {};
 
-export function RegisterForm({ email }: { email: string }) {
+type Props = {
+  email: string;
+  preToken: string | null;
+  onBack?: () => void;
+};
+
+export function RegisterForm({ email, preToken, onBack }: Props) {
   const [state, action] = useActionState(registerAction, initialState);
   const { pending } = useFormStatus();
   const router = useRouter();
@@ -20,16 +26,33 @@ export function RegisterForm({ email }: { email: string }) {
     }
   }, [router, state.redirectTo]);
 
+  if (!preToken) {
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+        Verification expired.{" "}
+        <button
+          type="button"
+          onClick={onBack}
+          className="font-semibold text-amber-900 underline underline-offset-2"
+        >
+          Restart verification
+        </button>
+        .
+      </div>
+    );
+  }
+
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="preToken" value={preToken} />
       <div className="text-sm text-slate-500">Registering {email}</div>
       <div>
-        <label htmlFor="name" className="text-sm font-medium text-slate-600">
+        <label htmlFor="register-name" className="text-sm font-medium text-slate-600">
           Full name
         </label>
         <input
-          id="name"
+          id="register-name"
           name="name"
           type="text"
           required
@@ -60,6 +83,15 @@ export function RegisterForm({ email }: { email: string }) {
         </div>
       </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-xs font-semibold text-slate-500 underline underline-offset-2"
+        >
+          Enter a different code
+        </button>
+      )}
       <button
         type="submit"
         disabled={pending}

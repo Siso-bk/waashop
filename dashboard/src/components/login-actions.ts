@@ -56,14 +56,25 @@ export const registerAction = async (_prev: ActionState, formData: FormData): Pr
   const name = formData.get("name");
   const email = formData.get("email");
   const password = formData.get("password");
-  if (!name || typeof name !== "string" || !email || typeof email !== "string" || !password || typeof password !== "string") {
-    return { error: "Name, email, and password are required" };
+  const preToken = formData.get("preToken");
+  if (
+    !name ||
+    typeof name !== "string" ||
+    !email ||
+    typeof email !== "string" ||
+    !password ||
+    typeof password !== "string" ||
+    !preToken ||
+    typeof preToken !== "string"
+  ) {
+    return { error: "Complete email verification before creating your account." };
   }
 
   try {
-    const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/register", {
+    const payload = { preToken, name, password };
+    const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/pre-signup/complete", {
       method: "POST",
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify(payload),
     });
     await persistToken(token);
     return await syncPortalSession();
