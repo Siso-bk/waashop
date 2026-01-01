@@ -1,5 +1,5 @@
 import { backendFetch } from "@/lib/backendClient";
-import { ProductDto, ProfileResponse, VendorProfile } from "@/types";
+import { ProductDto, ProfileResponse, VendorProfile, HomeHeroContent } from "@/types";
 
 export const getProfile = async (): Promise<ProfileResponse> => {
   return backendFetch<ProfileResponse>("/api/me");
@@ -16,4 +16,8 @@ export const getAdminProducts = async () => {
 
 export const getVendorProducts = async () => {
   return backendFetch<{ products: ProductDto[] }>("/api/vendors/products");
+};
+
+export const getAdminHomeHero = async () => {
+  return backendFetch<{ hero: HomeHeroContent }>("/api/admin/home-hero");
 };

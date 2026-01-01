@@ -1,5 +1,5 @@
 import { backendFetch } from "@/lib/backendClient";
-import { MysteryBoxDto, LedgerEntryDto, UserProfile } from "@/types";
+import { MysteryBoxDto, LedgerEntryDto, UserProfile, HomeHeroContent } from "@/types";
 
 type RawBox = MysteryBoxDto & {
   _id?: { toString: () => string } | string;
@@ -47,4 +47,30 @@ export const getRecentLedger = async (limit = 50): Promise<LedgerEntryDto[]> => 
     meta: entry.meta || {},
     createdAt: entry.createdAt,
   }));
+};
+
+const FALLBACK_HOME_HERO: HomeHeroContent = {
+  tagline: "Waashop",
+  headline: "Mystery drops with honest odds and a wallet that travels with you.",
+  description:
+    "See the guaranteed minimum, ledger impact, and cooldown before you tap buy. Once you're signed in, the Mini App, desktop web, and dashboard all stay in sync.",
+  primaryCtaLabel: "Sign in",
+  primaryCtaHref: "/login",
+  primaryCtaAuthedLabel: "Continue shopping",
+  primaryCtaAuthedHref: "/boxes/BOX_1000",
+  secondaryCtaLabel: "Wallet & ledger",
+  secondaryCtaHref: "/wallet",
+  secondaryCtaAuthedLabel: "Wallet & ledger",
+  secondaryCtaAuthedHref: "/wallet",
+  backgroundClass: "bg-black",
+  textClass: "text-white",
+};
+
+export const getHomeHero = async (): Promise<HomeHeroContent> => {
+  try {
+    const data = await backendFetch<{ hero: HomeHeroContent }>("/api/home-hero", { auth: false });
+    return data.hero;
+  } catch {
+    return FALLBACK_HOME_HERO;
+  }
 };

@@ -13,10 +13,46 @@ import Purchase from "../models/Purchase";
 import User from "../models/User";
 import Vendor from "../models/Vendor";
 import Product from "../models/Product";
+import HeroContent, { IHeroContent } from "../models/HeroContent";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
 
 const router = Router();
+
+const DEFAULT_HOME_HERO = {
+  tagline: "Waashop",
+  headline: "Mystery drops with honest odds and a wallet that travels with you.",
+  description:
+    "See the guaranteed minimum, ledger impact, and cooldown before you tap buy. Once you're signed in, the Mini App, desktop web, and dashboard all stay in sync.",
+  primaryCtaLabel: "Sign in",
+  primaryCtaHref: "/login",
+  primaryCtaAuthedLabel: "Continue shopping",
+  primaryCtaAuthedHref: "/boxes/BOX_1000",
+  secondaryCtaLabel: "Wallet & ledger",
+  secondaryCtaHref: "/wallet",
+  secondaryCtaAuthedLabel: "Wallet & ledger",
+  secondaryCtaAuthedHref: "/wallet",
+  backgroundClass: "bg-black",
+  textClass: "text-white",
+};
+
+type HeroResponse = typeof DEFAULT_HOME_HERO;
+
+const serializeHero = (hero?: Partial<IHeroContent> | null): HeroResponse => ({
+  tagline: hero?.tagline ?? DEFAULT_HOME_HERO.tagline,
+  headline: hero?.headline ?? DEFAULT_HOME_HERO.headline,
+  description: hero?.description ?? DEFAULT_HOME_HERO.description,
+  primaryCtaLabel: hero?.primaryCtaLabel ?? DEFAULT_HOME_HERO.primaryCtaLabel,
+  primaryCtaHref: hero?.primaryCtaHref ?? DEFAULT_HOME_HERO.primaryCtaHref,
+  primaryCtaAuthedLabel: hero?.primaryCtaAuthedLabel ?? DEFAULT_HOME_HERO.primaryCtaAuthedLabel,
+  primaryCtaAuthedHref: hero?.primaryCtaAuthedHref ?? DEFAULT_HOME_HERO.primaryCtaAuthedHref,
+  secondaryCtaLabel: hero?.secondaryCtaLabel ?? DEFAULT_HOME_HERO.secondaryCtaLabel,
+  secondaryCtaHref: hero?.secondaryCtaHref ?? DEFAULT_HOME_HERO.secondaryCtaHref,
+  secondaryCtaAuthedLabel: hero?.secondaryCtaAuthedLabel ?? DEFAULT_HOME_HERO.secondaryCtaAuthedLabel,
+  secondaryCtaAuthedHref: hero?.secondaryCtaAuthedHref ?? DEFAULT_HOME_HERO.secondaryCtaAuthedHref,
+  backgroundClass: hero?.backgroundClass ?? DEFAULT_HOME_HERO.backgroundClass,
+  textClass: hero?.textClass ?? DEFAULT_HOME_HERO.textClass,
+});
 
 router.post("/auth/telegram", async (req, res) => {
   try {
@@ -120,6 +156,49 @@ router.patch("/profile", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Profile update error", error);
     res.status(400).json({ error: "Unable to update profile" });
+  }
+});
+
+router.get("/home-hero", async (_req, res) => {
+  await connectDB();
+  const hero = await HeroContent.findOne({ slug: "home" }).lean();
+  res.json({ hero: serializeHero(hero) });
+});
+
+router.get("/admin/home-hero", authMiddleware, requireRole("admin"), async (_req, res) => {
+  await connectDB();
+  const hero = await HeroContent.findOne({ slug: "home" }).lean();
+  res.json({ hero: serializeHero(hero) });
+});
+
+router.put("/admin/home-hero", authMiddleware, requireRole("admin"), async (req, res) => {
+  const schema = z.object({
+    tagline: z.string().max(150),
+    headline: z.string().max(250),
+    description: z.string().max(500),
+    primaryCtaLabel: z.string().max(80),
+    primaryCtaHref: z.string().max(200),
+    primaryCtaAuthedLabel: z.string().max(80).optional(),
+    primaryCtaAuthedHref: z.string().max(200).optional(),
+    secondaryCtaLabel: z.string().max(80).optional(),
+    secondaryCtaHref: z.string().max(200).optional(),
+    secondaryCtaAuthedLabel: z.string().max(80).optional(),
+    secondaryCtaAuthedHref: z.string().max(200).optional(),
+    backgroundClass: z.string().max(120).optional(),
+    textClass: z.string().max(120).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const hero = await HeroContent.findOneAndUpdate(
+      { slug: "home" },
+      { slug: "home", ...payload },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+    res.json({ hero: serializeHero(hero) });
+  } catch (error) {
+    console.error("Home hero update error", error);
+    res.status(400).json({ error: "Unable to update home hero" });
   }
 });
 

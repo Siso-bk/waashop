@@ -44,3 +44,19 @@ export interface ProfileResponse {
   user: UserProfile;
   vendor: VendorProfile | null;
 }
+
+export interface HomeHeroContent {
+  tagline: string;
+  headline: string;
+  description: string;
+  primaryCtaLabel: string;
+  primaryCtaHref: string;
+  primaryCtaAuthedLabel?: string;
+  primaryCtaAuthedHref?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
+  secondaryCtaAuthedLabel?: string;
+  secondaryCtaAuthedHref?: string;
+  backgroundClass?: string;
+  textClass?: string;
+}

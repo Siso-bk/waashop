@@ -87,6 +87,10 @@ export default async function DashboardHome() {
               <p className="text-lg font-semibold text-slate-900">Moderate mystery boxes</p>
               <p className="text-sm text-slate-500">Activate/deactivate vendor products.</p>
             </Link>
+            <Link href="/admin/home-hero" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
+              <p className="text-lg font-semibold text-slate-900">Edit homepage hero</p>
+              <p className="text-sm text-slate-500">Update copy and CTAs without redeploying.</p>
+            </Link>
           </div>
         </div>
       ) : (

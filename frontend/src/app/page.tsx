@@ -1,67 +1,100 @@
 import Link from "next/link";
-import { getSessionUser, getActiveBoxes } from "@/lib/queries";
+import { getSessionUser, getActiveBoxes, getHomeHero } from "@/lib/queries";
 import { BalancePanel } from "@/components/BalancePanel";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
 
 export default async function HomePage() {
-  const [user, boxes] = await Promise.all([getSessionUser(), getActiveBoxes()]);
+  const [user, boxes, hero] = await Promise.all([getSessionUser(), getActiveBoxes(), getHomeHero()]);
   const isAuthenticated = Boolean(user);
+  const primaryCtaLabel = isAuthenticated
+    ? hero.primaryCtaAuthedLabel || hero.primaryCtaLabel
+    : hero.primaryCtaLabel;
+  const primaryCtaHref = isAuthenticated ? hero.primaryCtaAuthedHref || hero.primaryCtaHref : hero.primaryCtaHref;
+  const secondaryCtaLabel = isAuthenticated
+    ? hero.secondaryCtaAuthedLabel || hero.secondaryCtaLabel
+    : hero.secondaryCtaLabel;
+  const secondaryCtaHref = isAuthenticated
+    ? hero.secondaryCtaAuthedHref || hero.secondaryCtaHref
+    : hero.secondaryCtaHref;
+
+  const heroBackgroundClass = hero.backgroundClass ?? "bg-black";
+  const heroTextClass = hero.textClass ?? "text-white";
+  const heroPrefersLightText = heroTextClass.includes("white");
+  const heroAccentText = heroPrefersLightText ? "text-white/60" : "text-black/60";
+  const heroMutedText = heroPrefersLightText ? "text-white/70" : "text-black/70";
+  const heroSubtleText = heroPrefersLightText ? "text-white/50" : "text-black/50";
+  const heroStrongText = heroPrefersLightText ? "text-white" : "text-black";
+  const heroPanelClasses = heroPrefersLightText
+    ? "rounded-3xl border border-white/15 bg-white/5 p-6 backdrop-blur"
+    : "rounded-3xl border border-black/10 bg-white p-6 shadow-sm";
+  const heroPanelHeaderText = heroAccentText;
+  const heroPanelUserText = heroStrongText;
+  const heroEmptyStateClasses = heroPrefersLightText
+    ? "rounded-2xl border border-white/20 bg-white/5 p-4 text-sm text-white/80"
+    : "rounded-2xl border border-black/10 bg-black/5 p-4 text-sm text-black/70";
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[32px] border border-black/10 bg-black px-6 py-10 text-white sm:px-10">
+      <section
+        className={`rounded-[32px] border border-black/10 px-6 py-10 sm:px-10 ${heroBackgroundClass} ${heroTextClass}`}
+      >
         <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Waashop</p>
-            <h1 className="text-4xl font-semibold leading-tight">
-              Mystery drops with honest odds and a wallet that travels with you.
-            </h1>
-            <p className="text-sm text-white/70">
-              See the guaranteed minimum, ledger impact, and cooldown before you tap buy. Once you&apos;re signed in, the
-              Mini App, desktop web, and dashboard all stay in sync.
-            </p>
+            <p className={`text-xs font-semibold uppercase tracking-[0.35em] ${heroAccentText}`}>{hero.tagline}</p>
+            <h1 className="text-4xl font-semibold leading-tight">{hero.headline}</h1>
+            <p className={`text-sm ${heroMutedText}`}>{hero.description}</p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={isAuthenticated ? "/boxes/BOX_1000" : "/login"}
-                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
-              >
-                {isAuthenticated ? "Continue shopping" : "Sign in"}
-              </Link>
-              <Link
-                href="/wallet"
-                className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
-              >
-                Wallet & ledger
-              </Link>
+              {primaryCtaLabel && primaryCtaHref && (
+                <Link
+                  href={primaryCtaHref}
+                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
+                >
+                  {primaryCtaLabel}
+                </Link>
+              )}
+              {secondaryCtaLabel && secondaryCtaHref && (
+                <Link
+                  href={secondaryCtaHref}
+                  className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
+                >
+                  {secondaryCtaLabel}
+                </Link>
+              )}
             </div>
-            <div className="grid gap-4 pt-4 text-xs text-white/70 sm:grid-cols-3">
+            <div className={`grid gap-4 pt-4 text-xs ${heroMutedText} sm:grid-cols-3`}>
               <div>
-                <p className="uppercase tracking-[0.3em] text-white/50">Drops</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{boxes.length || "—"}</p>
+                <p className={`uppercase tracking-[0.3em] ${heroSubtleText}`}>Drops</p>
+                <p className={`mt-2 text-2xl font-semibold ${heroStrongText}`}>{boxes.length || "—"}</p>
               </div>
               <div>
-                <p className="uppercase tracking-[0.3em] text-white/50">Guaranteed min</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{boxes[0]?.guaranteedMinPoints ?? 600} pts</p>
+                <p className={`uppercase tracking-[0.3em] ${heroSubtleText}`}>Guaranteed min</p>
+                <p className={`mt-2 text-2xl font-semibold ${heroStrongText}`}>
+                  {boxes[0]?.guaranteedMinPoints ?? 600} pts
+                </p>
               </div>
               <div>
-                <p className="uppercase tracking-[0.3em] text-white/50">Ledger</p>
-                <p className="mt-2 text-2xl font-semibold text-white">Instant · tamperproof</p>
+                <p className={`uppercase tracking-[0.3em] ${heroSubtleText}`}>Ledger</p>
+                <p className={`mt-2 text-2xl font-semibold ${heroStrongText}`}>Instant · tamperproof</p>
               </div>
             </div>
           </div>
-          <div className="rounded-3xl border border-white/15 bg-white/5 p-6 backdrop-blur">
-            <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/60">
+          <div className={heroPanelClasses}>
+            <div className={`flex items-center justify-between text-xs uppercase tracking-[0.3em] ${heroPanelHeaderText}`}>
               <span>Status</span>
-              <span className="font-semibold text-white">{user ? `Hi, ${user.firstName || "Shopper"}` : "Guest"}</span>
+              <span className={`font-semibold ${heroPanelUserText}`}>
+                {user ? `Hi, ${user.firstName || "Shopper"}` : "Guest"}
+              </span>
             </div>
             <div className="mt-4">
               {user ? (
-                <BalancePanel coins={user.coinsBalance} points={user.pointsBalance} tone="dark" />
+                <BalancePanel
+                  coins={user.coinsBalance}
+                  points={user.pointsBalance}
+                  tone={heroPrefersLightText ? "dark" : "light"}
+                />
               ) : (
-                <div className="rounded-2xl border border-white/20 bg-white/5 p-4 text-sm text-white/80">
-                  Sign in to load your wallet instantly.
-                </div>
+                <div className={heroEmptyStateClasses}>Sign in to load your wallet instantly.</div>
               )}
             </div>
           </div>
