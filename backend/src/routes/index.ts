@@ -106,6 +106,7 @@ const serializePromoCard = (card: IPromoCard) => ({
   ctaLabel: card.ctaLabel,
   ctaHref: card.ctaHref,
   imageUrl: card.imageUrl,
+  status: card.status,
 });
 
 const forwardPaiRequest = async (path: string, payload: unknown) => {
@@ -357,6 +358,58 @@ router.post(
   }
 );
 
+router.patch(
+  "/vendors/promo-cards/:id",
+  authMiddleware,
+  loadVendor,
+  requireApprovedVendor,
+  async (req, res) => {
+    const schema = z.object({
+      title: z.string().min(5),
+      description: z.string().max(400).optional(),
+      ctaLabel: z.string().max(60).optional(),
+      ctaHref: z.string().max(200).optional(),
+      imageUrl: z.string().url().optional(),
+    });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const card = await PromoCard.findOne({ _id: req.params.id, vendorId: req.vendorDoc!._id }).exec();
+      if (!card) {
+        return res.status(404).json({ error: "Promo card not found" });
+      }
+      if (card.status !== "PENDING") {
+        return res.status(400).json({ error: "Only pending promo cards can be edited" });
+      }
+      Object.assign(card, payload);
+      await card.save();
+      res.json({ promoCard: serializePromoCard(card) });
+    } catch (error) {
+      console.error("Update promo card error", error);
+      res.status(400).json({ error: "Unable to update promo card" });
+    }
+  }
+);
+
+router.delete(
+  "/vendors/promo-cards/:id",
+  authMiddleware,
+  loadVendor,
+  requireApprovedVendor,
+  async (req, res) => {
+    await connectDB();
+    const card = await PromoCard.findOne({ _id: req.params.id, vendorId: req.vendorDoc!._id }).exec();
+    if (!card) {
+      return res.status(404).json({ error: "Promo card not found" });
+    }
+    if (card.status !== "PENDING") {
+      return res.status(400).json({ error: "Only pending promo cards can be deleted" });
+    }
+    await card.deleteOne();
+    res.json({ success: true });
+  }
+);
+
 router.get(
   "/vendors/promo-cards",
   authMiddleware,
@@ -412,6 +465,21 @@ router.patch(
       console.error("Promo card status error", error);
       res.status(400).json({ error: "Unable to update promo card" });
     }
+  }
+);
+
+router.delete(
+  "/admin/promo-cards/:id",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    await connectDB();
+    const card = await PromoCard.findById(req.params.id).exec();
+    if (!card) {
+      return res.status(404).json({ error: "Promo card not found" });
+    }
+    await card.deleteOne();
+    res.json({ success: true });
   }
 );
 
@@ -587,6 +655,57 @@ router.post(
   }
 );
 
+router.patch(
+  "/vendors/products/:id",
+  authMiddleware,
+  loadVendor,
+  requireApprovedVendor,
+  async (req, res) => {
+    try {
+      const payload = mysteryBoxSchema.parse(req.body);
+      await connectDB();
+      const product = await Product.findOne({ _id: req.params.id, vendorId: req.vendorDoc!._id }).exec();
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      if (product.status !== "PENDING") {
+        return res.status(400).json({ error: "Only pending products can be edited" });
+      }
+      Object.assign(product, {
+        name: payload.name,
+        description: payload.description,
+        priceCoins: payload.priceCoins,
+        guaranteedMinPoints: payload.guaranteedMinPoints,
+        rewardTiers: payload.rewardTiers,
+      });
+      await product.save();
+      res.json({ product });
+    } catch (error) {
+      console.error("Update product error", error);
+      res.status(400).json({ error: "Unable to update product" });
+    }
+  }
+);
+
+router.delete(
+  "/vendors/products/:id",
+  authMiddleware,
+  loadVendor,
+  requireApprovedVendor,
+  async (req, res) => {
+    await connectDB();
+    const product = await Product.findOne({ _id: req.params.id, vendorId: req.vendorDoc!._id }).exec();
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    if (product.status !== "PENDING") {
+      return res.status(400).json({ error: "Only pending products can be deleted" });
+    }
+    await product.deleteOne();
+    res.json({ success: true });
+  }
+);
+
 router.get(
   "/vendors/products",
   authMiddleware,
@@ -606,6 +725,49 @@ router.get(
     await connectDB();
     const products = await Product.find().sort({ createdAt: -1 }).lean();
     res.json({ products });
+  }
+);
+
+router.patch(
+  "/admin/products/:id",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    try {
+      const payload = mysteryBoxSchema.parse(req.body);
+      await connectDB();
+      const product = await Product.findById(req.params.id).exec();
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      Object.assign(product, {
+        name: payload.name,
+        description: payload.description,
+        priceCoins: payload.priceCoins,
+        guaranteedMinPoints: payload.guaranteedMinPoints,
+        rewardTiers: payload.rewardTiers,
+      });
+      await product.save();
+      res.json({ product });
+    } catch (error) {
+      console.error("Admin update product error", error);
+      res.status(400).json({ error: "Unable to update product" });
+    }
+  }
+);
+
+router.delete(
+  "/admin/products/:id",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    await connectDB();
+    const product = await Product.findById(req.params.id).exec();
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    await product.deleteOne();
+    res.json({ success: true });
   }
 );
 

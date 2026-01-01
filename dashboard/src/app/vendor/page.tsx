@@ -6,6 +6,12 @@ import { VendorProfileForm } from "@/components/VendorProfileForm";
 import { VendorProductForm } from "@/components/VendorProductForm";
 import { VendorPromoForm } from "@/components/VendorPromoForm";
 import { ProductDto, PromoCardDto } from "@/types";
+import {
+  updateVendorProductAction,
+  deleteVendorProductAction,
+  updatePromoCardAction,
+  deletePromoCardAction,
+} from "@/app/vendor/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +78,54 @@ export default async function VendorDashboardPage() {
                     {card.status && <StatusBadge status={card.status} />}
                   </div>
                   {card.description && <p className="mt-2 text-sm text-slate-500">{card.description}</p>}
+                  {card.status === "PENDING" && (
+                    <div className="mt-3 space-y-2">
+                      <form action={updatePromoCardAction} className="space-y-2">
+                        <input type="hidden" name="promoId" value={card.id} />
+                        <input
+                          name="promoTitle"
+                          defaultValue={card.title}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        />
+                        <textarea
+                          name="promoDescription"
+                          defaultValue={card.description || ""}
+                          rows={2}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        />
+                        <input
+                          name="promoCtaLabel"
+                          defaultValue={card.ctaLabel || ""}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                          placeholder="CTA label"
+                        />
+                        <input
+                          name="promoCtaHref"
+                          defaultValue={card.ctaHref || ""}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                          placeholder="/boxes/BOX_123"
+                        />
+                        <input
+                          name="promoImageUrl"
+                          defaultValue={card.imageUrl || ""}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                          placeholder="https://..."
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
+                        >
+                          Save promo
+                        </button>
+                      </form>
+                      <form action={deletePromoCardAction}>
+                        <input type="hidden" name="promoId" value={card.id} />
+                        <button type="submit" className="text-sm font-semibold text-red-500">
+                          Delete promo
+                        </button>
+                      </form>
+                    </div>
+                  )}
                 </div>
               ))}
               {promoCards.length === 0 && <p>No promo cards submitted yet.</p>}
@@ -110,6 +164,60 @@ export default async function VendorDashboardPage() {
                 <StatusBadge status={product.status} />
               </div>
               <p className="mt-2 text-sm text-slate-500">{product.description || "No description"}</p>
+              {product.status === "PENDING" && (
+                <div className="mt-3 space-y-3">
+                  <details className="rounded-xl border border-slate-200 p-3">
+                    <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit product</summary>
+                    <form action={updateVendorProductAction} className="mt-3 space-y-3">
+                      <input type="hidden" name="productId" value={product._id} />
+                      <input
+                        type="text"
+                        name="productName"
+                        defaultValue={product.name}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      />
+                      <textarea
+                        name="productDescription"
+                        defaultValue={product.description || ""}
+                        rows={2}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      />
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input
+                          type="number"
+                          name="priceCoins"
+                          defaultValue={product.priceCoins}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="number"
+                          name="guaranteedMinPoints"
+                          defaultValue={product.guaranteedMinPoints}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <textarea
+                        name="rewardTiers"
+                        rows={4}
+                        defaultValue={JSON.stringify(product.rewardTiers || [], null, 2)}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
+                      >
+                        Save changes
+                      </button>
+                    </form>
+                  </details>
+                  <form action={deleteVendorProductAction}>
+                    <input type="hidden" name="productId" value={product._id} />
+                    <button type="submit" className="text-sm font-semibold text-red-500">
+                      Delete product
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
           ))}
           {products.length === 0 && (

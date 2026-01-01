@@ -50,7 +50,15 @@ export default async function AdminPromoCardsPage() {
                   {card.status && <StatusBadge status={card.status} />}
                 </td>
                 <td className="px-4 py-3">
-                  <PromoStatusForm cardId={card.id} current={card.status || "PENDING"} />
+                  <div className="space-y-2">
+                    <PromoStatusForm cardId={card.id} current={card.status || "PENDING"} />
+                    <form action={deletePromoCard}>
+                      <input type="hidden" name="cardId" value={card.id} />
+                      <button type="submit" className="text-xs font-semibold text-red-500">
+                        Delete
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -97,6 +105,15 @@ async function updatePromoStatus(formData: FormData) {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/admin/promo-cards");
+}
+
+async function deletePromoCard(formData: FormData) {
+  "use server";
+  const cardId = formData.get("cardId");
+  if (!cardId) return;
+  await backendFetch(`/api/admin/promo-cards/${cardId}`, { method: "DELETE" });
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/admin/promo-cards");
 }

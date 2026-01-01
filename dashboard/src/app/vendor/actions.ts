@@ -33,6 +33,71 @@ export const createVendorProductAction = async (
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
+  const payload = extractProductPayload(formData);
+  if (payload.error) {
+    return { error: payload.error };
+  }
+
+  try {
+    await backendFetch("/api/vendors/products", {
+      method: "POST",
+      body: JSON.stringify(payload.data),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create product";
+    return { error: message };
+  }
+
+  revalidatePath("/vendor");
+  return {};
+};
+
+export const updateVendorProductAction = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  const productId = formData.get("productId");
+  if (!productId || typeof productId !== "string") {
+    return { error: "Missing product id" };
+  }
+  const payload = extractProductPayload(formData);
+  if (payload.error) {
+    return { error: payload.error };
+  }
+  try {
+    await backendFetch(`/api/vendors/products/${productId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload.data),
+    });
+    revalidatePath("/vendor");
+    return {};
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update product";
+    return { error: message };
+  }
+};
+
+export const deleteVendorProductAction = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  const productId = formData.get("productId");
+  if (!productId || typeof productId !== "string") {
+    return { error: "Missing product id" };
+  }
+  try {
+    await backendFetch(`/api/vendors/products/${productId}`, {
+      method: "DELETE",
+    });
+    revalidatePath("/vendor");
+    return {};
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete product";
+    return { error: message };
+  }
+};
+
+const extractProductPayload = (formData: FormData): { data?: unknown; error?: string } => {
   const name = formData.get("productName");
   const description = formData.get("productDescription");
   const priceCoins = Number(formData.get("priceCoins"));
@@ -77,24 +142,15 @@ export const createVendorProductAction = async (
     return { error: "Tier probabilities must sum to 1" };
   }
 
-  try {
-    await backendFetch("/api/vendors/products", {
-      method: "POST",
-      body: JSON.stringify({
-        name,
-        description: typeof description === "string" ? description : undefined,
-        priceCoins,
-        guaranteedMinPoints,
-        rewardTiers: tiers,
-      }),
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to create product";
-    return { error: message };
-  }
-
-  revalidatePath("/vendor");
-  return {};
+  return {
+    data: {
+      name,
+      description: typeof description === "string" ? description : undefined,
+      priceCoins,
+      guaranteedMinPoints,
+      rewardTiers: tiers,
+    },
+  };
 };
 
 export const createPromoCardAction = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
@@ -125,4 +181,65 @@ export const createPromoCardAction = async (_prev: ActionState, formData: FormDa
     const message = error instanceof Error ? error.message : "Failed to submit promo card";
     return { error: message };
   }
+};
+
+export const updatePromoCardAction = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  const cardId = formData.get("promoId");
+  if (!cardId || typeof cardId !== "string") {
+    return { error: "Missing promo id" };
+  }
+  const payload = extractPromoPayload(formData);
+  if (payload.error) {
+    return { error: payload.error };
+  }
+  try {
+    await backendFetch(`/api/vendors/promo-cards/${cardId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload.data),
+    });
+    revalidatePath("/vendor");
+    return {};
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update promo card";
+    return { error: message };
+  }
+};
+
+export const deletePromoCardAction = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  const cardId = formData.get("promoId");
+  if (!cardId || typeof cardId !== "string") {
+    return { error: "Missing promo id" };
+  }
+  try {
+    await backendFetch(`/api/vendors/promo-cards/${cardId}`, {
+      method: "DELETE",
+    });
+    revalidatePath("/vendor");
+    return {};
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete promo card";
+    return { error: message };
+  }
+};
+
+const extractPromoPayload = (formData: FormData): { data?: unknown; error?: string } => {
+  const title = formData.get("promoTitle");
+  const description = formData.get("promoDescription");
+  const ctaLabel = formData.get("promoCtaLabel");
+  const ctaHref = formData.get("promoCtaHref");
+  const imageUrl = formData.get("promoImageUrl");
+
+  if (!title || typeof title !== "string" || title.trim().length < 5) {
+    return { error: "Promo title must be at least 5 characters." };
+  }
+
+  return {
+    data: {
+      title: title.trim(),
+      description: typeof description === "string" ? description : undefined,
+      ctaLabel: typeof ctaLabel === "string" ? ctaLabel : undefined,
+      ctaHref: typeof ctaHref === "string" ? ctaHref : undefined,
+      imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
+    },
+  };
 };
