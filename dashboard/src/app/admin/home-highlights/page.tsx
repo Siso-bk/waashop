@@ -13,7 +13,9 @@ type Props = {
 };
 
 export default async function AdminHomeHighlightsPage({ searchParams }: Props) {
-  const params = typeof searchParams?.then === "function" ? await searchParams : searchParams;
+  const params = (await Promise.resolve(searchParams ?? {})) as Record<string, string | string[] | undefined>;
+  const statusValue = typeof params.status === "string" ? params.status : null;
+  const messageValue = typeof params.message === "string" ? params.message : null;
   await requireToken();
   const { user } = await getProfile();
   if (!user.roles.includes("admin")) {
@@ -21,8 +23,8 @@ export default async function AdminHomeHighlightsPage({ searchParams }: Props) {
   }
 
   const { cards } = await getAdminHomeHighlights();
-  const status = typeof params?.status === "string" ? params.status : null;
-  const message = typeof params?.message === "string" ? decodeURIComponent(params.message) : null;
+  const status = statusValue;
+  const message = messageValue ? decodeURIComponent(messageValue) : null;
 
   return (
     <div className="space-y-6">

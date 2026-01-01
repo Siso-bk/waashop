@@ -13,7 +13,9 @@ type PageProps = {
 };
 
 export default async function AdminHomeHeroPage({ searchParams }: PageProps) {
-  const params = typeof searchParams?.then === "function" ? await searchParams : searchParams;
+  const plainParams = (await Promise.resolve(searchParams ?? {})) as Record<string, string | string[] | undefined>;
+  const statusValue = typeof plainParams.status === "string" ? plainParams.status : null;
+  const messageValue = typeof plainParams.message === "string" ? plainParams.message : null;
   await requireToken();
   const { user } = await getProfile();
   if (!user.roles.includes("admin")) {
@@ -21,8 +23,8 @@ export default async function AdminHomeHeroPage({ searchParams }: PageProps) {
   }
 
   const { hero } = await getAdminHomeHero();
-  const status = typeof params?.status === "string" ? params.status : null;
-  const message = typeof params?.message === "string" ? decodeURIComponent(params.message) : null;
+  const status = statusValue;
+  const message = messageValue ? decodeURIComponent(messageValue) : null;
 
   return (
     <div className="space-y-6">
