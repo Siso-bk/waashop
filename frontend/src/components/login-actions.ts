@@ -53,13 +53,13 @@ export const loginAction = async (_prev: AuthActionState, formData: FormData): P
 };
 
 export const registerAction = async (_prev: AuthActionState, formData: FormData): Promise<AuthActionState> => {
-  const name = formData.get("name");
+  const fullName = formData.get("fullName");
   const email = formData.get("email");
   const password = formData.get("password");
   const preToken = formData.get("preToken");
   if (
-    !name ||
-    typeof name !== "string" ||
+    !fullName ||
+    typeof fullName !== "string" ||
     !email ||
     typeof email !== "string" ||
     !password ||
@@ -73,7 +73,7 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
   try {
     const payload = {
       preToken,
-      name,
+      name: fullName,
       password,
     };
     const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/pre-signup/complete", {

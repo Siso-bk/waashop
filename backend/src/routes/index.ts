@@ -123,6 +123,25 @@ router.patch("/profile", authMiddleware, async (req, res) => {
   }
 });
 
+router.delete("/profile", authMiddleware, async (req, res) => {
+  if (!req.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    await connectDB();
+    await Promise.all([
+      Vendor.deleteMany({ ownerUserId: req.userId }).exec(),
+      Ledger.deleteMany({ userId: req.userId }).exec(),
+      Purchase.deleteMany({ userId: req.userId }).exec(),
+    ]);
+    await User.findByIdAndDelete(req.userId).exec();
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Profile delete error", error);
+    res.status(400).json({ error: "Unable to delete profile" });
+  }
+});
+
 /** Vendor onboarding */
 router.post("/vendors", authMiddleware, async (req, res) => {
   const schema = z.object({

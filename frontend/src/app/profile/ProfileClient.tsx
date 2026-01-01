@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SESSION_COOKIE } from "@/lib/constants";
 
 export type ProfilePayload = {
   firstName: string;
@@ -15,21 +14,27 @@ type ProfileClientProps = {
   initialProfile: ProfilePayload;
 };
 
+type Feedback = {
+  type: "success" | "error";
+  message: string;
+};
+
 export function ProfileClient({ initialProfile }: ProfileClientProps) {
   const router = useRouter();
   const [profile, setProfile] = useState<ProfilePayload>(initialProfile);
-  const [status, setStatus] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleSave = async () => {
     if (!editing) {
       setEditing(true);
-      setStatus(null);
+      setFeedback(null);
       return;
     }
-    setLoading(true);
-    setStatus(null);
+    setSaving(true);
+    setFeedback(null);
     try {
       const response = await fetch("/api/profile", {
         method: "PATCH",
@@ -38,24 +43,61 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
           firstName: profile.firstName,
           lastName: profile.lastName,
         }),
+        credentials: "include",
       });
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Unable to update profile.");
+        throw new Error((data as { error?: string }).error || "Unable to update profile.");
       }
-      setStatus("Profile updated.");
+      const payload = data as { profile: ProfilePayload };
+      if (payload.profile) {
+        setProfile(payload.profile);
+      }
+      setFeedback({ type: "success", message: "Profile updated." });
       setEditing(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unable to update profile.";
-      setStatus(message);
+      setFeedback({ type: "error", message });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const handleLogout = () => {
-    document.cookie = `${SESSION_COOKIE}=; Max-Age=0; path=/`;
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/session", { method: "DELETE", credentials: "include" });
+    } catch {
+      // ignore failures clearing cookie
+    }
     router.push("/login");
+    router.refresh();
+  };
+
+  const handleDelete = async () => {
+    const confirmed =
+      typeof window !== "undefined"
+        ? window.confirm("This action deletes your Waashop profile and ledger history. Continue?")
+        : true;
+    if (!confirmed) return;
+    setDeleteLoading(true);
+    setFeedback(null);
+    try {
+      const response = await fetch("/api/profile", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error((data as { error?: string }).error || "Unable to delete profile.");
+      }
+      router.push("/login?accountDeleted=1");
+      router.refresh();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to delete profile.";
+      setFeedback({ type: "error", message });
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -105,10 +147,10 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
         <div className="grid gap-3 text-sm text-gray-600 sm:grid-cols-3">
           <button
             onClick={handleSave}
-            disabled={loading}
+            disabled={saving}
             className="rounded-2xl border border-black px-4 py-2 text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:bg-gray-200"
           >
-            {editing ? (loading ? "Saving…" : "Save changes") : "Edit profile"}
+            {editing ? (saving ? "Saving…" : "Save changes") : "Edit profile"}
           </button>
           <button
             onClick={handleLogout}
@@ -116,11 +158,23 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
           >
             Logout
           </button>
-          <button className="rounded-2xl border border-red-500 px-4 py-2 text-red-600 transition hover:bg-red-600 hover:text-white">
+          <button
+            onClick={handleDelete}
+            disabled={deleteLoading}
+            className="rounded-2xl border border-red-500 px-4 py-2 text-red-600 transition hover:bg-red-600 hover:text-white disabled:cursor-not-allowed disabled:border-red-200 disabled:bg-red-200 disabled:text-white"
+          >
             Delete account
           </button>
         </div>
-        {status && <p className="text-sm text-gray-600">{status}</p>}
+        {feedback && (
+          <p
+            className={`text-sm ${
+              feedback.type === "error" ? "text-red-600" : "text-green-600"
+            }`}
+          >
+            {feedback.message}
+          </p>
+        )}
       </section>
     </div>
   );

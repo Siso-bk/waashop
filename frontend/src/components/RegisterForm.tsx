@@ -53,9 +53,10 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
         </label>
         <input
           id="name"
-          name="name"
+          name="fullName"
           type="text"
           required
+          autoComplete="name"
           className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
           placeholder="Jane Doe"
         />
