@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createVendorProductAction } from "@/app/vendor/actions";
 import { PendingButton } from "@/components/PendingButton";
@@ -11,7 +11,42 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [state, action] = useActionState(createVendorProductAction, initialState);
   const { pending } = useFormStatus();
   const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE">("MYSTERY_BOX");
+  const [tiers, setTiers] = useState([
+    { points: "600", probability: "0.55", isTop: false },
+    { points: "800", probability: "0.25", isTop: false },
+    { points: "1000", probability: "0.15", isTop: false },
+    { points: "3000", probability: "0.04", isTop: false },
+    { points: "10000", probability: "0.01", isTop: true },
+  ]);
   const isLocked = disabled || pending;
+
+  const rewardTiersJson = useMemo(() => {
+    const normalized = tiers
+      .map((tier) => ({
+        points: Number(tier.points),
+        probability: Number(tier.probability),
+        isTop: Boolean(tier.isTop),
+      }))
+      .filter((tier) => Number.isFinite(tier.points) && Number.isFinite(tier.probability) && tier.points > 0 && tier.probability > 0);
+    return JSON.stringify(normalized, null, 2);
+  }, [tiers]);
+
+  const updateTier = (index: number, key: "points" | "probability" | "isTop", value: string | boolean) => {
+    setTiers((prev) =>
+      prev.map((tier, idx) => {
+        if (idx !== index) return tier;
+        return { ...tier, [key]: value };
+      })
+    );
+  };
+
+  const addTier = () => {
+    setTiers((prev) => [...prev, { points: "", probability: "", isTop: false }]);
+  };
+
+  const removeTier = (index: number) => {
+    setTiers((prev) => prev.filter((_, idx) => idx !== index));
+  };
 
   return (
     <form action={action} className="space-y-4">
@@ -88,20 +123,67 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-600" htmlFor="rewardTiers">
-              Reward tiers JSON
-            </label>
-            <textarea
-              id="rewardTiers"
-              name="rewardTiers"
-              rows={4}
-              disabled={isLocked}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
-              placeholder='Example: [\n  {"points":600,"probability":0.55},\n  {"points":800,"probability":0.25}\n]'
-            />
-            <p className="mt-2 text-xs text-slate-500">
-              Probabilities must sum to 1. Mark jackpots with {"{ \"isTop\": true }"}.
+            <label className="text-sm font-medium text-slate-600">Reward tiers</label>
+            <p className="mt-1 text-xs text-slate-500">
+              Define each tier&apos;s points, probability, and whether it&apos;s a top prize. We&apos;ll generate the JSON for you.
             </p>
+            <div className="mt-3 space-y-3">
+              {tiers.map((tier, idx) => (
+                <div key={idx} className="grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-[1fr,1fr,auto]">
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Points"
+                    value={tier.points}
+                    disabled={isLocked}
+                    onChange={(event) => updateTier(idx, "points", event.target.value)}
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="Probability"
+                    value={tier.probability}
+                    disabled={isLocked}
+                    onChange={(event) => updateTier(idx, "probability", event.target.value)}
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  />
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={tier.isTop}
+                      disabled={isLocked}
+                      onChange={(event) => updateTier(idx, "isTop", event.target.checked)}
+                    />
+                    Top prize
+                  </label>
+                  {tiers.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeTier(idx)}
+                      disabled={isLocked}
+                      className="text-xs font-semibold text-red-500 hover:text-red-600 disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addTier}
+                disabled={isLocked}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+              >
+                + Add tier
+              </button>
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-slate-500">Preview JSON</p>
+                <pre className="mt-2 overflow-x-auto text-xs text-slate-700">{rewardTiersJson}</pre>
+              </div>
+              <input type="hidden" name="rewardTiers" value={rewardTiersJson} readOnly />
+            </div>
           </div>
         </>
       ) : (
