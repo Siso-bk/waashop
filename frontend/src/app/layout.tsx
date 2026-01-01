@@ -48,13 +48,13 @@ export default function RootLayout({
                     Sign in
                   </Link>
                 </nav>
-                <button
-                  type="button"
+                <Link
+                  href="/notifications"
                   aria-label="Notifications"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-black hover:bg-black hover:text-white"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-black transition hover:bg-black hover:text-white"
                 >
                   &#128276;
-                </button>
+                </Link>
               </div>
             </div>
           </header>
