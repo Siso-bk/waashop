@@ -94,6 +94,10 @@ export default async function DashboardHome() {
               <p className="text-lg font-semibold text-slate-900">Edit homepage hero</p>
               <p className="text-sm text-slate-500">Update copy and CTAs without redeploying.</p>
             </Link>
+            <Link href="/admin/home-highlights" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
+              <p className="text-lg font-semibold text-slate-900">Edit homepage callouts</p>
+              <p className="text-sm text-slate-500">Control the cards under the hero.</p>
+            </Link>
           </div>
         </div>
       ) : (
