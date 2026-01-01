@@ -6,12 +6,7 @@ import { VendorProfileForm } from "@/components/VendorProfileForm";
 import { VendorProductForm } from "@/components/VendorProductForm";
 import { VendorPromoForm } from "@/components/VendorPromoForm";
 import { ProductDto, PromoCardDto } from "@/types";
-import {
-  updateVendorProductAction,
-  deleteVendorProductAction,
-  updatePromoCardAction,
-  deletePromoCardAction,
-} from "@/app/vendor/actions";
+import { updateVendorProductAction, deleteVendorProductAction, updatePromoCardAction, deletePromoCardAction } from "@/app/vendor/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -79,9 +74,9 @@ export default async function VendorDashboardPage() {
                   </div>
                   {card.description && <p className="mt-2 text-sm text-slate-500">{card.description}</p>}
                   {card.status === "PENDING" && (
-                    <div className="mt-3 space-y-2">
-                      <form action={updatePromoCardAction} className="space-y-2">
-                        <input type="hidden" name="promoId" value={card.id} />
+                <div className="mt-3 space-y-2">
+                  <form action={vendorUpdatePromo} className="space-y-2">
+                    <input type="hidden" name="promoId" value={card.id} />
                         <input
                           name="promoTitle"
                           defaultValue={card.title}
@@ -118,8 +113,8 @@ export default async function VendorDashboardPage() {
                           Save promo
                         </button>
                       </form>
-                      <form action={deletePromoCardAction}>
-                        <input type="hidden" name="promoId" value={card.id} />
+                  <form action={vendorDeletePromo}>
+                    <input type="hidden" name="promoId" value={card.id} />
                         <button type="submit" className="text-sm font-semibold text-red-500">
                           Delete promo
                         </button>
@@ -168,7 +163,7 @@ export default async function VendorDashboardPage() {
                 <div className="mt-3 space-y-3">
                   <details className="rounded-xl border border-slate-200 p-3">
                     <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit product</summary>
-                    <form action={updateVendorProductAction} className="mt-3 space-y-3">
+                    <form action={vendorUpdateProduct} className="mt-3 space-y-3">
                       <input type="hidden" name="productId" value={product._id} />
                       <input
                         type="text"
@@ -210,7 +205,7 @@ export default async function VendorDashboardPage() {
                       </button>
                     </form>
                   </details>
-                  <form action={deleteVendorProductAction}>
+                  <form action={vendorDeleteProduct}>
                     <input type="hidden" name="productId" value={product._id} />
                     <button type="submit" className="text-sm font-semibold text-red-500">
                       Delete product
@@ -227,4 +222,26 @@ export default async function VendorDashboardPage() {
       </section>
     </div>
   );
+}
+
+const emptyState = {};
+
+async function vendorUpdateProduct(formData: FormData) {
+  "use server";
+  await updateVendorProductAction(emptyState, formData);
+}
+
+async function vendorDeleteProduct(formData: FormData) {
+  "use server";
+  await deleteVendorProductAction(emptyState, formData);
+}
+
+async function vendorUpdatePromo(formData: FormData) {
+  "use server";
+  await updatePromoCardAction(emptyState, formData);
+}
+
+async function vendorDeletePromo(formData: FormData) {
+  "use server";
+  await deletePromoCardAction(emptyState, formData);
 }

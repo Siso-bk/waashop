@@ -9,10 +9,11 @@ import { HomeHighlightCard } from "@/types";
 export const dynamic = "force-dynamic";
 
 type Props = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Record<string, string | string[] | undefined> | Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function AdminHomeHighlightsPage({ searchParams }: Props) {
+  const params = typeof searchParams?.then === "function" ? await searchParams : searchParams;
   await requireToken();
   const { user } = await getProfile();
   if (!user.roles.includes("admin")) {
@@ -20,8 +21,8 @@ export default async function AdminHomeHighlightsPage({ searchParams }: Props) {
   }
 
   const { cards } = await getAdminHomeHighlights();
-  const status = typeof searchParams?.status === "string" ? searchParams.status : null;
-  const message = typeof searchParams?.message === "string" ? decodeURIComponent(searchParams.message) : null;
+  const status = typeof params?.status === "string" ? params.status : null;
+  const message = typeof params?.message === "string" ? decodeURIComponent(params.message) : null;
 
   return (
     <div className="space-y-6">
