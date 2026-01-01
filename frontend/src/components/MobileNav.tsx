@@ -2,17 +2,35 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const navLinks = [
   { href: "/", label: "Home", icon: "⌂" },
-  { href: "/shop", label: "Shop", icon: "◎" },
-  { href: "/orders", label: "Orders", icon: "✦" },
-  { href: "/wallet", label: "Wallet", icon: "₿" },
-  { href: "/profile", label: "Profile", icon: "☺" },
+  { href: "/shop", label: "Shop", icon: "🛍" },
+  { href: "/orders", label: "Orders", icon: "📦" },
+  { href: "/wallet", label: "Wallet", icon: "💳" },
+  { href: "/profile", label: "Profile", icon: "👤" },
 ];
+
 
 export function MobileNav() {
   const pathname = usePathname();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const initialHeight = window.innerHeight;
+    const handler = () => {
+      setKeyboardVisible(viewport.height < initialHeight * 0.75);
+    };
+    handler();
+    viewport.addEventListener("resize", handler);
+    return () => viewport.removeEventListener("resize", handler);
+  }, []);
+
+  if (keyboardVisible) return null;
 
   return (
     <nav className="fixed bottom-3 left-1/2 z-40 w-[90%] max-w-md -translate-x-1/2 rounded-2xl border border-black/10 bg-white/95 px-2 py-2 shadow-lg shadow-black/10 backdrop-blur md:hidden">

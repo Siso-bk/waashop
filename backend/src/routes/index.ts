@@ -515,6 +515,10 @@ router.post("/telegram/webhook", async (req, res) => {
         ? "Welcome to Waashop!\nTap the button below to launch the Mini App and start shopping curated drops."
         : "Welcome to Waashop!\nVisit waashop.ai to open the Mini App and start shopping curated drops.";
 
+      const initialState = {
+        expand: true,
+      };
+
       const apiUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
       void fetch(apiUrl, {
         method: "POST",
@@ -523,6 +527,7 @@ router.post("/telegram/webhook", async (req, res) => {
           chat_id: message.chat.id,
           text: welcomeText,
           reply_markup: keyboard,
+          web_app: webAppUrl ? { initial_state: JSON.stringify(initialState) } : undefined,
         }),
       }).catch((error) => console.error("Telegram sendMessage error", error));
     }
