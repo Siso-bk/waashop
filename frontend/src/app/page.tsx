@@ -1,11 +1,16 @@
 import Link from "next/link";
-import { getSessionUser, getActiveBoxes, getHomeHero } from "@/lib/queries";
+import { getSessionUser, getActiveBoxes, getHomeHero, getHomeHighlights } from "@/lib/queries";
 import { BalancePanel } from "@/components/BalancePanel";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
 
 export default async function HomePage() {
-  const [user, boxes, hero] = await Promise.all([getSessionUser(), getActiveBoxes(), getHomeHero()]);
+  const [user, boxes, hero, highlights] = await Promise.all([
+    getSessionUser(),
+    getActiveBoxes(),
+    getHomeHero(),
+    getHomeHighlights(),
+  ]);
   const isAuthenticated = Boolean(user);
   const primaryCtaLabel = isAuthenticated
     ? hero.primaryCtaAuthedLabel || hero.primaryCtaLabel
@@ -33,6 +38,24 @@ export default async function HomePage() {
   const heroEmptyStateClasses = heroPrefersLightText
     ? "rounded-2xl border border-white/20 bg-white/5 p-4 text-sm text-white/80"
     : "rounded-2xl border border-black/10 bg-black/5 p-4 text-sm text-black/70";
+
+  const highlightCards = highlights.map((card) => {
+    const ctaLabel = isAuthenticated ? card.authedCtaLabel || card.guestCtaLabel : card.guestCtaLabel;
+    const ctaHref = isAuthenticated ? card.authedCtaHref || card.guestCtaHref : card.guestCtaHref;
+    const textClass = card.textClass || "text-black";
+    const prefersLightText = textClass.includes("white");
+    return {
+      ...card,
+      ctaLabel,
+      ctaHref,
+      backgroundClass: card.backgroundClass || "bg-white",
+      textClass,
+      borderClass: card.borderClass || "border-black/10",
+      descriptionTone: prefersLightText ? "text-white/80" : "text-gray-600",
+      eyebrowTone: prefersLightText ? "text-white/60" : "text-gray-400",
+      ctaVariant: prefersLightText ? "border border-white/40 text-white hover:bg-white/10" : "bg-black text-white",
+    };
+  });
 
   return (
     <div className="space-y-8">
@@ -102,32 +125,28 @@ export default async function HomePage() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">
-        <article className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">New shoppers</p>
-          <h2 className="mt-2 text-lg font-semibold text-black">Create once, shop everywhere.</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Verify your email, set a password, and your identity stays consistent across every surface.
-          </p>
-          <Link
-            href={isAuthenticated ? "/wallet" : "/login"}
-            className="mt-4 inline-flex items-center justify-center rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80"
+        {highlightCards.map((card) => (
+          <article
+            key={card.key}
+            className={`rounded-3xl border p-5 shadow-sm ${card.backgroundClass} ${card.borderClass} ${card.textClass}`}
           >
-            {isAuthenticated ? "View wallet" : "Create profile"}
-          </Link>
-        </article>
-        <article className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Returning</p>
-          <h2 className="mt-2 text-lg font-semibold text-black">Sign in and resume instantly.</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Sessions rotate every seven days and Waashop validates them before loading balances or vendor access.
-          </p>
-          <Link
-            href={isAuthenticated ? "/boxes/BOX_1000" : "/login"}
-            className="mt-4 inline-flex items-center justify-center rounded-full border border-black px-4 py-2 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
-          >
-            {isAuthenticated ? "Open featured box" : "Sign in"}
-          </Link>
-        </article>
+            {card.eyebrow && (
+              <p className={`text-xs uppercase tracking-[0.3em] ${card.eyebrowTone}`}>{card.eyebrow}</p>
+            )}
+            <h2 className="mt-2 text-lg font-semibold">{card.title}</h2>
+            {card.description && <p className={`mt-1 text-sm ${card.descriptionTone}`}>{card.description}</p>}
+            {card.ctaLabel && card.ctaHref && (
+              <Link
+                href={card.ctaHref}
+                className={`mt-4 inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  card.ctaVariant
+                }`}
+              >
+                {card.ctaLabel}
+              </Link>
+            )}
+          </article>
+        ))}
       </section>
 
       <section className="space-y-4">

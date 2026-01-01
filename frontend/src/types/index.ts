@@ -54,3 +54,17 @@ export interface HomeHeroContent {
   backgroundClass?: string;
   textClass?: string;
 }
+
+export interface HomeHighlightCard {
+  key: string;
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  guestCtaLabel?: string;
+  guestCtaHref?: string;
+  authedCtaLabel?: string;
+  authedCtaHref?: string;
+  backgroundClass?: string;
+  textClass?: string;
+  borderClass?: string;
+}

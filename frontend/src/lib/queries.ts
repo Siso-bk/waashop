@@ -1,5 +1,5 @@
 import { backendFetch } from "@/lib/backendClient";
-import { MysteryBoxDto, LedgerEntryDto, UserProfile, HomeHeroContent } from "@/types";
+import { MysteryBoxDto, LedgerEntryDto, UserProfile, HomeHeroContent, HomeHighlightCard } from "@/types";
 
 type RawBox = MysteryBoxDto & {
   _id?: { toString: () => string } | string;
@@ -72,5 +72,37 @@ export const getHomeHero = async (): Promise<HomeHeroContent> => {
     return data.hero;
   } catch {
     return FALLBACK_HOME_HERO;
+  }
+};
+
+const FALLBACK_HOME_HIGHLIGHTS: HomeHighlightCard[] = [
+  {
+    key: "new",
+    eyebrow: "New shoppers",
+    title: "Create once, shop everywhere.",
+    description: "Verify your email, set a password, and your identity stays consistent across every surface.",
+    guestCtaLabel: "Create profile",
+    guestCtaHref: "/login",
+    authedCtaLabel: "View wallet",
+    authedCtaHref: "/wallet",
+  },
+  {
+    key: "returning",
+    eyebrow: "Returning",
+    title: "Sign in and resume instantly.",
+    description: "Sessions rotate every seven days and Waashop validates them before loading balances or vendor access.",
+    guestCtaLabel: "Sign in",
+    guestCtaHref: "/login",
+    authedCtaLabel: "Open featured box",
+    authedCtaHref: "/boxes/BOX_1000",
+  },
+];
+
+export const getHomeHighlights = async (): Promise<HomeHighlightCard[]> => {
+  try {
+    const data = await backendFetch<{ cards: HomeHighlightCard[] }>("/api/home-highlights", { auth: false });
+    return data.cards;
+  } catch {
+    return FALLBACK_HOME_HIGHLIGHTS;
   }
 };

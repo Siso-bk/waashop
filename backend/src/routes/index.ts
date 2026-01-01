@@ -14,6 +14,7 @@ import User from "../models/User";
 import Vendor from "../models/Vendor";
 import Product from "../models/Product";
 import HeroContent, { IHeroContent } from "../models/HeroContent";
+import HomeHighlights, { IHomeHighlights } from "../models/HomeHighlights";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
 
@@ -53,6 +54,48 @@ const serializeHero = (hero?: Partial<IHeroContent> | null): HeroResponse => ({
   backgroundClass: hero?.backgroundClass ?? DEFAULT_HOME_HERO.backgroundClass,
   textClass: hero?.textClass ?? DEFAULT_HOME_HERO.textClass,
 });
+
+const DEFAULT_HOME_HIGHLIGHTS = [
+  {
+    key: "new",
+    eyebrow: "New shoppers",
+    title: "Create once, shop everywhere.",
+    description: "Verify your email, set a password, and your identity stays consistent across every surface.",
+    guestCtaLabel: "Create profile",
+    guestCtaHref: "/login",
+    authedCtaLabel: "View wallet",
+    authedCtaHref: "/wallet",
+    backgroundClass: "bg-white",
+    borderClass: "border-black/10",
+    textClass: "text-black",
+  },
+  {
+    key: "returning",
+    eyebrow: "Returning",
+    title: "Sign in and resume instantly.",
+    description: "Sessions rotate every seven days and Waashop validates them before loading balances or vendor access.",
+    guestCtaLabel: "Sign in",
+    guestCtaHref: "/login",
+    authedCtaLabel: "Open featured box",
+    authedCtaHref: "/boxes/BOX_1000",
+    backgroundClass: "bg-white",
+    borderClass: "border-black/10",
+    textClass: "text-black",
+  },
+];
+
+type HighlightsResponse = typeof DEFAULT_HOME_HIGHLIGHTS;
+
+const serializeHighlights = (doc?: IHomeHighlights | null): HighlightsResponse => {
+  if (!doc?.cards?.length) {
+    return DEFAULT_HOME_HIGHLIGHTS;
+  }
+  const defaultsByKey = Object.fromEntries(DEFAULT_HOME_HIGHLIGHTS.map((card) => [card.key, card]));
+  return doc.cards.map((card) => ({
+    ...defaultsByKey[card.key]!,
+    ...card,
+  }));
+};
 
 router.post("/auth/telegram", async (req, res) => {
   try {
@@ -199,6 +242,50 @@ router.put("/admin/home-hero", authMiddleware, requireRole("admin"), async (req,
   } catch (error) {
     console.error("Home hero update error", error);
     res.status(400).json({ error: "Unable to update home hero" });
+  }
+});
+
+router.get("/home-highlights", async (_req, res) => {
+  await connectDB();
+  const highlights = await HomeHighlights.findOne({ slug: "home" }).lean();
+  res.json({ cards: serializeHighlights(highlights) });
+});
+
+router.get("/admin/home-highlights", authMiddleware, requireRole("admin"), async (_req, res) => {
+  await connectDB();
+  const highlights = await HomeHighlights.findOne({ slug: "home" }).lean();
+  res.json({ cards: serializeHighlights(highlights) });
+});
+
+router.put("/admin/home-highlights", authMiddleware, requireRole("admin"), async (req, res) => {
+  const cardSchema = z.object({
+    key: z.string().min(1),
+    eyebrow: z.string().max(150).optional(),
+    title: z.string().max(200),
+    description: z.string().max(400).optional(),
+    guestCtaLabel: z.string().max(80).optional(),
+    guestCtaHref: z.string().max(200).optional(),
+    authedCtaLabel: z.string().max(80).optional(),
+    authedCtaHref: z.string().max(200).optional(),
+    backgroundClass: z.string().max(120).optional(),
+    textClass: z.string().max(120).optional(),
+    borderClass: z.string().max(120).optional(),
+  });
+  const schema = z.object({
+    cards: z.array(cardSchema).min(1),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const doc = await HomeHighlights.findOneAndUpdate(
+      { slug: "home" },
+      { slug: "home", cards: payload.cards },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+    res.json({ cards: serializeHighlights(doc) });
+  } catch (error) {
+    console.error("Home highlights update error", error);
+    res.status(400).json({ error: "Unable to update home highlights" });
   }
 });
 
