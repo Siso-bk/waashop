@@ -4,7 +4,7 @@ import { useState } from "react";
 import { LoginForm } from "@/components/LoginForm";
 import { RegisterForm } from "@/components/RegisterForm";
 
-const PAI_BASE_URL = process.env.NEXT_PUBLIC_PAI_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 type Phase = "email" | "login" | "verify" | "details";
 
@@ -48,11 +48,11 @@ const phaseCopy: Record<
   },
 };
 
-const callPai = async <T,>(path: string, payload: Record<string, unknown>): Promise<T> => {
-  if (!PAI_BASE_URL) {
-    throw new Error("Missing auth base URL");
+const callWaashopAuth = async <T,>(path: string, payload: Record<string, unknown>): Promise<T> => {
+  if (!API_BASE_URL) {
+    throw new Error("Missing API base URL");
   }
-  const response = await fetch(`${PAI_BASE_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -89,7 +89,7 @@ export function AuthFlow() {
   };
 
   const requestPreSignup = async (normalizedEmail: string) => {
-    const data = await callPai<PreSignupResponse>("/api/auth/pre-signup", { email: normalizedEmail });
+    const data = await callWaashopAuth<PreSignupResponse>("/api/pai/auth/pre-signup", { email: normalizedEmail });
     setPhase("verify");
     setStatus(data.message || "We emailed you a six-digit code.");
     setDevCode(data.devVerificationCode || null);
@@ -111,7 +111,7 @@ export function AuthFlow() {
       setLoading(true);
       setError(null);
       setStatus(null);
-      const data = await callPai<CheckEmailResponse>("/api/auth/check-email", { email: normalized });
+      const data = await callWaashopAuth<CheckEmailResponse>("/api/pai/auth/check-email", { email: normalized });
       setEmail(normalized);
       if (data.exists && data.emailVerified) {
         setPhase("login");
@@ -136,7 +136,7 @@ export function AuthFlow() {
     try {
       setLoading(true);
       setError(null);
-      const data = await callPai<VerifyResponse>("/api/auth/pre-signup/verify", {
+      const data = await callWaashopAuth<VerifyResponse>("/api/pai/auth/pre-signup/verify", {
         email,
         code: code.trim(),
       });

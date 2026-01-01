@@ -97,6 +97,29 @@ const serializeHighlights = (doc?: IHomeHighlights | null): HighlightsResponse =
   }));
 };
 
+const forwardPaiRequest = async (path: string, payload: unknown) => {
+  if (!env.PAI_BASE_URL) {
+    return { ok: false, status: 400, data: { error: "PAI integration not configured" } };
+  }
+  try {
+    const response = await fetch(`${env.PAI_BASE_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
+    if (!response.ok) {
+      const error = data.error || data.message || "PAI request failed";
+      return { ok: false, status: response.status, data: { error } };
+    }
+    return { ok: true, status: 200, data };
+  } catch (error) {
+    console.error("PAI proxy error", error);
+    return { ok: false, status: 400, data: { error: "Unable to reach Personal AI" } };
+  }
+};
+
 router.post("/auth/telegram", async (req, res) => {
   try {
     const bodySchema = z.object({ initData: z.string().min(1) });
@@ -287,6 +310,30 @@ router.put("/admin/home-highlights", authMiddleware, requireRole("admin"), async
     console.error("Home highlights update error", error);
     res.status(400).json({ error: "Unable to update home highlights" });
   }
+});
+
+router.post("/pai/auth/check-email", async (req, res) => {
+  const result = await forwardPaiRequest("/api/auth/check-email", req.body);
+  if (!result.ok) {
+    return res.status(result.status).json(result.data);
+  }
+  res.json(result.data);
+});
+
+router.post("/pai/auth/pre-signup", async (req, res) => {
+  const result = await forwardPaiRequest("/api/auth/pre-signup", req.body);
+  if (!result.ok) {
+    return res.status(result.status).json(result.data);
+  }
+  res.json(result.data);
+});
+
+router.post("/pai/auth/pre-signup/verify", async (req, res) => {
+  const result = await forwardPaiRequest("/api/auth/pre-signup/verify", req.body);
+  if (!result.ok) {
+    return res.status(result.status).json(result.data);
+  }
+  res.json(result.data);
 });
 
 router.delete("/profile", authMiddleware, async (req, res) => {
