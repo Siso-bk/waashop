@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
+import { PendingButton } from "@/components/PendingButton";
 import { getAdminSettings, getProfile } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
@@ -50,9 +51,12 @@ export default async function AdminSettingsPage() {
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
             />
           </label>
-          <button type="submit" className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
+          <PendingButton
+            pendingLabel="Saving..."
+            className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
+          >
             Save changes
-          </button>
+          </PendingButton>
         </form>
       </section>
     </div>

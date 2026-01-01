@@ -1,16 +1,17 @@
-import { revalidatePath } from "next/cache";
+import { Suspense } from "react";
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getUserDeposits } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
+import { PendingButton } from "@/components/PendingButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function DepositsPage() {
   await requireToken();
-  const { deposits } = await getUserDeposits();
 
   return (
     <div className="space-y-6">
@@ -86,67 +87,110 @@ export default async function DepositsPage() {
             />
           </label>
           <div className="md:col-span-2">
-            <button
-              type="submit"
-              className="w-full rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 md:w-auto"
-            >
+            <PendingButton className="w-full rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 md:w-auto">
               Submit request
-            </button>
+            </PendingButton>
           </div>
         </form>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">Your deposit requests</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Submitted</th>
-                <th className="px-4 py-3">Amount</th>
-                <th className="px-4 py-3">Payment</th>
-                <th className="px-4 py-3">Proof</th>
-                <th className="px-4 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {deposits.map((entry) => (
-                <tr key={entry.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 text-xs text-slate-500">
-                    {new Date(entry.createdAt).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">{entry.amountCoins.toLocaleString()} coins</td>
-                  <td className="px-4 py-3 text-xs text-slate-600">
-                    <p>{entry.paymentMethod}</p>
-                    {entry.paymentReference && <p className="text-slate-400">{entry.paymentReference}</p>}
-                    {entry.note && <p className="mt-1 text-slate-400">{entry.note}</p>}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-indigo-600">
-                    {entry.proofUrl ? (
-                      <a href={entry.proofUrl} target="_blank" rel="noreferrer" className="hover:underline">
-                        View proof
-                      </a>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={entry.status} />
-                    {entry.adminNote && <p className="mt-1 text-xs text-slate-500">{entry.adminNote}</p>}
-                  </td>
-                </tr>
-              ))}
-              {deposits.length === 0 && (
-                <tr>
-                  <td className="px-4 py-6 text-center text-slate-500" colSpan={5}>
-                    No deposit requests yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Suspense fallback={<DepositTableSkeleton />}>
+          <DepositTable />
+        </Suspense>
       </section>
+    </div>
+  );
+}
+
+async function DepositTable() {
+  const { deposits } = await getUserDeposits();
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Submitted</th>
+            <th className="px-4 py-3">Amount</th>
+            <th className="px-4 py-3">Payment</th>
+            <th className="px-4 py-3">Proof</th>
+            <th className="px-4 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {deposits.map((entry) => (
+            <tr key={entry.id} className="border-t border-slate-100">
+              <td className="px-4 py-3 text-xs text-slate-500">{new Date(entry.createdAt).toLocaleString()}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900">{entry.amountCoins.toLocaleString()} coins</td>
+              <td className="px-4 py-3 text-xs text-slate-600">
+                <p>{entry.paymentMethod}</p>
+                {entry.paymentReference && <p className="text-slate-400">{entry.paymentReference}</p>}
+                {entry.note && <p className="mt-1 text-slate-400">{entry.note}</p>}
+              </td>
+              <td className="px-4 py-3 text-xs text-indigo-600">
+                {entry.proofUrl ? (
+                  <a href={entry.proofUrl} target="_blank" rel="noreferrer" className="hover:underline">
+                    View proof
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </td>
+              <td className="px-4 py-3">
+                <StatusBadge status={entry.status} />
+                {entry.adminNote && <p className="mt-1 text-xs text-slate-500">{entry.adminNote}</p>}
+              </td>
+            </tr>
+          ))}
+          {deposits.length === 0 && (
+            <tr>
+              <td className="px-4 py-6 text-center text-slate-500" colSpan={5}>
+                No deposit requests yet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DepositTableSkeleton() {
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Submitted</th>
+            <th className="px-4 py-3">Amount</th>
+            <th className="px-4 py-3">Payment</th>
+            <th className="px-4 py-3">Proof</th>
+            <th className="px-4 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <tr key={idx} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <div className="h-4 w-32 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-24 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-36 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-16 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-20 rounded bg-slate-100 animate-pulse" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

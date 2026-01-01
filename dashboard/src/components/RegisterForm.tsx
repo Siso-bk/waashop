@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useFormStatus } from "react-dom";
 import { registerAction, type ActionState } from "@/components/login-actions";
+import { PendingButton } from "@/components/PendingButton";
 
 const initialState: ActionState = {};
 
@@ -15,7 +15,6 @@ type Props = {
 
 export function RegisterForm({ email, preToken, onBack }: Props) {
   const [state, action] = useActionState(registerAction, initialState);
-  const { pending } = useFormStatus();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -92,13 +91,12 @@ export function RegisterForm({ email, preToken, onBack }: Props) {
           Enter a different code
         </button>
       )}
-      <button
-        type="submit"
-        disabled={pending}
+      <PendingButton
+        pendingLabel="Creating account..."
         className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-400"
       >
-        {pending ? "Creating account..." : "Create account"}
-      </button>
+        Create account
+      </PendingButton>
     </form>
   );
 }

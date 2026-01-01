@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PendingButton } from "@/components/PendingButton";
 import { backendFetch } from "@/lib/backendClient";
 import { getProfile } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
@@ -23,55 +25,96 @@ export default async function AdminPromoCardsPage() {
   if (!user.roles.includes("admin")) {
     return null;
   }
-  const { promoCards } = await backendFetch<{ promoCards: PromoCardAdmin[] }>("/api/admin/promo-cards");
-
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Admin" title="Promo cards" description="Review sponsored cards before they go live." />
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Card</th>
-              <th className="px-4 py-3">Vendor</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
+      <Suspense fallback={<PromoSkeleton />}>
+        <PromoTable />
+      </Suspense>
+    </div>
+  );
+}
+
+async function PromoTable() {
+  const { promoCards } = await backendFetch<{ promoCards: PromoCardAdmin[] }>("/api/admin/promo-cards");
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Card</th>
+            <th className="px-4 py-3">Vendor</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {promoCards.map((card) => (
+            <tr key={card.id} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <p className="font-semibold text-slate-900">{card.title}</p>
+                {card.description && <p className="text-xs text-slate-500">{card.description}</p>}
+              </td>
+              <td className="px-4 py-3 text-slate-600">{card.vendor || "Unknown vendor"}</td>
+              <td className="px-4 py-3">{card.status && <StatusBadge status={card.status} />}</td>
+              <td className="px-4 py-3">
+                <div className="space-y-2">
+                  <PromoStatusForm cardId={card.id} current={card.status || "PENDING"} />
+                  <form action={deletePromoCard}>
+                    <input type="hidden" name="cardId" value={card.id} />
+                    <PendingButton pendingLabel="Deleting..." className="text-xs font-semibold text-red-500">
+                      Delete
+                    </PendingButton>
+                  </form>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {promoCards.map((card) => (
-              <tr key={card.id} className="border-t border-slate-100">
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-slate-900">{card.title}</p>
-                  {card.description && <p className="text-xs text-slate-500">{card.description}</p>}
-                </td>
-                <td className="px-4 py-3 text-slate-600">{card.vendor || "Unknown vendor"}</td>
-                <td className="px-4 py-3">
-                  {card.status && <StatusBadge status={card.status} />}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="space-y-2">
-                    <PromoStatusForm cardId={card.id} current={card.status || "PENDING"} />
-                    <form action={deletePromoCard}>
-                      <input type="hidden" name="cardId" value={card.id} />
-                      <button type="submit" className="text-xs font-semibold text-red-500">
-                        Delete
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {promoCards.length === 0 && (
-              <tr>
-                <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
-                  No promo cards submitted yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+          ))}
+          {promoCards.length === 0 && (
+            <tr>
+              <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
+                No promo cards submitted yet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function PromoSkeleton() {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Card</th>
+            <th className="px-4 py-3">Vendor</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <tr key={idx} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <div className="h-4 w-48 rounded bg-slate-200 animate-pulse" />
+                <div className="mt-2 h-3 w-56 rounded bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-32 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-28 rounded bg-slate-100 animate-pulse" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -87,9 +130,9 @@ function PromoStatusForm({ cardId, current }: { cardId: string; current: string 
           </option>
         ))}
       </select>
-      <button className="rounded-lg bg-indigo-600 px-3 py-2 text-white" type="submit">
+      <PendingButton pendingLabel="Updating..." className="rounded-lg bg-indigo-600 px-3 py-2 text-white">
         Update
-      </button>
+      </PendingButton>
     </form>
   );
 }

@@ -127,3 +127,14 @@ export interface DepositRequestDto {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface NotificationDto {
+  id: string;
+  type: string;
+  title: string;
+  body?: string;
+  meta?: Record<string, unknown>;
+  status: "UNREAD" | "READ";
+  createdAt: string;
+  readAt?: string;
+}

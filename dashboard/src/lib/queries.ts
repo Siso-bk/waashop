@@ -9,6 +9,7 @@ import {
   AdminUser,
   PlatformSettingsDto,
   DepositRequestDto,
+  NotificationDto,
 } from "@/types";
 
 export const getProfile = async (): Promise<ProfileResponse> => {
@@ -63,4 +64,12 @@ export const getUserDeposits = async () => {
 export const getAdminDeposits = async (status?: string) => {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return backendFetch<{ deposits: DepositRequestDto[] }>(`/api/admin/deposits${query}`);
+};
+
+export const getNotifications = async () => {
+  return backendFetch<{ notifications: NotificationDto[] }>("/api/notifications");
+};
+
+export const getNotificationsSummary = async () => {
+  return backendFetch<{ unread: number }>("/api/notifications/unread-count");
 };

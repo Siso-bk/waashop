@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
+import { PendingButton } from "@/components/PendingButton";
 import { backendFetch } from "@/lib/backendClient";
 import { getAdminHomeHighlights, getProfile } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
@@ -160,12 +161,12 @@ function HighlightsForm({ cards }: { cards: HomeHighlightCard[] }) {
           </div>
         </fieldset>
       ))}
-      <button
-        type="submit"
+      <PendingButton
+        pendingLabel="Saving..."
         className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
       >
         Save highlights
-      </button>
+      </PendingButton>
     </form>
   );
 }

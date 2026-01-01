@@ -20,6 +20,7 @@ import PromoCard, { IPromoCard } from "../models/PromoCard";
 import ChallengeEntry from "../models/ChallengeEntry";
 import WinnerSpotlight, { WinnerType } from "../models/WinnerSpotlight";
 import DepositRequest, { IDepositRequest } from "../models/DepositRequest";
+import Notification from "../models/Notification";
 import { getPlatformSettings, updatePlatformSettings } from "../services/settings";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
@@ -114,6 +115,41 @@ const serializePromoCard = (card: IPromoCard) => ({
   status: card.status,
 });
 
+const sendTelegramNotification = async (telegramId: string | undefined | null, text: string) => {
+  if (!telegramId || telegramId.startsWith("pai:") || !env.TELEGRAM_BOT_TOKEN) {
+    return;
+  }
+  try {
+    const apiUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+    await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: telegramId, text }),
+    });
+  } catch (error) {
+    console.error("Telegram notification error", error);
+  }
+};
+
+const createNotification = async (
+  userId: string | Types.ObjectId | undefined,
+  payload: { type: string; title: string; body?: string; meta?: Record<string, unknown> }
+) => {
+  if (!userId) return;
+  try {
+    await Notification.create({
+      userId,
+      type: payload.type,
+      title: payload.title,
+      body: payload.body,
+      meta: payload.meta,
+      status: "UNREAD",
+    });
+  } catch (error) {
+    console.error("Notification create error", error);
+  }
+};
+
 const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.ObjectId | string }) => {
   const userField = deposit.userId as IUser | Types.ObjectId | string | undefined;
   let userId: string | undefined;
@@ -158,6 +194,17 @@ const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.Ob
     updatedAt: deposit.updatedAt.toISOString(),
   };
 };
+
+const serializeNotification = (notification: any) => ({
+  id: notification._id.toString(),
+  type: notification.type,
+  title: notification.title,
+  body: notification.body,
+  meta: notification.meta || undefined,
+  status: notification.status,
+  createdAt: notification.createdAt?.toISOString?.() || new Date(notification.createdAt).toISOString(),
+  readAt: notification.readAt ? notification.readAt.toISOString() : undefined,
+});
 
 const chargeSubmissionFee = async (
   user: IUser,
@@ -662,6 +709,12 @@ router.post("/deposits", authMiddleware, async (req, res) => {
       note: payload.note,
       status: "PENDING",
     });
+    await createNotification(req.userId, {
+      type: "DEPOSIT_SUBMITTED",
+      title: `Deposit submitted: ${payload.amountCoins} coins`,
+      body: "We received your receipt and will review it shortly.",
+      meta: { depositId: deposit._id, amountCoins: payload.amountCoins },
+    });
     res.status(201).json({ deposit: serializeDeposit(deposit) });
   } catch (error) {
     console.error("Create deposit error", error);
@@ -762,7 +815,7 @@ router.post(
             },
           });
         }
-        return { deposit };
+        return { deposit, userTelegramId: user.telegramId };
       });
 
       if ("error" in result) {
@@ -772,7 +825,19 @@ router.post(
       const populated = await DepositRequest.findById(result.deposit._id)
         .populate("userId", "email username firstName lastName")
         .exec();
-      res.json({ deposit: serializeDeposit(populated || result.deposit) });
+      const serialized = serializeDeposit(populated || result.deposit);
+      const amountText = Number(serialized.amountCoins).toLocaleString();
+      await createNotification(result.deposit.userId, {
+        type: "DEPOSIT_APPROVED",
+        title: `Deposit approved: ${amountText} coins`,
+        body: "Coins are now available in your Waashop wallet.",
+        meta: { depositId: serialized.id, amountCoins: serialized.amountCoins },
+      });
+      await sendTelegramNotification(
+        result.userTelegramId,
+        `✅ Your Waashop deposit for ${amountText} coins has been approved.\nCoins are now available in your wallet.`
+      );
+      res.json({ deposit: serialized });
     } catch (error) {
       console.error("Approve deposit error", error);
       res.status(400).json({ error: "Unable to approve deposit" });
@@ -798,6 +863,7 @@ router.post(
       if (deposit.status !== "PENDING") {
         return res.status(400).json({ error: "Deposit already processed" });
       }
+      const user = await User.findById(deposit.userId).exec();
       deposit.status = "REJECTED";
       deposit.adminNote = payload.adminNote;
       deposit.reviewedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
@@ -807,13 +873,60 @@ router.post(
       const populated = await DepositRequest.findById(deposit._id)
         .populate("userId", "email username firstName lastName")
         .exec();
-      res.json({ deposit: serializeDeposit(populated || deposit) });
+      const serialized = serializeDeposit(populated || deposit);
+      const amountText = Number(serialized.amountCoins).toLocaleString();
+      await createNotification(deposit.userId, {
+        type: "DEPOSIT_REJECTED",
+        title: `Deposit rejected: ${amountText} coins`,
+        body: payload.adminNote || "Please contact support for help completing your deposit.",
+        meta: { depositId: serialized.id, amountCoins: serialized.amountCoins },
+      });
+      await sendTelegramNotification(
+        user?.telegramId,
+        `⚠️ Your Waashop deposit for ${amountText} coins was rejected.` +
+          (payload.adminNote ? ` Reason: ${payload.adminNote}` : " Please contact support for assistance.")
+      );
+      res.json({ deposit: serialized });
     } catch (error) {
       console.error("Reject deposit error", error);
       res.status(400).json({ error: "Unable to reject deposit" });
     }
   }
 );
+
+router.get("/notifications", authMiddleware, async (req, res) => {
+  await connectDB();
+  const notifications = await Notification.find({ userId: req.userId })
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean();
+  res.json({ notifications: notifications.map(serializeNotification) });
+});
+
+router.get("/notifications/unread-count", authMiddleware, async (req, res) => {
+  await connectDB();
+  const count = await Notification.countDocuments({ userId: req.userId, status: "UNREAD" });
+  res.json({ unread: count });
+});
+
+router.post("/notifications/read", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    ids: z.array(z.string()).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body || {});
+    await connectDB();
+    const filter: Record<string, unknown> = { userId: req.userId, status: "UNREAD" };
+    if (payload.ids?.length) {
+      filter._id = { $in: payload.ids.map((id) => new Types.ObjectId(id)) };
+    }
+    const result = await Notification.updateMany(filter, { status: "READ", readAt: new Date() });
+    res.json({ updated: result.modifiedCount });
+  } catch (error) {
+    console.error("Notifications read error", error);
+    res.status(400).json({ error: "Unable to update notifications" });
+  }
+});
 
 router.get(
   "/admin/settings",

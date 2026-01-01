@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PendingButton } from "@/components/PendingButton";
 import { backendFetch } from "@/lib/backendClient";
 import { getAdminProducts, getProfile } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
@@ -17,107 +19,150 @@ export default async function AdminProductsPage() {
   if (!user.roles.includes("admin")) {
     redirect("/");
   }
-  const { products } = await getAdminProducts();
-
   return (
     <div className="space-y-4">
       <PageHeader eyebrow="Admin" title="Products" description="Moderate vendor submissions." />
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">Vendor</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product._id} className="border-t border-slate-100">
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-slate-900">{product.name}</p>
-                  {product.type === "CHALLENGE" ? (
-                    <p className="text-xs text-slate-500">
-                      Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets · {product.ticketPriceCoins?.toLocaleString() || "0"} coins
-                    </p>
-                  ) : (
-                    <p className="text-xs text-slate-500">
-                      {product.rewardTiers?.length || 0} reward tiers · {product.priceCoins.toLocaleString()} coins
-                    </p>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {typeof product.vendorId === "string" ? product.vendorId : product.vendorId?.name}
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={product.status} />
-                </td>
-                <td className="px-4 py-3">
-                  <div className="space-y-2">
-                    <ProductStatusForm product={product} />
-                    {product.type === "MYSTERY_BOX" && (
-                      <details className="rounded-xl border border-slate-100 p-3">
-                        <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit</summary>
-                        <form action={adminUpdateProduct} className="mt-2 space-y-2 text-xs">
-                          <input type="hidden" name="productId" value={product._id} />
+      <Suspense fallback={<ProductsSkeleton />}>
+        <ProductsTable />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ProductsTable() {
+  const { products } = await getAdminProducts();
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Product</th>
+            <th className="px-4 py-3">Vendor</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map((product) => (
+            <tr key={product._id} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <p className="font-semibold text-slate-900">{product.name}</p>
+                {product.type === "CHALLENGE" ? (
+                  <p className="text-xs text-slate-500">
+                    Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets · {product.ticketPriceCoins?.toLocaleString() || "0"} coins
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    {product.rewardTiers?.length || 0} reward tiers · {product.priceCoins.toLocaleString()} coins
+                  </p>
+                )}
+              </td>
+              <td className="px-4 py-3 text-slate-600">
+                {typeof product.vendorId === "string" ? product.vendorId : product.vendorId?.name}
+              </td>
+              <td className="px-4 py-3">
+                <StatusBadge status={product.status} />
+              </td>
+              <td className="px-4 py-3">
+                <div className="space-y-2">
+                  <ProductStatusForm product={product} />
+                  {product.type === "MYSTERY_BOX" && (
+                    <details className="rounded-xl border border-slate-100 p-3">
+                      <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit</summary>
+                      <form action={adminUpdateProduct} className="mt-2 space-y-2 text-xs">
+                        <input type="hidden" name="productId" value={product._id} />
+                        <input
+                          name="productName"
+                          defaultValue={product.name}
+                          className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                        />
+                        <textarea
+                          name="productDescription"
+                          defaultValue={product.description || ""}
+                          rows={2}
+                          className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2">
                           <input
-                            name="productName"
-                            defaultValue={product.name}
+                            type="number"
+                            name="priceCoins"
+                            defaultValue={product.priceCoins}
                             className="w-full rounded-lg border border-slate-200 px-2 py-1"
                           />
-                          <textarea
-                            name="productDescription"
-                            defaultValue={product.description || ""}
-                            rows={2}
+                          <input
+                            type="number"
+                            name="guaranteedMinPoints"
+                            defaultValue={product.guaranteedMinPoints}
                             className="w-full rounded-lg border border-slate-200 px-2 py-1"
                           />
-                          <div className="grid gap-2 sm:grid-cols-2">
-                            <input
-                              type="number"
-                              name="priceCoins"
-                              defaultValue={product.priceCoins}
-                              className="w-full rounded-lg border border-slate-200 px-2 py-1"
-                            />
-                            <input
-                              type="number"
-                              name="guaranteedMinPoints"
-                              defaultValue={product.guaranteedMinPoints}
-                              className="w-full rounded-lg border border-slate-200 px-2 py-1"
-                            />
-                          </div>
-                          <textarea
-                            name="rewardTiers"
-                            rows={3}
-                            defaultValue={JSON.stringify(product.rewardTiers || [], null, 2)}
-                            className="w-full rounded-lg border border-slate-200 px-2 py-1"
-                          />
-                          <button type="submit" className="rounded-lg bg-slate-900 px-3 py-1 text-white">
-                            Save
-                          </button>
-                        </form>
-                      </details>
-                    )}
-                    <form action={adminDeleteProduct}>
-                      <input type="hidden" name="productId" value={product._id} />
-                      <button type="submit" className="text-xs font-semibold text-red-500">
-                        Delete
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {products.length === 0 && (
-              <tr>
-                <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
-                  No products submitted yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                        </div>
+                        <textarea
+                          name="rewardTiers"
+                          rows={3}
+                          defaultValue={JSON.stringify(product.rewardTiers || [], null, 2)}
+                          className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                        />
+                        <PendingButton pendingLabel="Saving..." className="rounded-lg bg-slate-900 px-3 py-1 text-white">
+                          Save
+                        </PendingButton>
+                      </form>
+                    </details>
+                  )}
+                  <form action={adminDeleteProduct}>
+                    <input type="hidden" name="productId" value={product._id} />
+                    <PendingButton pendingLabel="Deleting..." className="text-xs font-semibold text-red-500">
+                      Delete
+                    </PendingButton>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          ))}
+          {products.length === 0 && (
+            <tr>
+              <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
+                No products submitted yet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ProductsSkeleton() {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Product</th>
+            <th className="px-4 py-3">Vendor</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <tr key={idx} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <div className="h-4 w-40 rounded bg-slate-200 animate-pulse" />
+                <div className="mt-2 h-3 w-32 rounded bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-24 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-32 rounded bg-slate-100 animate-pulse" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -133,9 +178,9 @@ function ProductStatusForm({ product }: { product: ProductDto }) {
           </option>
         ))}
       </select>
-      <button className="rounded-lg bg-indigo-600 px-3 py-2 text-white" type="submit">
+      <PendingButton pendingLabel="Updating..." className="rounded-lg bg-indigo-600 px-3 py-2 text-white">
         Update
-      </button>
+      </PendingButton>
     </form>
   );
 }

@@ -1,136 +1,258 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
-import { getProfile } from "@/lib/queries";
+import { getProfile, getUserDeposits } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardHome() {
   await requireToken();
-  const { user, vendor } = await getProfile();
-  const isAdmin = user.roles?.includes("admin");
-
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl bg-gradient-to-r from-slate-900 to-indigo-700 p-8 text-white shadow-lg">
-        <PageHeader
-          eyebrow="Welcome"
-          title={user.firstName ? `Hey, ${user.firstName}!` : "Waashop Portal"}
-          description="Manage vendors, approve products, and keep mystery boxes fair and profitable."
-          tone="light"
-          actions={
-            <div className="flex flex-wrap gap-3 text-sm">
-              {isAdmin && (
-                <Link href="/admin/vendors" className="rounded-full bg-white/20 px-4 py-2">
-                  Review Vendors
-                </Link>
-              )}
-              {isAdmin && (
-                <Link href="/admin/products" className="rounded-full bg-white/20 px-4 py-2">
-                  Review Products
-                </Link>
-              )}
-              <Link href="/vendor" className="rounded-full bg-white/20 px-4 py-2">
-                Vendor Workspace
-              </Link>
-            </div>
-          }
-        />
-      </section>
-
+      <Suspense fallback={<BannersSkeleton />}>
+        <DepositBanners />
+      </Suspense>
+      <Suspense fallback={<HeroSkeleton />}>
+        <HeroSection />
+      </Suspense>
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-500">Account</h2>
-          <p className="mt-2 text-xl font-semibold text-slate-900">{user.username || user.telegramId}</p>
-          <p className="text-sm text-slate-500">Roles: {user.roles.join(", ")}</p>
-          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-slate-500">Coins</p>
-              <p className="text-2xl font-semibold text-indigo-600">{user.coinsBalance.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-slate-500">Points</p>
-              <p className="text-2xl font-semibold text-emerald-600">{user.pointsBalance.toLocaleString()}</p>
-            </div>
+        <Suspense fallback={<AccountSkeleton />}>
+          <AccountCard />
+        </Suspense>
+        <Suspense fallback={<VendorSkeleton />}>
+          <VendorCard />
+        </Suspense>
+      </div>
+      <Suspense fallback={<AdminActionsSkeleton />}>
+        <AdminActions />
+      </Suspense>
+    </div>
+  );
+}
+
+async function DepositBanners() {
+  const { deposits } = await getUserDeposits();
+  const pendingDeposit = deposits.find((entry) => entry.status === "PENDING");
+  const latestResolved = deposits.find((entry) => entry.status !== "PENDING");
+  if (!pendingDeposit && !latestResolved) {
+    return null;
+  }
+  const variant = pendingDeposit ? "pending" : latestResolved?.status === "APPROVED" ? "success" : "danger";
+  const baseClass =
+    variant === "pending"
+      ? "border-amber-200 bg-amber-50 text-amber-900"
+      : variant === "success"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+        : "border-red-200 bg-red-50 text-red-900";
+
+  return (
+    <div className={`rounded-3xl border p-5 text-sm ${baseClass}`}>
+      {pendingDeposit ? (
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em]">Deposit processing</p>
+            <p className="mt-1 text-base font-semibold">{pendingDeposit.amountCoins.toLocaleString()} coins under review</p>
+            <p className="text-xs text-amber-800/80">
+              Submitted {new Date(pendingDeposit.createdAt).toLocaleString()}. We’ll notify you once it’s approved or rejected.
+            </p>
           </div>
-          <Link href="/deposits" className="mt-4 inline-flex text-sm font-semibold text-indigo-600">
-            Submit deposit request →
+          <Link href="/deposits" className="text-sm font-semibold underline">
+            View details
           </Link>
         </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-500">Vendor Status</h2>
-          {vendor ? (
-            <div className="mt-2 space-y-2">
-              <p className="text-xl font-semibold text-slate-900">{vendor.name}</p>
-              <StatusBadge status={vendor.status} />
-              <p className="text-sm text-slate-500">{vendor.description || "No description"}</p>
-              <Link href="/vendor" className="text-sm font-semibold text-indigo-600">
-                Manage vendor profile
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-2 text-sm text-slate-500">
-              <p>No vendor profile submitted.</p>
-              <Link href="/vendor" className="text-sm font-semibold text-indigo-600">
-                Create vendor profile
-              </Link>
-            </div>
-          )}
+      ) : latestResolved ? (
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em]">Deposit update</p>
+            <p className="mt-1 text-base font-semibold">
+              {latestResolved.amountCoins.toLocaleString()} coins{" "}
+              {latestResolved.status === "APPROVED" ? "credited" : "rejected"}
+            </p>
+            <p className="text-xs">{new Date(latestResolved.updatedAt).toLocaleString()}</p>
+            {latestResolved.adminNote && <p className="mt-1 text-xs opacity-80">{latestResolved.adminNote}</p>}
+          </div>
+          <Link href="/deposits" className="text-sm font-semibold underline">
+            View more
+          </Link>
         </div>
-      </div>
+      ) : null}
+    </div>
+  );
+}
 
-      {isAdmin ? (
-        <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-indigo-600">Admin Quick Actions</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Link href="/admin/vendors" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Review vendor applications</p>
-              <p className="text-sm text-slate-500">Approve or suspend vendor accounts.</p>
-            </Link>
-            <Link href="/admin/products" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Moderate mystery boxes</p>
-              <p className="text-sm text-slate-500">Activate/deactivate vendor products.</p>
-            </Link>
-            <Link href="/admin/home-hero" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Edit homepage hero</p>
-              <p className="text-sm text-slate-500">Update copy and CTAs without redeploying.</p>
-            </Link>
-            <Link href="/admin/home-highlights" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Edit homepage callouts</p>
-              <p className="text-sm text-slate-500">Control the cards under the hero.</p>
-            </Link>
-            <Link href="/admin/promo-cards" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Review promo cards</p>
-              <p className="text-sm text-slate-500">Approve sponsored placements.</p>
-            </Link>
-            <Link href="/admin/deposits" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Process deposits</p>
-              <p className="text-sm text-slate-500">Approve receipts and credit coins.</p>
-            </Link>
-            <Link href="/admin/users" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Manage roles</p>
-              <p className="text-sm text-slate-500">Promote admins and vendors.</p>
-            </Link>
-            <Link href="/admin/settings" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Platform settings</p>
-              <p className="text-sm text-slate-500">Update submission fees.</p>
-            </Link>
-            <Link href="/admin/winners" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
-              <p className="text-lg font-semibold text-slate-900">Post winners</p>
-              <p className="text-sm text-slate-500">Highlight challenge and mystery champions.</p>
+async function HeroSection() {
+  const { user } = await getProfile();
+  const isAdmin = user.roles?.includes("admin");
+  return (
+    <section className="rounded-3xl bg-gradient-to-r from-slate-900 to-indigo-700 p-8 text-white shadow-lg">
+      <PageHeader
+        eyebrow="Welcome"
+        title={user.firstName ? `Hey, ${user.firstName}!` : "Waashop Portal"}
+        description="Manage vendors, approve products, and keep mystery boxes fair and profitable."
+        tone="light"
+        actions={
+          <div className="flex flex-wrap gap-3 text-sm">
+            {isAdmin && (
+              <Link href="/admin/vendors" className="rounded-full bg-white/20 px-4 py-2">
+                Review Vendors
+              </Link>
+            )}
+            {isAdmin && (
+              <Link href="/admin/products" className="rounded-full bg-white/20 px-4 py-2">
+                Review Products
+              </Link>
+            )}
+            <Link href="/vendor" className="rounded-full bg-white/20 px-4 py-2">
+              Vendor Workspace
             </Link>
           </div>
+        }
+      />
+    </section>
+  );
+}
+
+async function AccountCard() {
+  const { user } = await getProfile();
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-500">Account</h2>
+      <p className="mt-2 text-xl font-semibold text-slate-900">{user.username || user.telegramId}</p>
+      <p className="text-sm text-slate-500">Roles: {user.roles.join(", ")}</p>
+      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-slate-500">Coins</p>
+          <p className="text-2xl font-semibold text-indigo-600">{user.coinsBalance.toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-slate-500">Points</p>
+          <p className="text-2xl font-semibold text-emerald-600">{user.pointsBalance.toLocaleString()}</p>
+        </div>
+      </div>
+      <Link href="/deposits" className="mt-4 inline-flex text-sm font-semibold text-indigo-600">
+        Submit deposit request →
+      </Link>
+    </div>
+  );
+}
+
+async function VendorCard() {
+  const { vendor } = await getProfile();
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-500">Vendor Status</h2>
+      {vendor ? (
+        <div className="mt-2 space-y-2">
+          <p className="text-xl font-semibold text-slate-900">{vendor.name}</p>
+          <StatusBadge status={vendor.status} />
+          <p className="text-sm text-slate-500">{vendor.description || "No description"}</p>
+          <Link href="/vendor" className="text-sm font-semibold text-indigo-600">
+            Manage vendor profile
+          </Link>
         </div>
       ) : (
-        <div className="rounded-2xl border border-amber-100 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-amber-600">Admin approval required</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Vendors must be approved by the platform admin. Complete your profile and wait for review.
-          </p>
+        <div className="mt-2 text-sm text-slate-500">
+          <p>No vendor profile submitted.</p>
+          <Link href="/vendor" className="text-sm font-semibold text-indigo-600">
+            Create vendor profile
+          </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+async function AdminActions() {
+  const { user } = await getProfile();
+  const isAdmin = user.roles?.includes("admin");
+  if (!isAdmin) {
+    return (
+      <div className="rounded-2xl border border-amber-100 bg-white p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-amber-600">Admin approval required</h2>
+        <p className="mt-2 text-sm text-slate-600">Complete your vendor profile and wait for review.</p>
+      </div>
+    );
+  }
+  const cards = [
+    { href: "/admin/vendors", title: "Review vendor applications", body: "Approve or suspend vendor accounts." },
+    { href: "/admin/products", title: "Moderate mystery boxes", body: "Activate/deactivate vendor products." },
+    { href: "/admin/home-hero", title: "Edit homepage hero", body: "Update copy and CTAs without redeploying." },
+    { href: "/admin/home-highlights", title: "Edit homepage callouts", body: "Control the cards under the hero." },
+    { href: "/admin/promo-cards", title: "Review promo cards", body: "Approve sponsored placements." },
+    { href: "/admin/deposits", title: "Process deposits", body: "Approve receipts and credit coins." },
+    { href: "/admin/users", title: "Manage roles", body: "Promote admins and vendors." },
+    { href: "/admin/settings", title: "Platform settings", body: "Update submission fees." },
+    { href: "/admin/winners", title: "Post winners", body: "Highlight challenge and mystery champions." },
+  ];
+  return (
+    <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm">
+      <h2 className="text-sm font-semibold text-indigo-600">Admin Quick Actions</h2>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        {cards.map((card) => (
+          <Link key={card.href} href={card.href} className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
+            <p className="text-lg font-semibold text-slate-900">{card.title}</p>
+            <p className="text-sm text-slate-500">{card.body}</p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonBlock({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-2xl bg-slate-200/70 ${className}`} />;
+}
+
+function BannersSkeleton() {
+  return <SkeletonBlock className="h-24" />;
+}
+
+function HeroSkeleton() {
+  return <SkeletonBlock className="h-40 bg-gradient-to-r from-slate-200 to-slate-300" />;
+}
+
+function AccountSkeleton() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="animate-pulse space-y-4">
+        <div className="h-4 w-24 rounded bg-slate-200" />
+        <div className="h-6 w-40 rounded bg-slate-200" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-16 rounded bg-slate-100" />
+          <div className="h-16 rounded bg-slate-100" />
+        </div>
+        <div className="h-4 w-32 rounded bg-slate-200" />
+      </div>
+    </div>
+  );
+}
+
+function VendorSkeleton() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="animate-pulse space-y-3">
+        <div className="h-4 w-28 rounded bg-slate-200" />
+        <div className="h-5 w-36 rounded bg-slate-200" />
+        <div className="h-4 w-full rounded bg-slate-100" />
+        <div className="h-4 w-1/2 rounded bg-slate-100" />
+      </div>
+    </div>
+  );
+}
+
+function AdminActionsSkeleton() {
+  return (
+    <div className="rounded-2xl border border-indigo-50 bg-white p-6 shadow-sm">
+      <div className="animate-pulse space-y-4">
+        <div className="h-4 w-36 rounded bg-slate-200" />
+        <div className="grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="h-20 rounded-xl border border-slate-100 bg-slate-50" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

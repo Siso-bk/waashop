@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PendingButton } from "@/components/PendingButton";
 import { getAdminUsers, getProfile } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
@@ -15,55 +17,101 @@ export default async function AdminUsersPage() {
   if (!user.roles.includes("admin")) {
     redirect("/");
   }
-  const { users } = await getAdminUsers();
-
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Admin" title="Users" description="Manage admin/vendor roles." />
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">User</th>
-              <th className="px-4 py-3">Roles</th>
-              <th className="px-4 py-3">Balances</th>
-              <th className="px-4 py-3">Actions</th>
+      <Suspense fallback={<UsersSkeleton />}>
+        <UsersTable />
+      </Suspense>
+    </div>
+  );
+}
+
+async function UsersTable() {
+  const { users } = await getAdminUsers();
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">User</th>
+            <th className="px-4 py-3">Roles</th>
+            <th className="px-4 py-3">Balances</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((entry) => (
+            <tr key={entry.id} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <p className="font-semibold text-slate-900">{entry.email || entry.username || entry.id}</p>
+                <p className="text-xs text-slate-500">
+                  {entry.firstName || entry.lastName ? `${entry.firstName || ""} ${entry.lastName || ""}` : "No profile"}
+                </p>
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-2">
+                  {entry.roles.map((role) => (
+                    <StatusBadge key={role} status={role} />
+                  ))}
+                </div>
+              </td>
+              <td className="px-4 py-3 text-xs text-slate-500">
+                <p>Coins: {entry.coinsBalance.toLocaleString()}</p>
+                <p>Points: {entry.pointsBalance.toLocaleString()}</p>
+              </td>
+              <td className="px-4 py-3">
+                <RoleForm user={entry} />
+                <BalanceAdjustForm user={entry} />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {users.map((entry) => (
-              <tr key={entry.id} className="border-t border-slate-100">
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-slate-900">{entry.email || entry.username || entry.id}</p>
-                  <p className="text-xs text-slate-500">{entry.firstName || entry.lastName ? `${entry.firstName || ""} ${entry.lastName || ""}` : "No profile"}</p>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-2">
-                    {entry.roles.map((role) => (
-                      <StatusBadge key={role} status={role} />
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-xs text-slate-500">
-                  <p>Coins: {entry.coinsBalance.toLocaleString()}</p>
-                  <p>Points: {entry.pointsBalance.toLocaleString()}</p>
-                </td>
-                <td className="px-4 py-3">
-                  <RoleForm user={entry} />
-                  <BalanceAdjustForm user={entry} />
-                </td>
-              </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
-                  No users yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+          ))}
+          {users.length === 0 && (
+            <tr>
+              <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
+                No users yet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function UsersSkeleton() {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">User</th>
+            <th className="px-4 py-3">Roles</th>
+            <th className="px-4 py-3">Balances</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <tr key={idx} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <div className="h-4 w-40 rounded bg-slate-200 animate-pulse" />
+                <div className="mt-2 h-3 w-24 rounded bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-24 rounded-full bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-3 w-32 rounded bg-slate-200 animate-pulse" />
+                <div className="mt-1 h-3 w-24 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-10 w-36 rounded bg-slate-100 animate-pulse" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -81,9 +129,9 @@ function RoleForm({ user }: { user: AdminUser }) {
       <label className="flex items-center gap-1">
         <input type="checkbox" name="role-admin" defaultChecked={user.roles.includes("admin")} /> Admin
       </label>
-      <button type="submit" className="rounded-lg bg-indigo-600 px-3 py-1 text-white">
+      <PendingButton pendingLabel="Saving..." className="rounded-lg bg-indigo-600 px-3 py-1 text-white">
         Save
-      </button>
+      </PendingButton>
     </form>
   );
 }
@@ -110,29 +158,12 @@ function BalanceAdjustForm({ user }: { user: AdminUser }) {
   return (
     <form action={adjustBalances} className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
       <input type="hidden" name="userId" value={user.id} />
-      <input
-        type="number"
-        name="coinsDelta"
-        step="1"
-        placeholder="+/- coins"
-        className="w-28 rounded-lg border border-slate-200 px-2 py-1"
-      />
-      <input
-        type="number"
-        name="pointsDelta"
-        step="1"
-        placeholder="+/- points"
-        className="w-28 rounded-lg border border-slate-200 px-2 py-1"
-      />
-      <input
-        type="text"
-        name="note"
-        placeholder="Optional note"
-        className="w-32 flex-1 rounded-lg border border-slate-200 px-2 py-1"
-      />
-      <button type="submit" className="rounded-lg bg-slate-900 px-3 py-1.5 font-semibold text-white">
+      <input type="number" name="coinsDelta" step="1" placeholder="+/- coins" className="w-28 rounded-lg border border-slate-200 px-2 py-1" />
+      <input type="number" name="pointsDelta" step="1" placeholder="+/- points" className="w-28 rounded-lg border border-slate-200 px-2 py-1" />
+      <input type="text" name="note" placeholder="Optional note" className="w-32 flex-1 rounded-lg border border-slate-200 px-2 py-1" />
+      <PendingButton pendingLabel="Updating..." className="rounded-lg bg-slate-900 px-3 py-1.5 font-semibold text-white">
         Adjust
-      </button>
+      </PendingButton>
     </form>
   );
 }

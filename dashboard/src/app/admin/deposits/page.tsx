@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
@@ -5,6 +6,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { getAdminDeposits, getProfile } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
+import { PendingButton } from "@/components/PendingButton";
 
 export const dynamic = "force-dynamic";
 
@@ -14,115 +16,165 @@ export default async function AdminDepositsPage() {
   if (!user.roles.includes("admin")) {
     redirect("/");
   }
-  const { deposits } = await getAdminDeposits();
-
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Admin"
-        title="Deposit queue"
-        description="Review customer payment proofs and credit coins instantly."
-      />
-      <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Submitted</th>
-              <th className="px-4 py-3">User</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Payment</th>
-              <th className="px-4 py-3">Proof</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
+      <PageHeader eyebrow="Admin" title="Deposit queue" description="Review payment proofs and credit coins." />
+      <Suspense fallback={<DepositsSkeleton />}>
+        <DepositsTable />
+      </Suspense>
+    </div>
+  );
+}
+
+async function DepositsTable() {
+  const { deposits } = await getAdminDeposits();
+  return (
+    <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Submitted</th>
+            <th className="px-4 py-3">User</th>
+            <th className="px-4 py-3">Amount</th>
+            <th className="px-4 py-3">Payment</th>
+            <th className="px-4 py-3">Proof</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {deposits.map((entry) => (
+            <tr key={entry.id} className="border-t border-slate-100 align-top">
+              <td className="px-4 py-3 text-xs text-slate-500">
+                <p>{new Date(entry.createdAt).toLocaleString()}</p>
+                {entry.reviewedAt && <p className="mt-1 text-slate-400">Reviewed {new Date(entry.reviewedAt).toLocaleString()}</p>}
+              </td>
+              <td className="px-4 py-3 text-xs text-slate-600">
+                <p className="font-semibold text-slate-900">{entry.userEmail || entry.username || entry.userId}</p>
+                {(entry.firstName || entry.lastName) && (
+                  <p className="text-slate-400">{[entry.firstName, entry.lastName].filter(Boolean).join(" ")}</p>
+                )}
+              </td>
+              <td className="px-4 py-3 font-semibold text-slate-900">
+                {entry.amountCoins.toLocaleString()} coins
+                {entry.currency && <p className="text-xs font-normal text-slate-500">Paid in {entry.currency}</p>}
+              </td>
+              <td className="px-4 py-3 text-xs text-slate-600">
+                <p>{entry.paymentMethod}</p>
+                {entry.paymentReference && <p className="text-slate-400">{entry.paymentReference}</p>}
+                {entry.note && <p className="mt-1 text-slate-400">{entry.note}</p>}
+              </td>
+              <td className="px-4 py-3 text-xs text-indigo-600">
+                {entry.proofUrl ? (
+                  <a href={entry.proofUrl} target="_blank" rel="noreferrer" className="hover:underline">
+                    View proof
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </td>
+              <td className="px-4 py-3">
+                <StatusBadge status={entry.status} />
+                {entry.adminNote && <p className="mt-1 text-xs text-slate-500">{entry.adminNote}</p>}
+              </td>
+              <td className="px-4 py-3">
+                {entry.status === "PENDING" ? (
+                  <div className="space-y-2 text-xs">
+                    <form action={approveDepositAction} className="flex flex-col gap-2">
+                      <input type="hidden" name="depositId" value={entry.id} />
+                      <input
+                        type="text"
+                        name="adminNote"
+                        placeholder="Approval note"
+                        className="rounded-xl border border-emerald-200 px-2 py-1"
+                      />
+                      <PendingButton
+                        pendingLabel="Approving..."
+                        className="rounded-full bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-500"
+                      >
+                        Approve & credit
+                      </PendingButton>
+                    </form>
+                    <form action={rejectDepositAction} className="flex flex-col gap-2">
+                      <input type="hidden" name="depositId" value={entry.id} />
+                      <input
+                        type="text"
+                        name="adminNote"
+                        placeholder="Rejection reason"
+                        className="rounded-xl border border-red-200 px-2 py-1"
+                      />
+                      <PendingButton
+                        pendingLabel="Rejecting..."
+                        className="rounded-full border border-red-200 px-3 py-1.5 font-semibold text-red-600 hover:border-red-400"
+                      >
+                        Reject
+                      </PendingButton>
+                    </form>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400">No actions</p>
+                )}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {deposits.map((entry) => (
-              <tr key={entry.id} className="border-t border-slate-100 align-top">
-                <td className="px-4 py-3 text-xs text-slate-500">
-                  <p>{new Date(entry.createdAt).toLocaleString()}</p>
-                  {entry.reviewedAt && <p className="mt-1 text-slate-400">Reviewed {new Date(entry.reviewedAt).toLocaleString()}</p>}
-                </td>
-                <td className="px-4 py-3 text-xs text-slate-600">
-                  <p className="font-semibold text-slate-900">{entry.userEmail || entry.username || entry.userId}</p>
-                  {(entry.firstName || entry.lastName) && (
-                    <p className="text-slate-400">
-                      {[entry.firstName, entry.lastName].filter(Boolean).join(" ")}
-                    </p>
-                  )}
-                </td>
-                <td className="px-4 py-3 font-semibold text-slate-900">
-                  {entry.amountCoins.toLocaleString()} coins
-                  {entry.currency && <p className="text-xs font-normal text-slate-500">Paid in {entry.currency}</p>}
-                </td>
-                <td className="px-4 py-3 text-xs text-slate-600">
-                  <p>{entry.paymentMethod}</p>
-                  {entry.paymentReference && <p className="text-slate-400">{entry.paymentReference}</p>}
-                  {entry.note && <p className="mt-1 text-slate-400">{entry.note}</p>}
-                </td>
-                <td className="px-4 py-3 text-xs text-indigo-600">
-                  {entry.proofUrl ? (
-                    <a href={entry.proofUrl} target="_blank" rel="noreferrer" className="hover:underline">
-                      View proof
-                    </a>
-                  ) : (
-                    "-"
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={entry.status} />
-                  {entry.adminNote && <p className="mt-1 text-xs text-slate-500">{entry.adminNote}</p>}
-                </td>
-                <td className="px-4 py-3">
-                  {entry.status === "PENDING" ? (
-                    <div className="space-y-2 text-xs">
-                      <form action={approveDepositAction} className="flex flex-col gap-2">
-                        <input type="hidden" name="depositId" value={entry.id} />
-                        <input
-                          type="text"
-                          name="adminNote"
-                          placeholder="Approval note"
-                          className="rounded-xl border border-emerald-200 px-2 py-1"
-                        />
-                        <button
-                          type="submit"
-                          className="rounded-full bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-500"
-                        >
-                          Approve & credit
-                        </button>
-                      </form>
-                      <form action={rejectDepositAction} className="flex flex-col gap-2">
-                        <input type="hidden" name="depositId" value={entry.id} />
-                        <input
-                          type="text"
-                          name="adminNote"
-                          placeholder="Rejection reason"
-                          className="rounded-xl border border-red-200 px-2 py-1"
-                        />
-                        <button
-                          type="submit"
-                          className="rounded-full border border-red-200 px-3 py-1.5 font-semibold text-red-600 hover:border-red-400"
-                        >
-                          Reject
-                        </button>
-                      </form>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-400">No actions</p>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {deposits.length === 0 && (
-              <tr>
-                <td className="px-4 py-6 text-center text-slate-500" colSpan={7}>
-                  No deposit requests yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+          ))}
+          {deposits.length === 0 && (
+            <tr>
+              <td className="px-4 py-6 text-center text-slate-500" colSpan={7}>
+                No deposit requests yet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DepositsSkeleton() {
+  return (
+    <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Submitted</th>
+            <th className="px-4 py-3">User</th>
+            <th className="px-4 py-3">Amount</th>
+            <th className="px-4 py-3">Payment</th>
+            <th className="px-4 py-3">Proof</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <tr key={idx} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <div className="h-4 w-32 rounded bg-slate-200 animate-pulse" />
+                <div className="mt-2 h-3 w-28 rounded bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-40 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-24 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-32 rounded bg-slate-200 animate-pulse" />
+                <div className="mt-2 h-3 w-40 rounded bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-16 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-12 w-32 rounded bg-slate-100 animate-pulse" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

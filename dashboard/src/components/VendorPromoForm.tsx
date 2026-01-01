@@ -3,12 +3,14 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { createPromoCardAction } from "@/app/vendor/actions";
+import { PendingButton } from "@/components/PendingButton";
 
 const initialState = { error: "" };
 
 export function VendorPromoForm({ disabled }: { disabled?: boolean }) {
   const [state, action] = useActionState(createPromoCardAction, initialState);
   const { pending } = useFormStatus();
+  const isLocked = disabled || pending;
 
   return (
     <form action={action} className="space-y-4">
@@ -20,7 +22,7 @@ export function VendorPromoForm({ disabled }: { disabled?: boolean }) {
           id="promoTitle"
           name="promoTitle"
           required
-          disabled={disabled}
+          disabled={isLocked}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         />
       </div>
@@ -32,7 +34,7 @@ export function VendorPromoForm({ disabled }: { disabled?: boolean }) {
           id="promoDescription"
           name="promoDescription"
           rows={3}
-          disabled={disabled}
+          disabled={isLocked}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         />
       </div>
@@ -41,7 +43,7 @@ export function VendorPromoForm({ disabled }: { disabled?: boolean }) {
           CTA label
           <input
             name="promoCtaLabel"
-            disabled={disabled}
+            disabled={isLocked}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
             placeholder="Open drop"
           />
@@ -50,7 +52,7 @@ export function VendorPromoForm({ disabled }: { disabled?: boolean }) {
           CTA URL
           <input
             name="promoCtaHref"
-            disabled={disabled}
+            disabled={isLocked}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
             placeholder="/boxes/BOX_123"
           />
@@ -63,19 +65,19 @@ export function VendorPromoForm({ disabled }: { disabled?: boolean }) {
         <input
           id="promoImageUrl"
           name="promoImageUrl"
-          disabled={disabled}
+          disabled={isLocked}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
           placeholder="https://..."
         />
       </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
-      <button
-        type="submit"
-        disabled={disabled || pending}
+      <PendingButton
+        pendingLabel="Submitting..."
+        disabled={isLocked}
         className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
-        {pending ? "Submitting..." : "Submit promo card"}
-      </button>
+        Submit promo card
+      </PendingButton>
     </form>
   );
 }

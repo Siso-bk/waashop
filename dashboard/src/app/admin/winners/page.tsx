@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PendingButton } from "@/components/PendingButton";
 import { requireToken } from "@/lib/session";
 import { getProfile } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
@@ -28,66 +30,109 @@ export default async function AdminWinnersPage() {
   if (!user.roles.includes("admin")) {
     redirect("/");
   }
-  const winners = await fetchWinners();
-
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Admin" title="Winner spotlights" description="Highlight recent challenge or mystery winners." />
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <CreateWinnerForm />
       </section>
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Winner</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
+      <Suspense fallback={<WinnersSkeleton />}>
+        <WinnersTable />
+      </Suspense>
+    </div>
+  );
+}
+
+async function WinnersTable() {
+  const winners = await fetchWinners();
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Winner</th>
+            <th className="px-4 py-3">Type</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {winners.map((entry) => (
+            <tr key={entry.id} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <p className="font-semibold text-slate-900">{entry.headline}</p>
+                <p className="text-xs text-slate-500">{entry.winnerName}</p>
+                {entry.description && <p className="text-xs text-slate-500">{entry.description}</p>}
+              </td>
+              <td className="px-4 py-3 text-slate-600">{entry.winnerType}</td>
+              <td className="px-4 py-3">
+                <StatusBadge status={entry.status} />
+              </td>
+              <td className="px-4 py-3">
+                <form action={updateWinnerStatus} className="flex items-center gap-2 text-xs">
+                  <input type="hidden" name="winnerId" value={entry.id} />
+                  <select name="status" defaultValue={entry.status} className="rounded-md border border-slate-200 px-2 py-1">
+                    <option value="PENDING">Pending</option>
+                    <option value="PUBLISHED">Published</option>
+                  </select>
+                  <PendingButton pendingLabel="Updating..." className="rounded-md bg-indigo-600 px-3 py-1 text-white">
+                    Update
+                  </PendingButton>
+                </form>
+                <form action={deleteWinner}>
+                  <input type="hidden" name="winnerId" value={entry.id} />
+                  <PendingButton pendingLabel="Removing..." className="text-xs font-semibold text-red-500">
+                    Remove
+                  </PendingButton>
+                </form>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {winners.map((entry) => (
-              <tr key={entry.id} className="border-t border-slate-100">
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-slate-900">{entry.headline}</p>
-                  <p className="text-xs text-slate-500">{entry.winnerName}</p>
-                  {entry.description && <p className="text-xs text-slate-500">{entry.description}</p>}
-                </td>
-                <td className="px-4 py-3 text-slate-600">{entry.winnerType}</td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={entry.status} />
-                </td>
-                <td className="px-4 py-3">
-                  <form action={updateWinnerStatus} className="flex items-center gap-2 text-xs">
-                    <input type="hidden" name="winnerId" value={entry.id} />
-                    <select name="status" defaultValue={entry.status} className="rounded-md border border-slate-200 px-2 py-1">
-                      <option value="PENDING">Pending</option>
-                      <option value="PUBLISHED">Published</option>
-                    </select>
-                    <button type="submit" className="rounded-md bg-indigo-600 px-3 py-1 text-white">
-                      Update
-                    </button>
-                  </form>
-                  <form action={deleteWinner}>
-                    <input type="hidden" name="winnerId" value={entry.id} />
-                    <button type="submit" className="text-xs font-semibold text-red-500">
-                      Remove
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            ))}
-            {winners.length === 0 && (
-              <tr>
-                <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
-                  No winners posted yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+          ))}
+          {winners.length === 0 && (
+            <tr>
+              <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
+                No winners posted yet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function WinnersSkeleton() {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Winner</th>
+            <th className="px-4 py-3">Type</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <tr key={idx} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <div className="h-4 w-48 rounded bg-slate-200 animate-pulse" />
+                <div className="mt-2 h-3 w-40 rounded bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-20 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-8 w-32 rounded bg-slate-100 animate-pulse" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -115,9 +160,9 @@ function CreateWinnerForm() {
         <textarea name="description" rows={2} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
       </label>
       <div className="md:col-span-2">
-        <button type="submit" className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white">
+        <PendingButton pendingLabel="Publishing..." className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white">
           Publish winner
-        </button>
+        </PendingButton>
       </div>
     </form>
   );

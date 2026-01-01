@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createVendorProductAction } from "@/app/vendor/actions";
+import { PendingButton } from "@/components/PendingButton";
 
 const initialState = { error: "" };
 
@@ -10,6 +11,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [state, action] = useActionState(createVendorProductAction, initialState);
   const { pending } = useFormStatus();
   const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE">("MYSTERY_BOX");
+  const isLocked = disabled || pending;
 
   return (
     <form action={action} className="space-y-4">
@@ -21,7 +23,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           id="productType"
           name="type"
           value={productType}
-          disabled={disabled}
+          disabled={isLocked}
           onChange={(event) => setProductType(event.target.value as "MYSTERY_BOX" | "CHALLENGE")}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         >
@@ -37,7 +39,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           id="productName"
           name="productName"
           required
-          disabled={disabled}
+          disabled={isLocked}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         />
       </div>
@@ -49,7 +51,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           id="productDescription"
           name="productDescription"
           rows={3}
-          disabled={disabled}
+          disabled={isLocked}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         />
       </div>
@@ -66,7 +68,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                 type="number"
                 min={1}
                 required
-                disabled={disabled}
+                disabled={isLocked}
                 className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
               />
             </div>
@@ -80,7 +82,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                 type="number"
                 min={1}
                 required
-                disabled={disabled}
+                disabled={isLocked}
                 className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
               />
             </div>
@@ -93,7 +95,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
               id="rewardTiers"
               name="rewardTiers"
               rows={4}
-              disabled={disabled}
+              disabled={isLocked}
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
               placeholder='Example: [\n  {"points":600,"probability":0.55},\n  {"points":800,"probability":0.25}\n]'
             />
@@ -114,7 +116,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
               type="number"
               min={1}
               required
-              disabled={disabled}
+              disabled={isLocked}
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
@@ -128,20 +130,20 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
               type="number"
               min={1}
               required
-              disabled={disabled}
+              disabled={isLocked}
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
         </div>
       )}
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
-      <button
-        type="submit"
-        disabled={disabled || pending}
+      <PendingButton
+        pendingLabel="Submitting..."
+        disabled={isLocked}
         className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
-        {pending ? "Submitting..." : "Submit product"}
-      </button>
+        Submit product
+      </PendingButton>
     </form>
   );
 }

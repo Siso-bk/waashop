@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
-import { getOptionalProfile } from "@/lib/queries";
+import { getNotificationsSummary, getOptionalProfile } from "@/lib/queries";
+import { PendingButton } from "@/components/PendingButton";
 
 export const metadata: Metadata = {
   title: "Waashop Portal",
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 const navItems = [
   { href: "/", label: "Overview" },
   { href: "/deposits", label: "Deposits" },
+  { href: "/notifications", label: "Notifications" },
   { href: "/admin/vendors", label: "Admin · Vendors", roles: ["admin"] },
   { href: "/admin/products", label: "Admin · Products", roles: ["admin"] },
   { href: "/admin/home-hero", label: "Admin · Home hero", roles: ["admin"] },
@@ -28,6 +30,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = profile?.user;
   const roles = user?.roles ?? [];
   const isSignedIn = Boolean(user);
+  let unread = 0;
+  if (isSignedIn) {
+    try {
+      const summary = await getNotificationsSummary();
+      unread = summary.unread;
+    } catch {
+      unread = 0;
+    }
+  }
   const filteredNavItems = isSignedIn
     ? navItems.filter((item) => {
         if (!item.roles || item.roles.length === 0) return true;
@@ -54,13 +65,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </nav>
                 {isSignedIn ? (
                   <div className="flex items-center gap-3">
+                    <Link
+                      href="/notifications"
+                      className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-base hover:border-indigo-300"
+                      aria-label="Notifications"
+                    >
+                      🔔
+                      {unread > 0 && (
+                        <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 text-[10px] font-semibold text-white">
+                          {unread > 9 ? "9+" : unread}
+                        </span>
+                      )}
+                    </Link>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                       {user?.email || user?.username || "Signed in"}
                     </span>
                     <form action={logoutAction}>
-                      <button className="text-sm text-red-500 hover:text-red-600" type="submit">
+                      <PendingButton
+                        pendingLabel="Signing out..."
+                        className="text-sm text-red-500 hover:text-red-600"
+                      >
                         Logout
-                      </button>
+                      </PendingButton>
                     </form>
                   </div>
                 ) : (

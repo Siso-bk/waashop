@@ -1,15 +1,15 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { submitVendorProfileAction } from "@/app/vendor/actions";
 import { VendorProfile } from "@/types";
+import { PendingButton } from "@/components/PendingButton";
 
 const initialState = { error: "" };
 
 export function VendorProfileForm({ vendor }: { vendor: VendorProfile | null }) {
   const [state, action] = useActionState(submitVendorProfileAction, initialState);
-  const { pending } = useFormStatus();
+  const primaryLabel = vendor ? "Update profile" : "Submit for approval";
 
   return (
     <form action={action} className="space-y-4">
@@ -39,13 +39,12 @@ export function VendorProfileForm({ vendor }: { vendor: VendorProfile | null }) 
         />
       </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
-      <button
-        type="submit"
-        disabled={pending}
+      <PendingButton
+        pendingLabel="Saving..."
         className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
       >
-        {pending ? "Saving..." : vendor ? "Update profile" : "Submit for approval"}
-      </button>
+        {primaryLabel}
+      </PendingButton>
     </form>
   );
 }
