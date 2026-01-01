@@ -19,6 +19,7 @@ import HomeHighlights, { IHomeHighlights } from "../models/HomeHighlights";
 import PromoCard, { IPromoCard } from "../models/PromoCard";
 import ChallengeEntry from "../models/ChallengeEntry";
 import WinnerSpotlight, { WinnerType } from "../models/WinnerSpotlight";
+import DepositRequest, { IDepositRequest } from "../models/DepositRequest";
 import { getPlatformSettings, updatePlatformSettings } from "../services/settings";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
@@ -112,6 +113,51 @@ const serializePromoCard = (card: IPromoCard) => ({
   imageUrl: card.imageUrl,
   status: card.status,
 });
+
+const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.ObjectId | string }) => {
+  const userField = deposit.userId as IUser | Types.ObjectId | string | undefined;
+  let userId: string | undefined;
+  let userEmail: string | undefined;
+  let username: string | undefined;
+  let firstName: string | undefined;
+  let lastName: string | undefined;
+
+  if (userField) {
+    if (typeof userField === "string") {
+      userId = userField;
+    } else if (userField instanceof Types.ObjectId) {
+      userId = userField.toString();
+    } else {
+      userId = userField._id?.toString();
+      userEmail = userField.email;
+      username = userField.username;
+      firstName = userField.firstName;
+      lastName = userField.lastName;
+    }
+  }
+
+  return {
+    id: deposit._id.toString(),
+    userId,
+    userEmail,
+    username,
+    firstName,
+    lastName,
+    amountCoins: deposit.amountCoins,
+    currency: deposit.currency,
+    paymentMethod: deposit.paymentMethod,
+    paymentReference: deposit.paymentReference,
+    proofUrl: deposit.proofUrl,
+    note: deposit.note,
+    status: deposit.status,
+    adminNote: deposit.adminNote,
+    reviewedBy: deposit.reviewedBy ? deposit.reviewedBy.toString() : undefined,
+    reviewedAt: deposit.reviewedAt?.toISOString(),
+    coinsCredited: deposit.coinsCredited,
+    createdAt: deposit.createdAt.toISOString(),
+    updatedAt: deposit.updatedAt.toISOString(),
+  };
+};
 
 const chargeSubmissionFee = async (
   user: IUser,
@@ -519,6 +565,256 @@ router.patch(
   }
 );
 
+router.post(
+  "/admin/ledger/adjust",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z
+      .object({
+        userId: z.string().optional(),
+        email: z.string().email().optional(),
+        coinsDelta: z.number().finite().optional().default(0),
+        pointsDelta: z.number().finite().optional().default(0),
+        note: z.string().max(200).optional(),
+      })
+      .refine((data) => Boolean(data.userId || data.email), {
+        message: "User identifier required",
+        path: ["userId"],
+      });
+
+    try {
+      const payload = schema.parse(req.body);
+      const coinsDelta = payload.coinsDelta || 0;
+      const pointsDelta = payload.pointsDelta || 0;
+      if (coinsDelta === 0 && pointsDelta === 0) {
+        return res.status(400).json({ error: "Provide a coins or points delta" });
+      }
+
+      await connectDB();
+      const userQuery = payload.userId
+        ? User.findById(payload.userId)
+        : User.findOne({ email: payload.email });
+      const user = await userQuery;
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const nextCoins = user.coinsBalance + coinsDelta;
+      const nextPoints = user.pointsBalance + pointsDelta;
+      if (nextCoins < 0 || nextPoints < 0) {
+        return res.status(400).json({ error: "Adjustment would result in negative balance" });
+      }
+
+      user.coinsBalance = nextCoins;
+      user.pointsBalance = nextPoints;
+      await user.save();
+
+      await Ledger.create({
+        userId: user._id,
+        deltaCoins: coinsDelta,
+        deltaPoints: pointsDelta,
+        reason: "ADMIN_MANUAL_ADJUSTMENT",
+        meta: {
+          adminUserId: req.userId,
+          note: payload.note,
+        },
+      });
+
+      res.json({
+        userId: user._id.toString(),
+        coinsBalance: user.coinsBalance,
+        pointsBalance: user.pointsBalance,
+      });
+    } catch (error) {
+      console.error("Ledger adjust error", error);
+      res.status(400).json({ error: "Unable to adjust balance" });
+    }
+  }
+);
+
+router.get("/deposits", authMiddleware, async (req, res) => {
+  await connectDB();
+  const deposits = await DepositRequest.find({ userId: req.userId }).sort({ createdAt: -1 }).exec();
+  res.json({ deposits: deposits.map((deposit) => serializeDeposit(deposit)) });
+});
+
+router.post("/deposits", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    amountCoins: z.number().finite().min(1),
+    currency: z.string().max(20).optional(),
+    paymentMethod: z.string().min(1).max(100),
+    paymentReference: z.string().max(120).optional(),
+    proofUrl: z.string().max(500).optional(),
+    note: z.string().max(500).optional(),
+  });
+
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const deposit = await DepositRequest.create({
+      userId: req.userId,
+      amountCoins: payload.amountCoins,
+      currency: payload.currency,
+      paymentMethod: payload.paymentMethod,
+      paymentReference: payload.paymentReference,
+      proofUrl: payload.proofUrl,
+      note: payload.note,
+      status: "PENDING",
+    });
+    res.status(201).json({ deposit: serializeDeposit(deposit) });
+  } catch (error) {
+    console.error("Create deposit error", error);
+    res.status(400).json({ error: "Unable to submit deposit" });
+  }
+});
+
+router.get(
+  "/admin/deposits",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const querySchema = z.object({
+      status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
+    });
+    try {
+      const params = querySchema.parse(req.query);
+      await connectDB();
+      const filter: Record<string, unknown> = {};
+      if (params.status) {
+        filter.status = params.status;
+      }
+      const deposits = await DepositRequest.find(filter)
+        .sort({ status: 1, createdAt: -1 })
+        .populate("userId", "email username firstName lastName")
+        .exec();
+      res.json({ deposits: deposits.map((deposit) => serializeDeposit(deposit)) });
+    } catch (error) {
+      console.error("Admin deposits error", error);
+      res.status(400).json({ error: "Unable to load deposits" });
+    }
+  }
+);
+
+router.post(
+  "/admin/deposits/:id/approve",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({
+      adminNote: z.string().max(500).optional(),
+    });
+    try {
+      const payload = schema.parse(req.body || {});
+      await connectDB();
+      const result = await withMongoSession(async (session) => {
+        const depositQuery = DepositRequest.findById(req.params.id);
+        if (session) depositQuery.session(session);
+        const deposit = await depositQuery;
+        if (!deposit) {
+          return { error: "Deposit not found" } as const;
+        }
+        if (deposit.status !== "PENDING") {
+          return { error: "Deposit already processed" } as const;
+        }
+        const userQuery = User.findById(deposit.userId);
+        if (session) userQuery.session(session);
+        const user = await userQuery;
+        if (!user) {
+          return { error: "User not found" } as const;
+        }
+        const creditAmount = deposit.amountCoins;
+        user.coinsBalance += creditAmount;
+        deposit.status = "APPROVED";
+        deposit.adminNote = payload.adminNote;
+        deposit.reviewedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
+        deposit.reviewedAt = new Date();
+        deposit.coinsCredited = creditAmount;
+        if (session) {
+          await Promise.all([user.save({ session }), deposit.save({ session })]);
+          await Ledger.create(
+            [
+              {
+                userId: user._id,
+                deltaCoins: creditAmount,
+                deltaPoints: 0,
+                reason: "DEPOSIT_CREDIT",
+                meta: {
+                  depositId: deposit._id,
+                  paymentMethod: deposit.paymentMethod,
+                  paymentReference: deposit.paymentReference,
+                },
+              },
+            ],
+            { session }
+          );
+        } else {
+          await Promise.all([user.save(), deposit.save()]);
+          await Ledger.create({
+            userId: user._id,
+            deltaCoins: creditAmount,
+            deltaPoints: 0,
+            reason: "DEPOSIT_CREDIT",
+            meta: {
+              depositId: deposit._id,
+              paymentMethod: deposit.paymentMethod,
+              paymentReference: deposit.paymentReference,
+            },
+          });
+        }
+        return { deposit };
+      });
+
+      if ("error" in result) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      const populated = await DepositRequest.findById(result.deposit._id)
+        .populate("userId", "email username firstName lastName")
+        .exec();
+      res.json({ deposit: serializeDeposit(populated || result.deposit) });
+    } catch (error) {
+      console.error("Approve deposit error", error);
+      res.status(400).json({ error: "Unable to approve deposit" });
+    }
+  }
+);
+
+router.post(
+  "/admin/deposits/:id/reject",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({
+      adminNote: z.string().max(500).optional(),
+    });
+    try {
+      const payload = schema.parse(req.body || {});
+      await connectDB();
+      const deposit = await DepositRequest.findById(req.params.id).exec();
+      if (!deposit) {
+        return res.status(404).json({ error: "Deposit not found" });
+      }
+      if (deposit.status !== "PENDING") {
+        return res.status(400).json({ error: "Deposit already processed" });
+      }
+      deposit.status = "REJECTED";
+      deposit.adminNote = payload.adminNote;
+      deposit.reviewedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
+      deposit.reviewedAt = new Date();
+      await deposit.save();
+
+      const populated = await DepositRequest.findById(deposit._id)
+        .populate("userId", "email username firstName lastName")
+        .exec();
+      res.json({ deposit: serializeDeposit(populated || deposit) });
+    } catch (error) {
+      console.error("Reject deposit error", error);
+      res.status(400).json({ error: "Unable to reject deposit" });
+    }
+  }
+);
+
 router.get(
   "/admin/settings",
   authMiddleware,
@@ -531,6 +827,7 @@ router.get(
         feeMysteryBox: settings.feeMysteryBox,
         feeChallenge: settings.feeChallenge,
         feePromoCard: settings.feePromoCard,
+        feeTopWinnerPercent: settings.feeTopWinnerPercent,
       },
     });
   }
@@ -545,6 +842,7 @@ router.patch(
       feeMysteryBox: z.number().nonnegative().optional(),
       feeChallenge: z.number().nonnegative().optional(),
       feePromoCard: z.number().nonnegative().optional(),
+      feeTopWinnerPercent: z.number().min(0).max(100).optional(),
     });
     try {
       const payload = schema.parse(req.body);
@@ -555,6 +853,7 @@ router.patch(
           feeMysteryBox: doc.feeMysteryBox,
           feeChallenge: doc.feeChallenge,
           feePromoCard: doc.feePromoCard,
+          feeTopWinnerPercent: doc.feeTopWinnerPercent,
         },
       });
     } catch (error) {
@@ -1087,6 +1386,8 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
   try {
     const { boxId, purchaseId } = bodySchema.parse(req.body);
     await connectDB();
+    const settings = await getPlatformSettings();
+    const topWinnerFeePercent = settings?.feeTopWinnerPercent ?? 0;
 
     const existing = await Purchase.findOne({ purchaseId }).exec();
     if (existing) {
@@ -1119,11 +1420,33 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
       else await purchase.save();
 
       userDoc.coinsBalance -= product.priceCoins;
-      const { rewardPoints, awardedTop, tier } = resolveReward(product, userDoc);
-      userDoc.pointsBalance += rewardPoints;
+      const { rewardPoints: grossRewardPoints, awardedTop, tier } = resolveReward(product, userDoc);
+      let platformFeePoints = 0;
+      if (awardedTop && topWinnerFeePercent > 0) {
+        platformFeePoints = Math.min(
+          grossRewardPoints,
+          Math.max(0, Math.round((grossRewardPoints * topWinnerFeePercent) / 100))
+        );
+      }
+      const netRewardPoints = grossRewardPoints - platformFeePoints;
+      userDoc.pointsBalance += grossRewardPoints;
+      if (platformFeePoints > 0) {
+        userDoc.pointsBalance -= platformFeePoints;
+      }
       if (awardedTop) {
         userDoc.lastTopWinAt = new Date();
       }
+
+      const rewardMeta: Record<string, unknown> = {
+        productId: product._id,
+        purchaseId,
+        tierPoints: tier.points,
+        awardedTop,
+        netPoints: netRewardPoints,
+        grossPoints: grossRewardPoints,
+        platformFeePoints,
+        feePercent: topWinnerFeePercent,
+      };
 
       const ledgerEntries = [
         {
@@ -1136,11 +1459,20 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
         {
           userId: userDoc._id,
           deltaCoins: 0,
-          deltaPoints: rewardPoints,
+          deltaPoints: grossRewardPoints,
           reason: "BOX_REWARD_CREDIT",
-          meta: { productId: product._id, purchaseId, tierPoints: tier.points },
+          meta: rewardMeta,
         },
       ];
+      if (platformFeePoints > 0) {
+        ledgerEntries.push({
+          userId: userDoc._id,
+          deltaCoins: 0,
+          deltaPoints: -platformFeePoints,
+          reason: "TOP_WINNER_FEE",
+          meta: { ...rewardMeta, feeApplied: true },
+        });
+      }
 
       if (session) {
         await userDoc.save({ session });
@@ -1150,12 +1482,19 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
         await Ledger.insertMany(ledgerEntries);
       }
 
-      purchase.rewardPoints = rewardPoints;
+      purchase.rewardPoints = netRewardPoints;
       purchase.status = "COMPLETED";
       if (session) await purchase.save({ session });
       else await purchase.save();
 
-      return { purchase, userDoc, rewardPoints, tier } as const;
+      return {
+        purchase,
+        userDoc,
+        netRewardPoints,
+        grossRewardPoints,
+        platformFeePoints,
+        tier,
+      } as const;
     });
 
     if ("error" in result) {
@@ -1164,7 +1503,9 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
 
     res.json({
       purchaseId,
-      rewardPoints: result.rewardPoints,
+      rewardPoints: result.netRewardPoints,
+      grossRewardPoints: result.grossRewardPoints,
+      platformFeePoints: result.platformFeePoints,
       tier: result.tier,
       balances: {
         coins: result.userDoc.coinsBalance,

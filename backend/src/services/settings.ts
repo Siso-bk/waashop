@@ -16,6 +16,7 @@ export const getPlatformSettings = async () => {
       feeMysteryBox: env.FEE_MYSTERY_BOX,
       feeChallenge: env.FEE_CHALLENGE,
       feePromoCard: env.FEE_PROMO_CARD,
+      feeTopWinnerPercent: env.FEE_TOP_WINNER_PERCENT,
     });
   }
   cachedSettings = settings as IPlatformSettings;

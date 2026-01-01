@@ -54,6 +54,9 @@ export default async function DashboardHome() {
               <p className="text-2xl font-semibold text-emerald-600">{user.pointsBalance.toLocaleString()}</p>
             </div>
           </div>
+          <Link href="/deposits" className="mt-4 inline-flex text-sm font-semibold text-indigo-600">
+            Submit deposit request →
+          </Link>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -101,6 +104,10 @@ export default async function DashboardHome() {
             <Link href="/admin/promo-cards" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
               <p className="text-lg font-semibold text-slate-900">Review promo cards</p>
               <p className="text-sm text-slate-500">Approve sponsored placements.</p>
+            </Link>
+            <Link href="/admin/deposits" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
+              <p className="text-lg font-semibold text-slate-900">Process deposits</p>
+              <p className="text-sm text-slate-500">Approve receipts and credit coins.</p>
             </Link>
             <Link href="/admin/users" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
               <p className="text-lg font-semibold text-slate-900">Manage roles</p>

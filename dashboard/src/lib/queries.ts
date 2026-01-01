@@ -8,6 +8,7 @@ import {
   PromoCardDto,
   AdminUser,
   PlatformSettingsDto,
+  DepositRequestDto,
 } from "@/types";
 
 export const getProfile = async (): Promise<ProfileResponse> => {
@@ -53,4 +54,13 @@ export const getAdminUsers = async () => {
 
 export const getAdminSettings = async () => {
   return backendFetch<{ settings: PlatformSettingsDto }>("/api/admin/settings");
+};
+
+export const getUserDeposits = async () => {
+  return backendFetch<{ deposits: DepositRequestDto[] }>("/api/deposits");
+};
+
+export const getAdminDeposits = async (status?: string) => {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return backendFetch<{ deposits: DepositRequestDto[] }>(`/api/admin/deposits${query}`);
 };

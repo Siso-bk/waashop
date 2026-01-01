@@ -28,6 +28,7 @@ export const env = {
   FEE_MYSTERY_BOX: Number(process.env.FEE_MYSTERY_BOX || 0),
   FEE_CHALLENGE: Number(process.env.FEE_CHALLENGE || 0),
   FEE_PROMO_CARD: Number(process.env.FEE_PROMO_CARD || 0),
+  FEE_TOP_WINNER_PERCENT: Number(process.env.FEE_TOP_WINNER_PERCENT || 10),
 };
 
 export const isProd = env.NODE_ENV === "production";

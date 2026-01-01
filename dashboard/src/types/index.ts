@@ -105,3 +105,25 @@ export interface PlatformSettingsDto {
   feeChallenge: number;
   feePromoCard: number;
 }
+
+export interface DepositRequestDto {
+  id: string;
+  userId?: string;
+  userEmail?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  amountCoins: number;
+  currency?: string;
+  paymentMethod: string;
+  paymentReference?: string;
+  proofUrl?: string;
+  note?: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  adminNote?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  coinsCredited?: number;
+  createdAt: string;
+  updatedAt: string;
+}

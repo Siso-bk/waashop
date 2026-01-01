@@ -163,6 +163,9 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
   if (Math.abs(probabilitySum - 1) > 0.01) {
     return { error: "Tier probabilities must sum to 1" };
   }
+  if (!tiers.some((tier) => tier.isTop)) {
+    return { error: "Mark at least one reward tier as a top winner (set isTop: true)." };
+  }
 
   return {
     data: {

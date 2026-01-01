@@ -50,6 +50,7 @@ export default async function AdminUsersPage() {
                 </td>
                 <td className="px-4 py-3">
                   <RoleForm user={entry} />
+                  <BalanceAdjustForm user={entry} />
                 </td>
               </tr>
             ))}
@@ -101,6 +102,65 @@ async function updateRoles(formData: FormData) {
   await backendFetch(`/api/admin/users/${userId}/roles`, {
     method: "PATCH",
     body: JSON.stringify({ roles }),
+  });
+  revalidatePath("/admin/users");
+}
+
+function BalanceAdjustForm({ user }: { user: AdminUser }) {
+  return (
+    <form action={adjustBalances} className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+      <input type="hidden" name="userId" value={user.id} />
+      <input
+        type="number"
+        name="coinsDelta"
+        step="1"
+        placeholder="+/- coins"
+        className="w-28 rounded-lg border border-slate-200 px-2 py-1"
+      />
+      <input
+        type="number"
+        name="pointsDelta"
+        step="1"
+        placeholder="+/- points"
+        className="w-28 rounded-lg border border-slate-200 px-2 py-1"
+      />
+      <input
+        type="text"
+        name="note"
+        placeholder="Optional note"
+        className="w-32 flex-1 rounded-lg border border-slate-200 px-2 py-1"
+      />
+      <button type="submit" className="rounded-lg bg-slate-900 px-3 py-1.5 font-semibold text-white">
+        Adjust
+      </button>
+    </form>
+  );
+}
+
+async function adjustBalances(formData: FormData) {
+  "use server";
+  const userId = formData.get("userId");
+  if (!userId || typeof userId !== "string") {
+    return;
+  }
+  const coinsDeltaRaw = formData.get("coinsDelta");
+  const pointsDeltaRaw = formData.get("pointsDelta");
+  const coinsDelta = typeof coinsDeltaRaw === "string" && coinsDeltaRaw.trim() !== "" ? Number(coinsDeltaRaw) : 0;
+  const pointsDelta =
+    typeof pointsDeltaRaw === "string" && pointsDeltaRaw.trim() !== "" ? Number(pointsDeltaRaw) : 0;
+  const noteRaw = formData.get("note");
+  const note = typeof noteRaw === "string" && noteRaw.trim().length > 0 ? noteRaw.trim() : undefined;
+
+  if (!Number.isFinite(coinsDelta) || !Number.isFinite(pointsDelta)) {
+    return;
+  }
+  if (coinsDelta === 0 && pointsDelta === 0) {
+    return;
+  }
+
+  await backendFetch("/api/admin/ledger/adjust", {
+    method: "POST",
+    body: JSON.stringify({ userId, coinsDelta, pointsDelta, note }),
   });
   revalidatePath("/admin/users");
 }
