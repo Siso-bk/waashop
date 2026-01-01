@@ -1,5 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusBadge } from "@/components/StatusBadge";
 import { backendFetch } from "@/lib/backendClient";
 import { getAdminProducts, getProfile } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
@@ -19,11 +21,7 @@ export default async function AdminProductsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-sm uppercase tracking-wide text-indigo-600">Admin</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Products</h1>
-        <p className="text-sm text-slate-500">Moderate vendor submissions.</p>
-      </div>
+      <PageHeader eyebrow="Admin" title="Products" description="Moderate vendor submissions." />
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
@@ -47,9 +45,7 @@ export default async function AdminProductsPage() {
                   {typeof product.vendorId === "string" ? product.vendorId : product.vendorId?.name}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(product.status)}`}>
-                    {product.status}
-                  </span>
+                  <StatusBadge status={product.status} />
                 </td>
                 <td className="px-4 py-3">
                   <ProductStatusForm product={product} />
@@ -87,19 +83,6 @@ function ProductStatusForm({ product }: { product: ProductDto }) {
     </form>
   );
 }
-
-const statusClass = (status: string) => {
-  switch (status) {
-    case "ACTIVE":
-      return "bg-emerald-100 text-emerald-700";
-    case "PENDING":
-      return "bg-amber-100 text-amber-700";
-    case "INACTIVE":
-      return "bg-slate-200 text-slate-700";
-    default:
-      return "bg-slate-100 text-slate-600";
-  }
-};
 
 async function updateProductStatus(formData: FormData) {
   "use server";

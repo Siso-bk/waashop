@@ -1,5 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusBadge } from "@/components/StatusBadge";
 import { backendFetch } from "@/lib/backendClient";
 import { getAdminVendors, getProfile } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
@@ -20,11 +22,7 @@ export default async function AdminVendorsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-sm uppercase tracking-wide text-indigo-600">Admin</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Vendors</h1>
-        <p className="text-sm text-slate-500">Approve or suspend vendor accounts.</p>
-      </div>
+      <PageHeader eyebrow="Admin" title="Vendors" description="Approve or suspend vendor accounts." />
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
@@ -44,9 +42,7 @@ export default async function AdminVendorsPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-600">{vendor.ownerUserId}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(vendor.status)}`}>
-                    {vendor.status}
-                  </span>
+                  <StatusBadge status={vendor.status} />
                 </td>
                 <td className="px-4 py-3">
                   <StatusForm vendorId={vendor._id} current={vendor.status} />
@@ -66,20 +62,6 @@ export default async function AdminVendorsPage() {
     </div>
   );
 }
-
-const statusClass = (status: string) => {
-  switch (status) {
-    case "APPROVED":
-      return "bg-emerald-100 text-emerald-700";
-    case "PENDING":
-      return "bg-amber-100 text-amber-700";
-    case "SUSPENDED":
-    case "REJECTED":
-      return "bg-red-100 text-red-700";
-    default:
-      return "bg-slate-100 text-slate-600";
-  }
-};
 
 function StatusForm({ vendorId, current }: { vendorId: string; current: Status }) {
   return (

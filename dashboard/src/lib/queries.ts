@@ -5,6 +5,14 @@ export const getProfile = async (): Promise<ProfileResponse> => {
   return backendFetch<ProfileResponse>("/api/me");
 };
 
+export const getOptionalProfile = async (): Promise<ProfileResponse | null> => {
+  try {
+    return await backendFetch<ProfileResponse>("/api/me");
+  } catch {
+    return null;
+  }
+};
+
 export const getAdminVendors = async (status?: string) => {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return backendFetch<{ vendors: VendorProfile[] }>(`/api/admin/vendors${query}`);

@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/PageHeader";
 import { backendFetch } from "@/lib/backendClient";
 import { getAdminHomeHero, getProfile } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
@@ -24,11 +25,11 @@ export default async function AdminHomeHeroPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm uppercase tracking-wide text-indigo-600">Admin</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Home Hero</h1>
-        <p className="text-sm text-slate-500">Control the headline, description, and CTAs on Waashop&apos;s homepage.</p>
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Home Hero"
+        description="Control the headline, description, and CTAs on Waashop's homepage."
+      />
       {status === "updated" && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           Hero content updated successfully.

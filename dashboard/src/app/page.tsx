@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusBadge } from "@/components/StatusBadge";
 import { getProfile } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
 
@@ -12,26 +14,29 @@ export default async function DashboardHome() {
   return (
     <div className="space-y-6">
       <section className="rounded-3xl bg-gradient-to-r from-slate-900 to-indigo-700 p-8 text-white shadow-lg">
-        <p className="text-sm uppercase text-white/70">Welcome</p>
-        <h1 className="text-3xl font-semibold">{user.firstName ? `Hey, ${user.firstName}!` : "Waashop Portal"}</h1>
-        <p className="mt-2 text-sm text-white/80">
-          Manage vendors, approve products, and keep mystery boxes fair and profitable.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3 text-sm">
-          {isAdmin && (
-            <Link href="/admin/vendors" className="rounded-full bg-white/20 px-4 py-2">
-              Review Vendors
-            </Link>
-          )}
-          {isAdmin && (
-            <Link href="/admin/products" className="rounded-full bg-white/20 px-4 py-2">
-              Review Products
-            </Link>
-          )}
-          <Link href="/vendor" className="rounded-full bg-white/20 px-4 py-2">
-            Vendor Workspace
-          </Link>
-        </div>
+        <PageHeader
+          eyebrow="Welcome"
+          title={user.firstName ? `Hey, ${user.firstName}!` : "Waashop Portal"}
+          description="Manage vendors, approve products, and keep mystery boxes fair and profitable."
+          tone="light"
+          actions={
+            <div className="flex flex-wrap gap-3 text-sm">
+              {isAdmin && (
+                <Link href="/admin/vendors" className="rounded-full bg-white/20 px-4 py-2">
+                  Review Vendors
+                </Link>
+              )}
+              {isAdmin && (
+                <Link href="/admin/products" className="rounded-full bg-white/20 px-4 py-2">
+                  Review Products
+                </Link>
+              )}
+              <Link href="/vendor" className="rounded-full bg-white/20 px-4 py-2">
+                Vendor Workspace
+              </Link>
+            </div>
+          }
+        />
       </section>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -56,9 +61,7 @@ export default async function DashboardHome() {
           {vendor ? (
             <div className="mt-2 space-y-2">
               <p className="text-xl font-semibold text-slate-900">{vendor.name}</p>
-              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusClass(vendor.status)}`}>
-                {vendor.status}
-              </span>
+              <StatusBadge status={vendor.status} />
               <p className="text-sm text-slate-500">{vendor.description || "No description"}</p>
               <Link href="/vendor" className="text-sm font-semibold text-indigo-600">
                 Manage vendor profile
@@ -104,17 +107,3 @@ export default async function DashboardHome() {
     </div>
   );
 }
-
-const statusClass = (status: string) => {
-  switch (status) {
-    case "APPROVED":
-      return "bg-emerald-100 text-emerald-700";
-    case "PENDING":
-      return "bg-amber-100 text-amber-700";
-    case "SUSPENDED":
-    case "REJECTED":
-      return "bg-red-100 text-red-700";
-    default:
-      return "bg-slate-100 text-slate-600";
-  }
-};
