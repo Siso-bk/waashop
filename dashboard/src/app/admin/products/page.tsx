@@ -37,9 +37,15 @@ export default async function AdminProductsPage() {
               <tr key={product._id} className="border-t border-slate-100">
                 <td className="px-4 py-3">
                   <p className="font-semibold text-slate-900">{product.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {product.rewardTiers?.length || 0} reward tiers · {product.priceCoins.toLocaleString()} coins
-                  </p>
+                  {product.type === "CHALLENGE" ? (
+                    <p className="text-xs text-slate-500">
+                      Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets · {product.ticketPriceCoins?.toLocaleString() || "0"} coins
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      {product.rewardTiers?.length || 0} reward tiers · {product.priceCoins.toLocaleString()} coins
+                    </p>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-slate-600">
                   {typeof product.vendorId === "string" ? product.vendorId : product.vendorId?.name}
@@ -50,46 +56,48 @@ export default async function AdminProductsPage() {
                 <td className="px-4 py-3">
                   <div className="space-y-2">
                     <ProductStatusForm product={product} />
-                    <details className="rounded-xl border border-slate-100 p-3">
-                      <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit</summary>
-                      <form action={adminUpdateProduct} className="mt-2 space-y-2 text-xs">
-                        <input type="hidden" name="productId" value={product._id} />
-                        <input
-                          name="productName"
-                          defaultValue={product.name}
-                          className="w-full rounded-lg border border-slate-200 px-2 py-1"
-                        />
-                        <textarea
-                          name="productDescription"
-                          defaultValue={product.description || ""}
-                          rows={2}
-                          className="w-full rounded-lg border border-slate-200 px-2 py-1"
-                        />
-                        <div className="grid gap-2 sm:grid-cols-2">
+                    {product.type === "MYSTERY_BOX" && (
+                      <details className="rounded-xl border border-slate-100 p-3">
+                        <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit</summary>
+                        <form action={adminUpdateProduct} className="mt-2 space-y-2 text-xs">
+                          <input type="hidden" name="productId" value={product._id} />
                           <input
-                            type="number"
-                            name="priceCoins"
-                            defaultValue={product.priceCoins}
+                            name="productName"
+                            defaultValue={product.name}
                             className="w-full rounded-lg border border-slate-200 px-2 py-1"
                           />
-                          <input
-                            type="number"
-                            name="guaranteedMinPoints"
-                            defaultValue={product.guaranteedMinPoints}
+                          <textarea
+                            name="productDescription"
+                            defaultValue={product.description || ""}
+                            rows={2}
                             className="w-full rounded-lg border border-slate-200 px-2 py-1"
                           />
-                        </div>
-                        <textarea
-                          name="rewardTiers"
-                          rows={3}
-                          defaultValue={JSON.stringify(product.rewardTiers || [], null, 2)}
-                          className="w-full rounded-lg border border-slate-200 px-2 py-1"
-                        />
-                        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-1 text-white">
-                          Save
-                        </button>
-                      </form>
-                    </details>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <input
+                              type="number"
+                              name="priceCoins"
+                              defaultValue={product.priceCoins}
+                              className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                            />
+                            <input
+                              type="number"
+                              name="guaranteedMinPoints"
+                              defaultValue={product.guaranteedMinPoints}
+                              className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                            />
+                          </div>
+                          <textarea
+                            name="rewardTiers"
+                            rows={3}
+                            defaultValue={JSON.stringify(product.rewardTiers || [], null, 2)}
+                            className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                          />
+                          <button type="submit" className="rounded-lg bg-slate-900 px-3 py-1 text-white">
+                            Save
+                          </button>
+                        </form>
+                      </details>
+                    )}
                     <form action={adminDeleteProduct}>
                       <input type="hidden" name="productId" value={product._id} />
                       <button type="submit" className="text-xs font-semibold text-red-500">

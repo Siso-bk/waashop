@@ -102,6 +102,18 @@ export default async function DashboardHome() {
               <p className="text-lg font-semibold text-slate-900">Review promo cards</p>
               <p className="text-sm text-slate-500">Approve sponsored placements.</p>
             </Link>
+            <Link href="/admin/users" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
+              <p className="text-lg font-semibold text-slate-900">Manage roles</p>
+              <p className="text-sm text-slate-500">Promote admins and vendors.</p>
+            </Link>
+            <Link href="/admin/settings" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
+              <p className="text-lg font-semibold text-slate-900">Platform settings</p>
+              <p className="text-sm text-slate-500">Update submission fees.</p>
+            </Link>
+            <Link href="/admin/winners" className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
+              <p className="text-lg font-semibold text-slate-900">Post winners</p>
+              <p className="text-sm text-slate-500">Highlight challenge and mystery champions.</p>
+            </Link>
           </div>
         </div>
       ) : (

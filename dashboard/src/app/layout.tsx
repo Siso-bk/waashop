@@ -15,6 +15,9 @@ const navItems = [
   { href: "/admin/home-hero", label: "Admin · Home hero", roles: ["admin"] },
   { href: "/admin/home-highlights", label: "Admin · Home highlights", roles: ["admin"] },
   { href: "/admin/promo-cards", label: "Admin · Promo cards", roles: ["admin"] },
+  { href: "/admin/users", label: "Admin · Users", roles: ["admin"] },
+  { href: "/admin/winners", label: "Admin · Winners", roles: ["admin"] },
+  { href: "/admin/settings", label: "Admin · Settings", roles: ["admin"] },
   { href: "/vendor", label: "Vendor", roles: ["vendor", "admin"] },
 ];
 

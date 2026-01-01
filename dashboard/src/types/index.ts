@@ -32,11 +32,14 @@ export interface ProductDto {
   vendorId: string | { _id: string; name: string };
   name: string;
   description?: string;
-  type: "MYSTERY_BOX" | "STANDARD";
+  type: "MYSTERY_BOX" | "STANDARD" | "CHALLENGE";
   status: "DRAFT" | "PENDING" | "ACTIVE" | "INACTIVE";
   priceCoins: number;
   guaranteedMinPoints?: number;
   rewardTiers?: RewardTierDto[];
+  ticketPriceCoins?: number;
+  ticketCount?: number;
+  ticketsSold?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,4 +87,21 @@ export interface PromoCardDto {
   ctaHref?: string;
   imageUrl?: string;
   status?: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  roles: string[];
+  coinsBalance: number;
+  pointsBalance: number;
+}
+
+export interface PlatformSettingsDto {
+  feeMysteryBox: number;
+  feeChallenge: number;
+  feePromoCard: number;
 }

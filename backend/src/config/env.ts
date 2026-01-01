@@ -25,6 +25,9 @@ export const env = {
     .filter(Boolean),
   PAI_BASE_URL: process.env.PAI_BASE_URL,
   PAI_API_KEY: process.env.PAI_API_KEY,
+  FEE_MYSTERY_BOX: Number(process.env.FEE_MYSTERY_BOX || 0),
+  FEE_CHALLENGE: Number(process.env.FEE_CHALLENGE || 0),
+  FEE_PROMO_CARD: Number(process.env.FEE_PROMO_CARD || 0),
 };
 
 export const isProd = env.NODE_ENV === "production";

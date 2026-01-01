@@ -159,12 +159,18 @@ export default async function VendorDashboardPage() {
                 <StatusBadge status={product.status} />
               </div>
               <p className="mt-2 text-sm text-slate-500">{product.description || "No description"}</p>
-              {product.status === "PENDING" && (
+              {product.type === "CHALLENGE" ? (
+                <p className="mt-2 text-xs text-slate-500">
+                  Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets sold · {product.ticketPriceCoins?.toLocaleString() || ""} coins each
+                </p>
+              ) : null}
+              {product.status === "PENDING" && product.type === "MYSTERY_BOX" && (
                 <div className="mt-3 space-y-3">
                   <details className="rounded-xl border border-slate-200 p-3">
                     <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit product</summary>
                     <form action={vendorUpdateProduct} className="mt-3 space-y-3">
                       <input type="hidden" name="productId" value={product._id} />
+                      <input type="hidden" name="type" value={product.type} />
                       <input
                         type="text"
                         name="productName"

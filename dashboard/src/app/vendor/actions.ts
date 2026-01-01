@@ -100,13 +100,35 @@ export const deleteVendorProductAction = async (
 const extractProductPayload = (formData: FormData): { data?: unknown; error?: string } => {
   const name = formData.get("productName");
   const description = formData.get("productDescription");
-  const priceCoins = Number(formData.get("priceCoins"));
-  const guaranteedMinPoints = Number(formData.get("guaranteedMinPoints"));
-  const tiersRaw = formData.get("rewardTiers");
+  const type = (formData.get("productType") || formData.get("type") || "MYSTERY_BOX") as string;
 
   if (!name || typeof name !== "string") {
     return { error: "Product name is required" };
   }
+
+  if (type === "CHALLENGE") {
+    const ticketPriceCoins = Number(formData.get("ticketPriceCoins"));
+    const ticketCount = Number(formData.get("ticketCount"));
+    if (!Number.isFinite(ticketPriceCoins) || ticketPriceCoins <= 0) {
+      return { error: "Ticket price must be positive" };
+    }
+    if (!Number.isFinite(ticketCount) || ticketCount <= 0) {
+      return { error: "Ticket count must be positive" };
+    }
+    return {
+      data: {
+        type: "CHALLENGE",
+        name,
+        description: typeof description === "string" ? description : undefined,
+        ticketPriceCoins,
+        ticketCount,
+      },
+    };
+  }
+
+  const priceCoins = Number(formData.get("priceCoins"));
+  const guaranteedMinPoints = Number(formData.get("guaranteedMinPoints"));
+  const tiersRaw = formData.get("rewardTiers");
   if (!Number.isFinite(priceCoins) || priceCoins <= 0) {
     return { error: "Price must be a positive number" };
   }
@@ -144,6 +166,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
 
   return {
     data: {
+      type: "MYSTERY_BOX",
       name,
       description: typeof description === "string" ? description : undefined,
       priceCoins,

@@ -77,3 +77,22 @@ export interface PromoCard {
   ctaHref?: string;
   imageUrl?: string;
 }
+
+export interface ChallengeProduct {
+  id: string;
+  name: string;
+  description?: string;
+  ticketPriceCoins: number;
+  ticketCount: number;
+  ticketsSold: number;
+  vendor?: { _id: string; name: string } | string;
+  winnerUserId?: string;
+}
+
+export interface WinnerSpotlightDto {
+  id: string;
+  winnerType: "CHALLENGE" | "MYSTERY_BOX";
+  winnerName: string;
+  headline: string;
+  description?: string;
+}

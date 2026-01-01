@@ -1,5 +1,14 @@
 import { backendFetch } from "@/lib/backendClient";
-import { MysteryBoxDto, LedgerEntryDto, UserProfile, HomeHeroContent, HomeHighlightCard, PromoCard } from "@/types";
+import {
+  MysteryBoxDto,
+  LedgerEntryDto,
+  UserProfile,
+  HomeHeroContent,
+  HomeHighlightCard,
+  PromoCard,
+  ChallengeProduct,
+  WinnerSpotlightDto,
+} from "@/types";
 
 type RawBox = MysteryBoxDto & {
   _id?: { toString: () => string } | string;
@@ -111,6 +120,24 @@ export const getPromoCards = async (): Promise<PromoCard[]> => {
   try {
     const data = await backendFetch<{ promoCards: PromoCard[] }>("/api/promo-cards", { auth: false });
     return data.promoCards;
+  } catch {
+    return [];
+  }
+};
+
+export const getChallenges = async (): Promise<ChallengeProduct[]> => {
+  try {
+    const data = await backendFetch<{ challenges: ChallengeProduct[] }>("/api/challenges", { auth: false });
+    return data.challenges;
+  } catch {
+    return [];
+  }
+};
+
+export const getWinners = async (): Promise<WinnerSpotlightDto[]> => {
+  try {
+    const data = await backendFetch<{ winners: WinnerSpotlightDto[] }>("/api/winners", { auth: false });
+    return data.winners;
   } catch {
     return [];
   }

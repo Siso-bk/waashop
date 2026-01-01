@@ -6,7 +6,7 @@ export interface IRewardTier {
   isTop?: boolean;
 }
 
-export type ProductType = "MYSTERY_BOX" | "STANDARD";
+export type ProductType = "MYSTERY_BOX" | "STANDARD" | "CHALLENGE";
 export type ProductStatus = "DRAFT" | "PENDING" | "ACTIVE" | "INACTIVE";
 
 export interface IProduct extends Document {
@@ -18,6 +18,10 @@ export interface IProduct extends Document {
   priceCoins: number;
   guaranteedMinPoints?: number;
   rewardTiers?: IRewardTier[];
+  ticketPriceCoins?: number;
+  ticketCount?: number;
+  ticketsSold?: number;
+  challengeWinnerUserId?: Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,11 +40,15 @@ const ProductSchema = new Schema<IProduct>(
     vendorId: { type: Schema.Types.ObjectId, ref: "Vendor", required: true },
     name: { type: String, required: true },
     description: { type: String },
-    type: { type: String, enum: ["MYSTERY_BOX", "STANDARD"], default: "MYSTERY_BOX" },
+    type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE"], default: "MYSTERY_BOX" },
     status: { type: String, enum: ["DRAFT", "PENDING", "ACTIVE", "INACTIVE"], default: "DRAFT" },
     priceCoins: { type: Number, required: true },
     guaranteedMinPoints: { type: Number },
     rewardTiers: { type: [RewardTierSchema], default: undefined },
+    ticketPriceCoins: { type: Number },
+    ticketCount: { type: Number },
+    ticketsSold: { type: Number, default: 0 },
+    challengeWinnerUserId: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

@@ -1,5 +1,14 @@
 import { backendFetch } from "@/lib/backendClient";
-import { ProductDto, ProfileResponse, VendorProfile, HomeHeroContent, HomeHighlightCard, PromoCardDto } from "@/types";
+import {
+  ProductDto,
+  ProfileResponse,
+  VendorProfile,
+  HomeHeroContent,
+  HomeHighlightCard,
+  PromoCardDto,
+  AdminUser,
+  PlatformSettingsDto,
+} from "@/types";
 
 export const getProfile = async (): Promise<ProfileResponse> => {
   return backendFetch<ProfileResponse>("/api/me");
@@ -36,4 +45,12 @@ export const getAdminHomeHighlights = async () => {
 
 export const getVendorPromoCards = async () => {
   return backendFetch<{ promoCards: PromoCardDto[] }>("/api/vendors/promo-cards");
+};
+
+export const getAdminUsers = async () => {
+  return backendFetch<{ users: AdminUser[] }>("/api/admin/users");
+};
+
+export const getAdminSettings = async () => {
+  return backendFetch<{ settings: PlatformSettingsDto }>("/api/admin/settings");
 };

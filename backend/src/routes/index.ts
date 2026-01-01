@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { Types } from "mongoose";
 import { z } from "zod";
 import { authMiddleware, loadVendor, requireApprovedVendor, requireRole } from "../middleware/auth";
 import {
@@ -10,12 +11,15 @@ import {
 import { env, isProd } from "../config/env";
 import Ledger from "../models/Ledger";
 import Purchase from "../models/Purchase";
-import User from "../models/User";
+import User, { IUser } from "../models/User";
 import Vendor from "../models/Vendor";
 import Product from "../models/Product";
 import HeroContent, { IHeroContent } from "../models/HeroContent";
 import HomeHighlights, { IHomeHighlights } from "../models/HomeHighlights";
 import PromoCard, { IPromoCard } from "../models/PromoCard";
+import ChallengeEntry from "../models/ChallengeEntry";
+import WinnerSpotlight, { WinnerType } from "../models/WinnerSpotlight";
+import { getPlatformSettings, updatePlatformSettings } from "../services/settings";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
 
@@ -108,6 +112,27 @@ const serializePromoCard = (card: IPromoCard) => ({
   imageUrl: card.imageUrl,
   status: card.status,
 });
+
+const chargeSubmissionFee = async (
+  user: IUser,
+  amount: number,
+  reason: string,
+  meta: Record<string, unknown>
+) => {
+  if (!amount || amount <= 0) return;
+  if (user.coinsBalance < amount) {
+    throw new Error("Insufficient balance to pay submission fee");
+  }
+  user.coinsBalance -= amount;
+  await user.save();
+  await Ledger.create({
+    userId: user._id,
+    deltaCoins: -amount,
+    deltaPoints: 0,
+    reason,
+    meta,
+  });
+};
 
 const forwardPaiRequest = async (path: string, payload: unknown) => {
   if (!env.PAI_BASE_URL) {
@@ -339,6 +364,10 @@ router.post(
     });
     try {
       const payload = schema.parse(req.body);
+      const settings = await getPlatformSettings();
+      await chargeSubmissionFee(req.userDoc!, settings.feePromoCard || 0, "PROMO_CARD_SUBMISSION_FEE", {
+        title: payload.title,
+      });
       await connectDB();
       const card = new PromoCard({
         vendorId: req.vendorDoc!._id,
@@ -442,6 +471,177 @@ router.get(
         status: card.status,
       })),
     });
+  }
+);
+
+router.get(
+  "/admin/users",
+  authMiddleware,
+  requireRole("admin"),
+  async (_req, res) => {
+    await connectDB();
+    const users = await User.find().sort({ createdAt: -1 }).lean();
+    res.json({
+      users: users.map((user) => ({
+        id: user._id.toString(),
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        roles: user.roles,
+        coinsBalance: user.coinsBalance,
+        pointsBalance: user.pointsBalance,
+      })),
+    });
+  }
+);
+
+router.patch(
+  "/admin/users/:id/roles",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({ roles: z.array(z.string().min(1)).min(1) });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const user = await User.findById(req.params.id).exec();
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      user.roles = payload.roles;
+      await user.save();
+      res.json({ user: { id: user._id.toString(), roles: user.roles } });
+    } catch (error) {
+      console.error("Role update error", error);
+      res.status(400).json({ error: "Unable to update roles" });
+    }
+  }
+);
+
+router.get(
+  "/admin/settings",
+  authMiddleware,
+  requireRole("admin"),
+  async (_req, res) => {
+    await connectDB();
+    const settings = await getPlatformSettings();
+    res.json({
+      settings: {
+        feeMysteryBox: settings.feeMysteryBox,
+        feeChallenge: settings.feeChallenge,
+        feePromoCard: settings.feePromoCard,
+      },
+    });
+  }
+);
+
+router.patch(
+  "/admin/settings/fees",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({
+      feeMysteryBox: z.number().nonnegative().optional(),
+      feeChallenge: z.number().nonnegative().optional(),
+      feePromoCard: z.number().nonnegative().optional(),
+    });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const doc = await updatePlatformSettings(payload);
+      res.json({
+        settings: {
+          feeMysteryBox: doc.feeMysteryBox,
+          feeChallenge: doc.feeChallenge,
+          feePromoCard: doc.feePromoCard,
+        },
+      });
+    } catch (error) {
+      console.error("Update settings error", error);
+      res.status(400).json({ error: "Unable to update settings" });
+    }
+  }
+);
+
+router.get(
+  "/admin/winners",
+  authMiddleware,
+  requireRole("admin"),
+  async (_req, res) => {
+    await connectDB();
+    const winners = await WinnerSpotlight.find().sort({ createdAt: -1 }).lean();
+    res.json({
+      winners: winners.map((entry) => ({
+        id: entry._id.toString(),
+        winnerType: entry.winnerType,
+        winnerName: entry.winnerName,
+        headline: entry.headline,
+        description: entry.description,
+        status: entry.status,
+      })),
+    });
+  }
+);
+
+const winnerSchema = z.object({
+  winnerType: z.enum(["CHALLENGE", "MYSTERY_BOX"]),
+  winnerName: z.string().min(2),
+  headline: z.string().min(4),
+  description: z.string().max(400).optional(),
+});
+
+router.post(
+  "/admin/winners",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    try {
+      const payload = winnerSchema.parse(req.body);
+      await connectDB();
+      const entry = await WinnerSpotlight.create({
+        winnerType: payload.winnerType,
+        winnerName: payload.winnerName,
+        headline: payload.headline,
+        description: payload.description,
+        status: "PUBLISHED",
+      });
+      res.json({ winner: entry });
+    } catch (error) {
+      console.error("Create winner error", error);
+      res.status(400).json({ error: "Unable to create winner spotlight" });
+    }
+  }
+);
+
+router.patch(
+  "/admin/winners/:id",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    try {
+      const payload = winnerSchema.extend({ status: z.enum(["PENDING", "PUBLISHED"]).optional() }).partial().parse(req.body);
+      await connectDB();
+      const winner = await WinnerSpotlight.findByIdAndUpdate(req.params.id, payload, { new: true }).lean();
+      if (!winner) {
+        return res.status(404).json({ error: "Winner entry not found" });
+      }
+      res.json({ winner });
+    } catch (error) {
+      console.error("Update winner error", error);
+      res.status(400).json({ error: "Unable to update winner" });
+    }
+  }
+);
+
+router.delete(
+  "/admin/winners/:id",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    await connectDB();
+    await WinnerSpotlight.findByIdAndDelete(req.params.id).exec();
+    res.json({ success: true });
   }
 );
 
@@ -624,6 +824,13 @@ const mysteryBoxSchema = z.object({
   rewardTiers: z.array(rewardTierSchema).min(1),
 });
 
+const challengeSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().max(500).optional(),
+  ticketPriceCoins: z.number().int().positive(),
+  ticketCount: z.number().int().positive(),
+});
+
 router.post(
   "/vendors/products",
   authMiddleware,
@@ -631,11 +838,37 @@ router.post(
   requireApprovedVendor,
   async (req, res) => {
     try {
+      await connectDB();
+      const type = typeof req.body?.type === "string" ? req.body.type : "MYSTERY_BOX";
+      const settings = await getPlatformSettings();
+      const submitter = req.userDoc!;
+      if (type === "CHALLENGE") {
+        const payload = challengeSchema.parse(req.body);
+        await chargeSubmissionFee(submitter, settings.feeChallenge || 0, "CHALLENGE_SUBMISSION_FEE", {
+          name: payload.name,
+        });
+        const product = new Product({
+          vendorId: req.vendorDoc!._id,
+          name: payload.name,
+          description: payload.description,
+          type: "CHALLENGE",
+          status: "PENDING",
+          ticketPriceCoins: payload.ticketPriceCoins,
+          ticketCount: payload.ticketCount,
+          ticketsSold: 0,
+          priceCoins: payload.ticketPriceCoins,
+        });
+        await product.save();
+        return res.json({ product });
+      }
       const payload = mysteryBoxSchema.parse(req.body);
       const totalProbability = payload.rewardTiers.reduce((acc, tier) => acc + tier.probability, 0);
       if (Math.abs(totalProbability - 1) > 0.01) {
         return res.status(400).json({ error: "Reward probabilities must sum to 1" });
       }
+      await chargeSubmissionFee(submitter, settings.feeMysteryBox || 0, "MYSTERY_BOX_SUBMISSION_FEE", {
+        name: payload.name,
+      });
       const product = new Product({
         vendorId: req.vendorDoc!._id,
         name: payload.name,
@@ -812,6 +1045,39 @@ router.get("/boxes", async (_req, res) => {
   });
 });
 
+router.get("/challenges", async (_req, res) => {
+  await connectDB();
+  const challenges = await Product.find({ type: "CHALLENGE", status: "ACTIVE" })
+    .populate("vendorId", "name")
+    .lean();
+  res.json({
+    challenges: challenges.map((challenge) => ({
+      id: challenge._id.toString(),
+      name: challenge.name,
+      description: challenge.description,
+      ticketPriceCoins: challenge.ticketPriceCoins,
+      ticketCount: challenge.ticketCount,
+      ticketsSold: challenge.ticketsSold,
+      vendor: challenge.vendorId,
+      winnerUserId: challenge.challengeWinnerUserId,
+    })),
+  });
+});
+
+router.get("/winners", async (_req, res) => {
+  await connectDB();
+  const winners = await WinnerSpotlight.find({ status: "PUBLISHED" }).sort({ createdAt: -1 }).lean();
+  res.json({
+    winners: winners.map((entry) => ({
+      id: entry._id.toString(),
+      winnerType: entry.winnerType,
+      winnerName: entry.winnerName,
+      headline: entry.headline,
+      description: entry.description,
+    })),
+  });
+});
+
 router.post("/boxes/buy", authMiddleware, async (req, res) => {
   const bodySchema = z.object({
     boxId: z.string().min(1),
@@ -908,6 +1174,138 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Buy box error", error);
     res.status(400).json({ error: "Unable to process purchase" });
+  }
+});
+
+router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
+  const bodySchema = z.object({
+    quantity: z.coerce.number().int().min(1).max(100).default(1),
+  });
+  try {
+    const { quantity: requestedQuantity } = bodySchema.parse(req.body || {});
+    await connectDB();
+    const result = await withMongoSession(async (session) => {
+      const productQuery = Product.findOne({ _id: req.params.id, type: "CHALLENGE", status: "ACTIVE" });
+      if (session) productQuery.session(session);
+      const product = await productQuery;
+      if (!product || !product.ticketCount || !product.ticketPriceCoins) {
+        return { error: "Challenge not found" } as const;
+      }
+      if (product.challengeWinnerUserId) {
+        return { error: "Challenge already completed" } as const;
+      }
+      const remaining = product.ticketCount - (product.ticketsSold || 0);
+      if (remaining <= 0) {
+        return { error: "Challenge sold out" } as const;
+      }
+      const quantity = Math.min(requestedQuantity, remaining);
+      if (quantity <= 0) {
+        return { error: "No tickets remaining" } as const;
+      }
+
+      const userQuery = User.findById(req.userId);
+      if (session) userQuery.session(session);
+      const userDoc = await userQuery;
+      if (!userDoc) {
+        return { error: "User not found" } as const;
+      }
+      const totalCost = quantity * product.ticketPriceCoins;
+      if (userDoc.coinsBalance < totalCost) {
+        return { error: "Insufficient balance" } as const;
+      }
+
+      const vendorQuery = Vendor.findById(product.vendorId);
+      if (session) vendorQuery.session(session);
+      const vendorDoc = await vendorQuery;
+      let vendorOwner: IUser | null = null;
+      if (vendorDoc?.ownerUserId) {
+        const ownerQuery = User.findById(vendorDoc.ownerUserId);
+        if (session) ownerQuery.session(session);
+        vendorOwner = await ownerQuery;
+      }
+
+      userDoc.coinsBalance -= totalCost;
+      if (vendorOwner) {
+        vendorOwner.coinsBalance += totalCost;
+      }
+
+      const startTicket = (product.ticketsSold || 0) + 1;
+      const entries = Array.from({ length: quantity }).map((_, idx) => ({
+        productId: product._id,
+        userId: userDoc._id,
+        ticketNumber: startTicket + idx,
+      }));
+
+      product.ticketsSold = (product.ticketsSold || 0) + quantity;
+
+      if (session) {
+        await userDoc.save({ session });
+        if (vendorOwner) await vendorOwner.save({ session });
+        await ChallengeEntry.insertMany(entries, { session });
+        await product.save({ session });
+      } else {
+        await userDoc.save();
+        if (vendorOwner) await vendorOwner.save();
+        await ChallengeEntry.insertMany(entries);
+        await product.save();
+      }
+
+      const ledgerEntries = [
+        {
+          userId: userDoc._id,
+          deltaCoins: -totalCost,
+          deltaPoints: 0,
+          reason: "CHALLENGE_TICKET_PURCHASE",
+          meta: { productId: product._id, quantity },
+        },
+      ];
+      if (vendorOwner) {
+        ledgerEntries.push({
+          userId: vendorOwner._id,
+          deltaCoins: totalCost,
+          deltaPoints: 0,
+          reason: "CHALLENGE_TICKET_REVENUE",
+          meta: { productId: product._id, quantity },
+        });
+      }
+      if (session) await Ledger.insertMany(ledgerEntries, { session });
+      else await Ledger.insertMany(ledgerEntries);
+
+      let winnerUserId: Types.ObjectId | null = null;
+      if (product.ticketsSold >= (product.ticketCount || 0)) {
+        const totalTickets = product.ticketCount || 0;
+        const winningNumber = Math.floor(Math.random() * totalTickets) + 1;
+        const winnerEntryQuery = ChallengeEntry.findOne({ productId: product._id, ticketNumber: winningNumber });
+        if (session) winnerEntryQuery.session(session);
+        const winnerEntry = await winnerEntryQuery;
+        if (winnerEntry) {
+          winnerUserId = winnerEntry.userId;
+          product.challengeWinnerUserId = winnerEntry.userId;
+          product.status = "INACTIVE";
+          if (session) await product.save({ session });
+          else await product.save();
+        }
+      }
+
+      return {
+        ticketsSold: product.ticketsSold,
+        ticketCount: product.ticketCount,
+        winnerUserId,
+      } as const;
+    });
+
+    if ("error" in result) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({
+      ticketsSold: result.ticketsSold,
+      ticketCount: result.ticketCount,
+      winnerUserId: result.winnerUserId,
+    });
+  } catch (error) {
+    console.error("Buy challenge ticket error", error);
+    res.status(400).json({ error: "Unable to process ticket purchase" });
   }
 });
 

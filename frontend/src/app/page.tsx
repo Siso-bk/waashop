@@ -1,16 +1,28 @@
 import Link from "next/link";
-import { getSessionUser, getActiveBoxes, getHomeHero, getHomeHighlights, getPromoCards } from "@/lib/queries";
+import {
+  getSessionUser,
+  getActiveBoxes,
+  getHomeHero,
+  getHomeHighlights,
+  getPromoCards,
+  getChallenges,
+  getWinners,
+} from "@/lib/queries";
+import type { WinnerSpotlightDto } from "@/types";
 import { BalancePanel } from "@/components/BalancePanel";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
+import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
 
 export default async function HomePage() {
-  const [user, boxes, hero, highlights, promoCards] = await Promise.all([
+  const [user, boxes, hero, highlights, promoCards, challenges, winners] = await Promise.all([
     getSessionUser(),
     getActiveBoxes(),
     getHomeHero(),
     getHomeHighlights(),
     getPromoCards(),
+    getChallenges(),
+    getWinners(),
   ]);
   const isAuthenticated = Boolean(user);
   const primaryCtaLabel = isAuthenticated
@@ -188,6 +200,43 @@ export default async function HomePage() {
         </section>
       )}
 
+      {challenges.length > 0 && (
+        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Challenges</p>
+              <h2 className="text-2xl font-semibold text-black">Play-to-win drops</h2>
+            </div>
+            <p className="text-sm text-gray-500">Buy tickets. Winner takes the prize.</p>
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {challenges.map((challenge) => {
+              const remaining = Math.max(challenge.ticketCount - challenge.ticketsSold, 0);
+              return (
+                <article key={challenge.id} className="flex flex-col gap-3 rounded-2xl border border-black/10 p-4">
+                  <header>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Challenge</p>
+                    <h3 className="text-xl font-semibold text-black">{challenge.name}</h3>
+                    {challenge.description && <p className="text-sm text-gray-600">{challenge.description}</p>}
+                  </header>
+                  <p className="text-xs text-gray-500">
+                    {remaining} of {challenge.ticketCount} tickets remain · {challenge.ticketPriceCoins.toLocaleString()} coins each
+                  </p>
+                  <ChallengePurchaseButton challenge={challenge} />
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {winners.length > 0 && (
+        <section className="space-y-4">
+          <WinnerRow title="Challenge winners" entries={winners.filter((w) => w.winnerType === "CHALLENGE")} />
+          <WinnerRow title="Mystery box winners" entries={winners.filter((w) => w.winnerType === "MYSTERY_BOX")} />
+        </section>
+      )}
+
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -260,6 +309,29 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+    </div>
+  );
+}
+
+function WinnerRow({ title, entries }: { title: string; entries: WinnerSpotlightDto[] }) {
+  if (!entries.length) return null;
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Winners</p>
+          <h2 className="text-lg font-semibold text-black">{title}</h2>
+        </div>
+      </div>
+      <div className="mt-3 flex gap-3 overflow-x-auto pb-3">
+        {entries.map((entry) => (
+          <article key={entry.id} className="min-w-[220px] rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{entry.winnerName}</p>
+            <h3 className="mt-1 text-sm font-semibold text-black">{entry.headline}</h3>
+            {entry.description && <p className="text-xs text-gray-500">{entry.description}</p>}
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
