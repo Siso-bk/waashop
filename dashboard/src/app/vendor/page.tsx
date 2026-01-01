@@ -1,10 +1,11 @@
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
-import { getProfile, getVendorProducts } from "@/lib/queries";
+import { getProfile, getVendorProducts, getVendorPromoCards } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
 import { VendorProfileForm } from "@/components/VendorProfileForm";
 import { VendorProductForm } from "@/components/VendorProductForm";
-import { ProductDto } from "@/types";
+import { VendorPromoForm } from "@/components/VendorPromoForm";
+import { ProductDto, PromoCardDto } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +17,19 @@ export default async function VendorDashboardPage() {
   }
 
   let products: ProductDto[] = [];
+  let promoCards: PromoCardDto[] = [];
   if (vendor && vendor.status === "APPROVED") {
     try {
       const { products: vendorProducts } = await getVendorProducts();
       products = vendorProducts;
     } catch (error) {
       console.error("Failed to load vendor products", error);
+    }
+    try {
+      const { promoCards: cards } = await getVendorPromoCards();
+      promoCards = cards as PromoCardDto[];
+    } catch (error) {
+      console.error("Failed to load promo cards", error);
     }
   }
 
@@ -44,6 +52,32 @@ export default async function VendorDashboardPage() {
         <div className="mt-4">
           <VendorProfileForm vendor={vendor} />
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Promoted card</h2>
+          <span className="text-xs text-slate-500">Optional paid slot</span>
+        </div>
+        {vendor?.status !== "APPROVED" ? (
+          <p className="mt-2 text-sm text-slate-500">Promo cards unlock after approval.</p>
+        ) : (
+          <div className="mt-4 space-y-6">
+            <VendorPromoForm />
+            <div className="space-y-3 text-sm text-slate-600">
+              {promoCards.map((card) => (
+                <div key={card.id} className="rounded-xl border border-slate-100 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold text-slate-900">{card.title}</p>
+                    {card.status && <StatusBadge status={card.status} />}
+                  </div>
+                  {card.description && <p className="mt-2 text-sm text-slate-500">{card.description}</p>}
+                </div>
+              ))}
+              {promoCards.length === 0 && <p>No promo cards submitted yet.</p>}
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

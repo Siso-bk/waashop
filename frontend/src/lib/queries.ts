@@ -1,5 +1,5 @@
 import { backendFetch } from "@/lib/backendClient";
-import { MysteryBoxDto, LedgerEntryDto, UserProfile, HomeHeroContent, HomeHighlightCard } from "@/types";
+import { MysteryBoxDto, LedgerEntryDto, UserProfile, HomeHeroContent, HomeHighlightCard, PromoCard } from "@/types";
 
 type RawBox = MysteryBoxDto & {
   _id?: { toString: () => string } | string;
@@ -104,5 +104,14 @@ export const getHomeHighlights = async (): Promise<HomeHighlightCard[]> => {
     return data.cards;
   } catch {
     return FALLBACK_HOME_HIGHLIGHTS;
+  }
+};
+
+export const getPromoCards = async (): Promise<PromoCard[]> => {
+  try {
+    const data = await backendFetch<{ promoCards: PromoCard[] }>("/api/promo-cards", { auth: false });
+    return data.promoCards;
+  } catch {
+    return [];
   }
 };

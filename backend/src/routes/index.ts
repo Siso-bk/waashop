@@ -15,6 +15,7 @@ import Vendor from "../models/Vendor";
 import Product from "../models/Product";
 import HeroContent, { IHeroContent } from "../models/HeroContent";
 import HomeHighlights, { IHomeHighlights } from "../models/HomeHighlights";
+import PromoCard, { IPromoCard } from "../models/PromoCard";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
 
@@ -96,6 +97,16 @@ const serializeHighlights = (doc?: IHomeHighlights | null): HighlightsResponse =
     ...card,
   }));
 };
+
+const serializePromoCard = (card: IPromoCard) => ({
+  id: card._id.toString(),
+  vendorId: card.vendorId,
+  title: card.title,
+  description: card.description,
+  ctaLabel: card.ctaLabel,
+  ctaHref: card.ctaHref,
+  imageUrl: card.imageUrl,
+});
 
 const forwardPaiRequest = async (path: string, payload: unknown) => {
   if (!env.PAI_BASE_URL) {
@@ -311,6 +322,98 @@ router.put("/admin/home-highlights", authMiddleware, requireRole("admin"), async
     res.status(400).json({ error: "Unable to update home highlights" });
   }
 });
+
+router.post(
+  "/vendors/promo-cards",
+  authMiddleware,
+  loadVendor,
+  requireApprovedVendor,
+  async (req, res) => {
+    const schema = z.object({
+      title: z.string().min(5),
+      description: z.string().max(400).optional(),
+      ctaLabel: z.string().max(60).optional(),
+      ctaHref: z.string().max(200).optional(),
+      imageUrl: z.string().url().optional(),
+    });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const card = new PromoCard({
+        vendorId: req.vendorDoc!._id,
+        title: payload.title,
+        description: payload.description,
+        ctaLabel: payload.ctaLabel,
+        ctaHref: payload.ctaHref,
+        imageUrl: payload.imageUrl,
+        status: "PENDING",
+      });
+      await card.save();
+      res.json({ promoCard: serializePromoCard(card) });
+    } catch (error) {
+      console.error("Create promo card error", error);
+      res.status(400).json({ error: "Unable to submit promo card" });
+    }
+  }
+);
+
+router.get(
+  "/vendors/promo-cards",
+  authMiddleware,
+  loadVendor,
+  requireApprovedVendor,
+  async (req, res) => {
+    await connectDB();
+    const cards = await PromoCard.find({ vendorId: req.vendorDoc!._id }).sort({ createdAt: -1 }).lean();
+    res.json({ promoCards: cards.map(serializePromoCard) });
+  }
+);
+
+router.get("/promo-cards", async (_req, res) => {
+  await connectDB();
+  const cards = await PromoCard.find({ status: "ACTIVE" }).sort({ createdAt: -1 }).limit(5).lean();
+  res.json({ promoCards: cards.map(serializePromoCard) });
+});
+
+router.get(
+  "/admin/promo-cards",
+  authMiddleware,
+  requireRole("admin"),
+  async (_req, res) => {
+    await connectDB();
+    const cards = await PromoCard.find().sort({ createdAt: -1 }).populate("vendorId", "name").lean();
+    res.json({
+      promoCards: cards.map((card) => ({
+        ...serializePromoCard(card as IPromoCard),
+        vendor: (card.vendorId as any)?.name || null,
+        status: card.status,
+      })),
+    });
+  }
+);
+
+router.patch(
+  "/admin/promo-cards/:id/status",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({ status: z.enum(["PENDING", "ACTIVE", "REJECTED"]) });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const card = await PromoCard.findById(req.params.id).exec();
+      if (!card) {
+        return res.status(404).json({ error: "Promo card not found" });
+      }
+      card.status = payload.status;
+      await card.save();
+      res.json({ promoCard: serializePromoCard(card) });
+    } catch (error) {
+      console.error("Promo card status error", error);
+      res.status(400).json({ error: "Unable to update promo card" });
+    }
+  }
+);
 
 router.post("/pai/auth/check-email", async (req, res) => {
   const result = await forwardPaiRequest("/api/auth/check-email", req.body);

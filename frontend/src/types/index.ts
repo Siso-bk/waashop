@@ -68,3 +68,12 @@ export interface HomeHighlightCard {
   textClass?: string;
   borderClass?: string;
 }
+
+export interface PromoCard {
+  id: string;
+  title: string;
+  description?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  imageUrl?: string;
+}

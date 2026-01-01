@@ -96,3 +96,33 @@ export const createVendorProductAction = async (
   revalidatePath("/vendor");
   return {};
 };
+
+export const createPromoCardAction = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  const title = formData.get("promoTitle");
+  const description = formData.get("promoDescription");
+  const ctaLabel = formData.get("promoCtaLabel");
+  const ctaHref = formData.get("promoCtaHref");
+  const imageUrl = formData.get("promoImageUrl");
+
+  if (!title || typeof title !== "string" || title.trim().length < 5) {
+    return { error: "Promo title must be at least 5 characters." };
+  }
+
+  try {
+    await backendFetch("/api/vendors/promo-cards", {
+      method: "POST",
+      body: JSON.stringify({
+        title: title.trim(),
+        description: typeof description === "string" ? description : undefined,
+        ctaLabel: typeof ctaLabel === "string" ? ctaLabel : undefined,
+        ctaHref: typeof ctaHref === "string" ? ctaHref : undefined,
+        imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
+      }),
+    });
+    revalidatePath("/vendor");
+    return {};
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to submit promo card";
+    return { error: message };
+  }
+};

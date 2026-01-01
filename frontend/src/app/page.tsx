@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { getSessionUser, getActiveBoxes, getHomeHero, getHomeHighlights } from "@/lib/queries";
+import { getSessionUser, getActiveBoxes, getHomeHero, getHomeHighlights, getPromoCards } from "@/lib/queries";
 import { BalancePanel } from "@/components/BalancePanel";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
 
 export default async function HomePage() {
-  const [user, boxes, hero, highlights] = await Promise.all([
+  const [user, boxes, hero, highlights, promoCards] = await Promise.all([
     getSessionUser(),
     getActiveBoxes(),
     getHomeHero(),
     getHomeHighlights(),
+    getPromoCards(),
   ]);
   const isAuthenticated = Boolean(user);
   const primaryCtaLabel = isAuthenticated
@@ -148,6 +149,44 @@ export default async function HomePage() {
           </article>
         ))}
       </section>
+
+      {promoCards.length > 0 && (
+        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Promoted</p>
+              <h2 className="text-2xl font-semibold text-black">Featured vendor drops</h2>
+            </div>
+            <p className="text-sm text-gray-500">Sponsored cards curated by Waashop.</p>
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {promoCards.map((card) => (
+              <article key={card.id} className="flex flex-col gap-4 rounded-2xl border border-black/10 p-4">
+                {card.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={card.imageUrl}
+                    alt={card.title}
+                    className="h-40 w-full rounded-xl object-cover"
+                  />
+                )}
+                <div>
+                  <h3 className="text-xl font-semibold text-black">{card.title}</h3>
+                  {card.description && <p className="mt-1 text-sm text-gray-600">{card.description}</p>}
+                </div>
+                {card.ctaLabel && card.ctaHref && (
+                  <Link
+                    href={card.ctaHref}
+                    className="inline-flex w-fit items-center justify-center rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80"
+                  >
+                    {card.ctaLabel}
+                  </Link>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

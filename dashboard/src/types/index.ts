@@ -75,3 +75,13 @@ export interface HomeHighlightCard {
   textClass?: string;
   borderClass?: string;
 }
+
+export interface PromoCardDto {
+  id: string;
+  title: string;
+  description?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  imageUrl?: string;
+  status?: string;
+}
