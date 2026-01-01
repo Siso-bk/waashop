@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
-import { registerAction } from "@/components/login-actions";
+import { registerAction, type AuthActionState } from "@/components/login-actions";
 
-const initialState = { error: "" };
+const initialState: AuthActionState = {};
 
 type RegisterFormProps = {
   email: string;
@@ -15,6 +16,15 @@ type RegisterFormProps = {
 export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
   const [state, action] = useActionState(registerAction, initialState);
   const { pending } = useFormStatus();
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state.redirectTo) {
+      router.push(state.redirectTo);
+      router.refresh();
+    }
+  }, [router, state.redirectTo]);
 
   if (!preToken) {
     return (
@@ -54,14 +64,23 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
         <label htmlFor="register-password" className="text-sm font-medium text-gray-700">
           Password
         </label>
-        <input
-          id="register-password"
-          name="password"
-          type="password"
-          required
-          className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
-          placeholder="Create a secure password"
-        />
+        <div className="relative mt-2">
+          <input
+            id="register-password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            required
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 pr-10 text-sm focus:border-black focus:outline-none"
+            placeholder="Create a secure password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(prev => !prev)}
+            className="absolute inset-y-0 right-0 flex items-center px-3 text-xs text-gray-500"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
       </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
       {onBack && (

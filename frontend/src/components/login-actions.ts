@@ -1,13 +1,13 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { backendFetch } from "@/lib/backendClient";
 import { paiFetch } from "@/lib/paiClient";
 
-interface ActionState {
+export interface AuthActionState {
   error?: string;
+  redirectTo?: string;
 }
 
 const persistToken = async (token: string) => {
@@ -20,10 +20,10 @@ const persistToken = async (token: string) => {
   });
 };
 
-const syncSession = async (): Promise<ActionState> => {
+const syncSession = async (): Promise<AuthActionState> => {
   try {
     await backendFetch("/api/me");
-    redirect("/");
+    return { redirectTo: "/" };
   } catch (error) {
     const cookieStore = await cookies();
     cookieStore.delete(SESSION_COOKIE);
@@ -32,7 +32,7 @@ const syncSession = async (): Promise<ActionState> => {
   }
 };
 
-export const loginAction = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+export const loginAction = async (_prev: AuthActionState, formData: FormData): Promise<AuthActionState> => {
   const email = formData.get("email");
   const password = formData.get("password");
   if (!email || typeof email !== "string" || !password || typeof password !== "string") {
@@ -52,7 +52,7 @@ export const loginAction = async (_prev: ActionState, formData: FormData): Promi
   }
 };
 
-export const registerAction = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+export const registerAction = async (_prev: AuthActionState, formData: FormData): Promise<AuthActionState> => {
   const name = formData.get("name");
   const email = formData.get("email");
   const password = formData.get("password");
