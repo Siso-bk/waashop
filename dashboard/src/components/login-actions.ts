@@ -1,13 +1,13 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { backendFetch } from "@/lib/backendClient";
 import { paiFetch } from "@/lib/paiClient";
 
-interface ActionState {
+export interface ActionState {
   error?: string;
+  redirectTo?: string;
 }
 
 const persistToken = async (token: string) => {
@@ -23,7 +23,7 @@ const persistToken = async (token: string) => {
 const syncPortalSession = async (): Promise<ActionState> => {
   try {
     await backendFetch("/api/me");
-    redirect("/");
+    return { redirectTo: "/" };
   } catch (error) {
     const cookieStore = await cookies();
     cookieStore.delete(SESSION_COOKIE);
