@@ -8,7 +8,11 @@ import { connectDB } from "./lib/db";
 
 const app = express();
 
-const corsOrigins = env.CORS_ORIGIN?.split(",").map((o) => o.trim()).filter(Boolean);
+const corsOrigins = [env.CORS_ORIGIN, env.CORS_EXTRA_ORIGINS]
+  .filter(Boolean)
+  .flatMap((entry) => entry!.split(","))
+  .map((o) => o.trim())
+  .filter((o) => o.length > 0);
 app.use(
   cors({
     origin: corsOrigins && corsOrigins.length > 0 ? corsOrigins : undefined,
