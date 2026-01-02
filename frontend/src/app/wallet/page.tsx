@@ -23,7 +23,7 @@ export default async function WalletPage() {
         <h1 className="text-2xl font-semibold text-black">Balances & ledger</h1>
         <p className="text-sm text-gray-600">Track every debit and credit in one place.</p>
       </header>
-      <BalancePanel minis={user.minisBalance} />
+      <BalancePanel minis={user.minisBalance ?? (user as any).coinsBalance ?? 0} />
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>

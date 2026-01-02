@@ -1,5 +1,5 @@
 interface Props {
-  minis: number;
+  minis?: number;
   tone?: "light" | "dark";
 }
 
@@ -17,7 +17,7 @@ export function BalancePanel({ minis, tone = "light" }: Props) {
     <div>
       <div className={container}>
         <p className={`text-xs uppercase tracking-[0.3em] ${label}`}>MIN</p>
-        <p className="mt-2 text-3xl font-semibold">{minis.toLocaleString()}</p>
+        <p className="mt-2 text-3xl font-semibold">{(minis ?? 0).toLocaleString()}</p>
         <p className={`text-xs ${description}`}>Spend MIN to open boxes</p>
       </div>
     </div>
