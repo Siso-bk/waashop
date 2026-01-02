@@ -183,7 +183,7 @@ export default async function HomePage() {
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>Box {box.boxId}</span>
                 <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                  {box.priceMinis.toLocaleString()}MIN
+                  {(box.priceMinis ?? 0).toLocaleString()}MIN
                 </span>
               </div>
               <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>

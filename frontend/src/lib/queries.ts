@@ -22,9 +22,9 @@ const mapBox = (box: RawBox): MysteryBoxDto => ({
   id: typeof box._id === "string" ? box._id : box._id?.toString?.() || box.id,
   boxId: box.boxId,
   name: box.name,
-  priceMinis: box.priceMinis,
-  guaranteedMinMinis: box.guaranteedMinMinis,
-  rewardTiers: box.rewardTiers,
+  priceMinis: (box as any).priceMinis ?? (box as any).priceCoins ?? 0,
+  guaranteedMinMinis: (box as any).guaranteedMinMinis ?? (box as any).guaranteedMinCoins ?? 0,
+  rewardTiers: (box as any).rewardTiers ?? [],
 });
 
 export const getActiveBoxes = async (): Promise<MysteryBoxDto[]> => {
