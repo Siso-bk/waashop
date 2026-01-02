@@ -3,7 +3,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
-import { getUserDeposits } from "@/lib/queries";
+import { getUserDeposits, getUserWithdrawals } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
 import { PendingButton } from "@/components/PendingButton";
@@ -98,6 +98,72 @@ export default async function DepositsPage() {
         <h2 className="text-base font-semibold text-slate-900">Your deposit requests</h2>
         <Suspense fallback={<DepositTableSkeleton />}>
           <DepositTable />
+        </Suspense>
+      </section>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-slate-900">Sell MINIS (withdraw)</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Share payout details so the admin can send your withdrawal.
+        </p>
+        <form action={createWithdrawal} className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="text-sm text-slate-600">
+            Amount (MINIS)
+            <input
+              name="amountMinis"
+              type="number"
+              min={1}
+              step={1}
+              required
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2 font-semibold"
+            />
+          </label>
+          <label className="text-sm text-slate-600">
+            Payout method
+            <input
+              name="payoutMethod"
+              placeholder="Bank transfer, M-Pesa, USDT..."
+              required
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2"
+            />
+          </label>
+          <label className="text-sm text-slate-600">
+            Payout address / account
+            <input
+              name="payoutAddress"
+              placeholder="Account number or wallet address"
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2"
+            />
+          </label>
+          <label className="text-sm text-slate-600">
+            Account name (optional)
+            <input
+              name="accountName"
+              placeholder="Name on the account"
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2"
+            />
+          </label>
+          <label className="text-sm text-slate-600 md:col-span-2">
+            Notes to admin
+            <textarea
+              name="note"
+              rows={3}
+              placeholder="Anything else we should know?"
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2"
+            />
+          </label>
+          <div className="md:col-span-2">
+            <PendingButton className="w-full rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 md:w-auto">
+              Submit withdrawal
+            </PendingButton>
+          </div>
+        </form>
+      </section>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-slate-900">Your withdrawal requests</h2>
+        <Suspense fallback={<WithdrawalTableSkeleton />}>
+          <WithdrawalTable />
         </Suspense>
       </section>
     </div>
@@ -195,6 +261,84 @@ function DepositTableSkeleton() {
   );
 }
 
+async function WithdrawalTable() {
+  const { withdrawals } = await getUserWithdrawals();
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Submitted</th>
+            <th className="px-4 py-3">Amount</th>
+            <th className="px-4 py-3">Payout</th>
+            <th className="px-4 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {withdrawals.map((entry) => (
+            <tr key={entry.id} className="border-t border-slate-100">
+              <td className="px-4 py-3 text-xs text-slate-500">{new Date(entry.createdAt).toLocaleString()}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900">{entry.amountMinis.toLocaleString()} MINIS</td>
+              <td className="px-4 py-3 text-xs text-slate-600">
+                <p>{entry.payoutMethod}</p>
+                {entry.payoutAddress && <p className="text-slate-400">{entry.payoutAddress}</p>}
+                {entry.accountName && <p className="text-slate-400">{entry.accountName}</p>}
+                {entry.note && <p className="mt-1 text-slate-400">{entry.note}</p>}
+              </td>
+              <td className="px-4 py-3">
+                <StatusBadge status={entry.status} />
+                {entry.adminNote && <p className="mt-1 text-xs text-slate-500">{entry.adminNote}</p>}
+              </td>
+            </tr>
+          ))}
+          {withdrawals.length === 0 && (
+            <tr>
+              <td className="px-4 py-6 text-center text-slate-500" colSpan={4}>
+                No withdrawal requests yet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function WithdrawalTableSkeleton() {
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Submitted</th>
+            <th className="px-4 py-3">Amount</th>
+            <th className="px-4 py-3">Payout</th>
+            <th className="px-4 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <tr key={idx} className="border-t border-slate-100">
+              <td className="px-4 py-3">
+                <div className="h-4 w-32 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-24 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 w-36 rounded bg-slate-200 animate-pulse" />
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-6 w-20 rounded bg-slate-100 animate-pulse" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 async function createDeposit(formData: FormData) {
   "use server";
   const amountMinisRaw = formData.get("amountMinis");
@@ -219,6 +363,33 @@ async function createDeposit(formData: FormData) {
     body: JSON.stringify(payload),
   });
   revalidatePath("/deposits");
+  revalidatePath("/");
+}
+
+async function createWithdrawal(formData: FormData) {
+  "use server";
+  const amountMinisRaw = formData.get("amountMinis");
+  const payoutMethod = formData.get("payoutMethod");
+  if (!amountMinisRaw || !payoutMethod) {
+    return;
+  }
+  const amountMinis = Number(amountMinisRaw);
+  if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
+    return;
+  }
+  const payload = {
+    amountMinis,
+    payoutMethod: String(payoutMethod),
+    payoutAddress: valueOrUndefined(formData.get("payoutAddress")),
+    accountName: valueOrUndefined(formData.get("accountName")),
+    note: valueOrUndefined(formData.get("note")),
+  };
+  await backendFetch("/api/withdrawals", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  revalidatePath("/deposits");
+  revalidatePath("/");
 }
 
 const valueOrUndefined = (value: FormDataEntryValue | null) => {

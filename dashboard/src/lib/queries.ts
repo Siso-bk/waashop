@@ -9,6 +9,7 @@ import {
   AdminUser,
   PlatformSettingsDto,
   DepositRequestDto,
+  WithdrawalRequestDto,
   NotificationDto,
 } from "@/types";
 
@@ -64,6 +65,15 @@ export const getUserDeposits = async () => {
 export const getAdminDeposits = async (status?: string) => {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return backendFetch<{ deposits: DepositRequestDto[] }>(`/api/admin/deposits${query}`);
+};
+
+export const getUserWithdrawals = async () => {
+  return backendFetch<{ withdrawals: WithdrawalRequestDto[] }>("/api/withdrawals");
+};
+
+export const getAdminWithdrawals = async (status?: string) => {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return backendFetch<{ withdrawals: WithdrawalRequestDto[] }>(`/api/admin/withdrawals${query}`);
 };
 
 export const getNotifications = async () => {

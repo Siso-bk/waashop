@@ -140,6 +140,26 @@ export interface DepositRequestDto {
   updatedAt: string;
 }
 
+export interface WithdrawalRequestDto {
+  id: string;
+  userId?: string;
+  userEmail?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  amountMinis: number;
+  payoutMethod: string;
+  payoutAddress?: string;
+  accountName?: string;
+  note?: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  adminNote?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface NotificationDto {
   id: string;
   type: string;

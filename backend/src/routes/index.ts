@@ -20,6 +20,7 @@ import PromoCard, { IPromoCard } from "../models/PromoCard";
 import ChallengeEntry from "../models/ChallengeEntry";
 import WinnerSpotlight, { WinnerType } from "../models/WinnerSpotlight";
 import DepositRequest, { IDepositRequest } from "../models/DepositRequest";
+import WithdrawalRequest, { IWithdrawalRequest } from "../models/WithdrawalRequest";
 import Notification from "../models/Notification";
 import { getPlatformSettings, updatePlatformSettings } from "../services/settings";
 import { withMongoSession, connectDB } from "../lib/db";
@@ -268,6 +269,50 @@ const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.Ob
     minisCredited: deposit.minisCredited,
     createdAt: deposit.createdAt.toISOString(),
     updatedAt: deposit.updatedAt.toISOString(),
+  };
+};
+
+const serializeWithdrawal = (
+  withdrawal: IWithdrawalRequest & { userId?: IUser | Types.ObjectId | string }
+) => {
+  const userField = withdrawal.userId as IUser | Types.ObjectId | string | undefined;
+  let userId: string | undefined;
+  let userEmail: string | undefined;
+  let username: string | undefined;
+  let firstName: string | undefined;
+  let lastName: string | undefined;
+  if (userField) {
+    if (typeof userField === "string") {
+      userId = userField;
+    } else if (userField instanceof Types.ObjectId) {
+      userId = userField.toString();
+    } else {
+      userId = userField._id?.toString();
+      userEmail = userField.email;
+      username = userField.username;
+      firstName = userField.firstName;
+      lastName = userField.lastName;
+    }
+  }
+
+  return {
+    id: withdrawal._id.toString(),
+    userId,
+    userEmail,
+    username,
+    firstName,
+    lastName,
+    amountMinis: withdrawal.amountMinis,
+    payoutMethod: withdrawal.payoutMethod,
+    payoutAddress: withdrawal.payoutAddress,
+    accountName: withdrawal.accountName,
+    note: withdrawal.note,
+    status: withdrawal.status,
+    adminNote: withdrawal.adminNote,
+    reviewedBy: withdrawal.reviewedBy ? withdrawal.reviewedBy.toString() : undefined,
+    reviewedAt: withdrawal.reviewedAt?.toISOString(),
+    createdAt: withdrawal.createdAt.toISOString(),
+    updatedAt: withdrawal.updatedAt.toISOString(),
   };
 };
 
@@ -988,6 +1033,191 @@ router.post(
     } catch (error) {
       console.error("Reject deposit error", error);
       res.status(400).json({ error: "Unable to reject deposit" });
+    }
+  }
+);
+
+router.get("/withdrawals", authMiddleware, async (req, res) => {
+  await connectDB();
+  const withdrawals = await WithdrawalRequest.find({ userId: req.userId })
+    .sort({ createdAt: -1 })
+    .exec();
+  res.json({ withdrawals: withdrawals.map((withdrawal) => serializeWithdrawal(withdrawal)) });
+});
+
+router.post("/withdrawals", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    amountMinis: z.number().finite().min(1),
+    payoutMethod: z.string().min(1).max(100),
+    payoutAddress: z.string().max(200).optional(),
+    accountName: z.string().max(120).optional(),
+    note: z.string().max(500).optional(),
+  });
+
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const user = await User.findById(req.userId).exec();
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    ensureMinisBalance(user);
+    if (user.minisBalance < payload.amountMinis) {
+      return res.status(400).json({ error: "Insufficient balance" });
+    }
+
+    user.minisBalance -= payload.amountMinis;
+    const withdrawal = await WithdrawalRequest.create({
+      userId: req.userId,
+      amountMinis: payload.amountMinis,
+      payoutMethod: payload.payoutMethod,
+      payoutAddress: payload.payoutAddress,
+      accountName: payload.accountName,
+      note: payload.note,
+      status: "PENDING",
+    });
+    await user.save();
+    await Ledger.create({
+      userId: user._id,
+      deltaMinis: -payload.amountMinis,
+      reason: "WITHDRAW_REQUEST",
+      meta: { withdrawalId: withdrawal._id, payoutMethod: payload.payoutMethod },
+    });
+
+    await createNotification(req.userId, {
+      type: "WITHDRAW_SUBMITTED",
+      title: `Withdrawal requested: ${formatMinis(payload.amountMinis)}`,
+      body: "We received your payout request and will review it shortly.",
+      meta: { withdrawalId: withdrawal._id, amountMinis: payload.amountMinis },
+    });
+
+    res.status(201).json({ withdrawal: serializeWithdrawal(withdrawal) });
+  } catch (error) {
+    console.error("Create withdrawal error", error);
+    res.status(400).json({ error: "Unable to submit withdrawal" });
+  }
+});
+
+router.get(
+  "/admin/withdrawals",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const querySchema = z.object({
+      status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
+    });
+    try {
+      const params = querySchema.parse(req.query);
+      await connectDB();
+      const filter = params.status ? { status: params.status } : {};
+      const withdrawals = await WithdrawalRequest.find(filter)
+        .sort({ createdAt: -1 })
+        .populate("userId", "email username firstName lastName")
+        .lean();
+      res.json({
+        withdrawals: withdrawals.map((withdrawal) =>
+          serializeWithdrawal(withdrawal as IWithdrawalRequest)
+        ),
+      });
+    } catch (error) {
+      console.error("Admin withdrawals error", error);
+      res.status(400).json({ error: "Unable to load withdrawals" });
+    }
+  }
+);
+
+router.post(
+  "/admin/withdrawals/:id/approve",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({
+      adminNote: z.string().max(200).optional(),
+      payoutReference: z.string().max(120).optional(),
+    });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const withdrawal = await WithdrawalRequest.findById(req.params.id).exec();
+      if (!withdrawal) {
+        return res.status(404).json({ error: "Withdrawal not found" });
+      }
+      if (withdrawal.status !== "PENDING") {
+        return res.status(400).json({ error: "Withdrawal already processed" });
+      }
+
+      withdrawal.status = "APPROVED";
+      withdrawal.adminNote = payload.adminNote;
+      withdrawal.reviewedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
+      withdrawal.reviewedAt = new Date();
+      await withdrawal.save();
+
+      const serialized = serializeWithdrawal(withdrawal);
+      await createNotification(withdrawal.userId, {
+        type: "WITHDRAW_APPROVED",
+        title: `Withdrawal approved: ${formatMinis(serialized.amountMinis)}`,
+        body: payload.adminNote || "Your withdrawal has been approved.",
+        meta: { withdrawalId: serialized.id, amountMinis: serialized.amountMinis },
+      });
+
+      res.json({ withdrawal: serialized });
+    } catch (error) {
+      console.error("Approve withdrawal error", error);
+      res.status(400).json({ error: "Unable to approve withdrawal" });
+    }
+  }
+);
+
+router.post(
+  "/admin/withdrawals/:id/reject",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({
+      adminNote: z.string().max(200).optional(),
+    });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const withdrawal = await WithdrawalRequest.findById(req.params.id).exec();
+      if (!withdrawal) {
+        return res.status(404).json({ error: "Withdrawal not found" });
+      }
+      if (withdrawal.status !== "PENDING") {
+        return res.status(400).json({ error: "Withdrawal already processed" });
+      }
+
+      const user = await User.findById(withdrawal.userId).exec();
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      ensureMinisBalance(user);
+      user.minisBalance += withdrawal.amountMinis;
+      withdrawal.status = "REJECTED";
+      withdrawal.adminNote = payload.adminNote;
+      withdrawal.reviewedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
+      withdrawal.reviewedAt = new Date();
+      await Promise.all([user.save(), withdrawal.save()]);
+
+      await Ledger.create({
+        userId: user._id,
+        deltaMinis: withdrawal.amountMinis,
+        reason: "WITHDRAW_REVERSED",
+        meta: { withdrawalId: withdrawal._id },
+      });
+
+      const serialized = serializeWithdrawal(withdrawal);
+      await createNotification(withdrawal.userId, {
+        type: "WITHDRAW_REJECTED",
+        title: `Withdrawal rejected: ${formatMinis(serialized.amountMinis)}`,
+        body: payload.adminNote || "Please contact support for help completing your withdrawal.",
+        meta: { withdrawalId: serialized.id, amountMinis: serialized.amountMinis },
+      });
+
+      res.json({ withdrawal: serialized });
+    } catch (error) {
+      console.error("Reject withdrawal error", error);
+      res.status(400).json({ error: "Unable to reject withdrawal" });
     }
   }
 );

@@ -4,6 +4,8 @@ import { LedgerTable } from "@/components/LedgerTable";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import Link from "next/link";
 import { formatMinis } from "@/lib/minis";
+import { backendFetch } from "@/lib/backendClient";
+import { revalidatePath } from "next/cache";
 
 export default async function WalletPage() {
   const user = await getSessionUser();
@@ -24,9 +26,108 @@ export default async function WalletPage() {
       <header className="space-y-1">
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Wallet</p>
         <h1 className="text-2xl font-semibold text-black">Balance</h1>
-        <p className="text-sm text-gray-600">BUY SELL DEPOSIT WITHDRAW</p>
+        <p className="text-sm text-gray-600">Buy, sell, deposit, and withdraw MINIS.</p>
       </header>
       <BalancePanel minis={minis} />
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Buy minis</p>
+          <h2 className="mt-2 text-lg font-semibold text-black">Deposit & top up</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Submit your receipt and we&apos;ll credit your balance. Status updates appear in notifications.
+          </p>
+          <form action={createDeposit} className="mt-4 space-y-3 text-sm text-gray-700">
+            <input
+              name="amountMinis"
+              type="number"
+              min={1}
+              step={1}
+              required
+              placeholder="Amount (MINIS)"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <input
+              name="currency"
+              placeholder="Currency (USD, ETB, USDT...)"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <input
+              name="paymentMethod"
+              required
+              placeholder="Payment method"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <input
+              name="paymentReference"
+              placeholder="Transaction reference"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <input
+              name="proofUrl"
+              placeholder="Proof link (optional)"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <textarea
+              name="note"
+              rows={3}
+              placeholder="Notes to admin"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <button
+              type="submit"
+              className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-900"
+            >
+              Submit deposit
+            </button>
+          </form>
+        </div>
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Sell minis</p>
+          <h2 className="mt-2 text-lg font-semibold text-black">Withdraw to cash</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Share payout details and the admin will review. You&apos;ll see updates in notifications.
+          </p>
+          <form action={createWithdrawal} className="mt-4 space-y-3 text-sm text-gray-700">
+            <input
+              name="amountMinis"
+              type="number"
+              min={1}
+              step={1}
+              required
+              placeholder="Amount (MINIS)"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <input
+              name="payoutMethod"
+              required
+              placeholder="Payout method"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <input
+              name="payoutAddress"
+              placeholder="Account / wallet address"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <input
+              name="accountName"
+              placeholder="Account name"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <textarea
+              name="note"
+              rows={3}
+              placeholder="Notes to admin"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <button
+              type="submit"
+              className="w-full rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-100"
+            >
+              Submit withdrawal
+            </button>
+          </form>
+        </div>
+      </section>
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -61,3 +162,60 @@ export default async function WalletPage() {
     </div>
   );
 }
+
+async function createDeposit(formData: FormData) {
+  "use server";
+  const amountMinisRaw = formData.get("amountMinis");
+  const paymentMethod = formData.get("paymentMethod");
+  if (!amountMinisRaw || !paymentMethod) {
+    return;
+  }
+  const amountMinis = Number(amountMinisRaw);
+  if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
+    return;
+  }
+  const payload = {
+    amountMinis,
+    currency: valueOrUndefined(formData.get("currency")),
+    paymentMethod: String(paymentMethod),
+    paymentReference: valueOrUndefined(formData.get("paymentReference")),
+    proofUrl: valueOrUndefined(formData.get("proofUrl")),
+    note: valueOrUndefined(formData.get("note")),
+  };
+  await backendFetch("/api/deposits", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  revalidatePath("/wallet");
+}
+
+async function createWithdrawal(formData: FormData) {
+  "use server";
+  const amountMinisRaw = formData.get("amountMinis");
+  const payoutMethod = formData.get("payoutMethod");
+  if (!amountMinisRaw || !payoutMethod) {
+    return;
+  }
+  const amountMinis = Number(amountMinisRaw);
+  if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
+    return;
+  }
+  const payload = {
+    amountMinis,
+    payoutMethod: String(payoutMethod),
+    payoutAddress: valueOrUndefined(formData.get("payoutAddress")),
+    accountName: valueOrUndefined(formData.get("accountName")),
+    note: valueOrUndefined(formData.get("note")),
+  };
+  await backendFetch("/api/withdrawals", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  revalidatePath("/wallet");
+}
+
+const valueOrUndefined = (value: FormDataEntryValue | null) => {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};

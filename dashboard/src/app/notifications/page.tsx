@@ -68,6 +68,11 @@ async function NotificationsList() {
                 View deposit →
               </Link>
             )}
+            {notification.meta?.withdrawalId != null && (
+              <Link href="/deposits" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                View withdrawal →
+              </Link>
+            )}
           </div>
         </article>
       ))}
