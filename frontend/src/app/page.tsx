@@ -175,7 +175,7 @@ export default async function HomePage() {
               className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
             >
               <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Box {box.boxId}</span>
+                <span>PRICE PER BOX</span>
                 <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
                   {formatMinis(box.priceMinis ?? 0)}
                 </span>
@@ -188,7 +188,7 @@ export default async function HomePage() {
                 <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />
               </div>
               <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
-                <span>Server draw + automatic ledger entries</span>
+                <span>TYR AND SEE IT NOW</span>
               </div>
               <div className="mt-6">
                 <BoxPurchaseButton box={box} disabled={!user} />

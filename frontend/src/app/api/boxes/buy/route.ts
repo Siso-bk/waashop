@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/backendClient";
+import { env } from "@/lib/env";
 import { SESSION_COOKIE } from "@/lib/constants";
 
 export async function POST(request: Request) {
@@ -12,11 +12,18 @@ export async function POST(request: Request) {
 
   try {
     const payload = await request.json();
-    const data = await backendFetch<{ purchaseId: string; rewardMinis: number; tier?: unknown }>("/api/boxes/buy", {
+    const response = await fetch(`${env.API_BASE_URL}/api/boxes/buy`, {
       method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
+      cache: "no-store",
     });
-    return NextResponse.json(data);
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to complete purchase";
     return NextResponse.json({ error: message }, { status: 400 });

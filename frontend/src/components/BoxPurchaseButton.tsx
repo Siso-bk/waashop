@@ -70,7 +70,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
         disabled={disabled || isLoading}
         className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        {isLoading ? "Processing..." : `Open for ${formatMinis(box.priceMinis ?? 0)}`}
+        {isLoading ? "Processing..." : `Join for ${formatMinis(box.priceMinis ?? 0)}`}
       </button>
       {error && <p className="text-sm text-red-500">{error}</p>}
       {result && showResult && (
@@ -86,7 +86,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
               onClick={() => setShowResult(false)}
               className="mt-4 w-full rounded-full border border-white px-4 py-2 text-sm font-semibold text-white hover:bg-white hover:text-black"
             >
-              Close
+              OK
             </button>
           </div>
         </div>
@@ -94,3 +94,4 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
     </div>
   );
 }
+

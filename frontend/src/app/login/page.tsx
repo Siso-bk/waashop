@@ -17,15 +17,20 @@ const extractPaiToken = (params?: SearchParams): string | null => {
   return null;
 };
 
-export default async function LoginPage({ searchParams }: { searchParams?: SearchParams }) {
-  const paiToken = extractPaiToken(searchParams);
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}) {
+  const resolvedParams = searchParams ? await searchParams : undefined;
+  const paiToken = extractPaiToken(resolvedParams);
   const redirectParam =
-    typeof searchParams?.redirect === "string" && searchParams.redirect.length > 0
-      ? searchParams.redirect
+    typeof resolvedParams?.redirect === "string" && resolvedParams.redirect.length > 0
+      ? resolvedParams.redirect
       : undefined;
   const errorMessage =
-    typeof searchParams?.error === "string" && searchParams.error.length > 0
-      ? searchParams.error
+    typeof resolvedParams?.error === "string" && resolvedParams.error.length > 0
+      ? resolvedParams.error
       : null;
 
   if (paiToken) {
