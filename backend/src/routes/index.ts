@@ -288,6 +288,12 @@ const formatMinis = (value: number) => {
   return `${amount.toLocaleString()} ${unit}`;
 };
 
+const ensureMinisBalance = (user: IUser) => {
+  if (!Number.isFinite(user.coinsBalance)) {
+    user.coinsBalance = 0;
+  }
+};
+
 const chargeSubmissionFee = async (
   user: IUser,
   amount: number,
@@ -295,6 +301,7 @@ const chargeSubmissionFee = async (
   meta: Record<string, unknown>
 ) => {
   if (!amount || amount <= 0) return;
+  ensureMinisBalance(user);
   if (user.minisBalance < amount) {
     throw new Error("Insufficient balance to pay submission fee");
   }
@@ -867,6 +874,7 @@ router.post(
         if (!user) {
           return { error: "User not found" } as const;
         }
+        ensureMinisBalance(user);
         const creditAmount = deposit.amountMinis;
         user.minisBalance += creditAmount;
         deposit.status = "APPROVED";
@@ -1611,6 +1619,7 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
 
       if (!userDoc) throw new Error("User not found");
       if (!product) return { error: "Mystery box not found" } as const;
+      ensureMinisBalance(userDoc);
       const priceMinis = (product as any).priceMinis ?? (product as any).priceCoins;
       if (userDoc.minisBalance < priceMinis) {
         return { error: "Insufficient balance" } as const;

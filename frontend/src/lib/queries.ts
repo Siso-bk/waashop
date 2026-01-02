@@ -140,7 +140,7 @@ const FALLBACK_HOME_HIGHLIGHTS: HomeHighlightCard[] = [
     description: "Sessions rotate every seven days and Waashop validates them before loading balances or vendor access.",
     guestCtaLabel: "Sign in",
     guestCtaHref: "/login",
-    authedCtaLabel: "Open featured box",
+    authedCtaLabel: "Join featured box",
     authedCtaHref: "/boxes/BOX_1000",
   },
 ];
