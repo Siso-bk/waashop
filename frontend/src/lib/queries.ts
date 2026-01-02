@@ -73,6 +73,40 @@ const FALLBACK_HOME_HERO: HomeHeroContent = {
   secondaryCtaAuthedHref: "/wallet",
   backgroundClass: "bg-black",
   textClass: "text-white",
+  cards: [
+    {
+      id: "hero-card-1",
+      tagline: "Transparency",
+      title: "Verified drops",
+      body: "Every box shows the guaranteed minimum before you buy.",
+      imageUrl: "",
+      overlayOpacity: 0.35,
+      ctaLabel: "See drops",
+      ctaHref: "/",
+      order: 0,
+      status: "PUBLISHED",
+    },
+    {
+      id: "hero-card-2",
+      tagline: "Always synced",
+      title: "Wallet-first",
+      body: "Coins and points move with you across the Mini App, web, and dashboard.",
+      imageUrl: "",
+      overlayOpacity: 0.35,
+      order: 1,
+      status: "PUBLISHED",
+    },
+    {
+      id: "hero-card-3",
+      tagline: "Live ledger",
+      title: "Instant settlement",
+      body: "Wins land in your ledger right away with tamperproof tracking.",
+      imageUrl: "",
+      overlayOpacity: 0.35,
+      order: 2,
+      status: "PUBLISHED",
+    },
+  ],
 };
 
 export const getHomeHero = async (): Promise<HomeHeroContent> => {

@@ -53,6 +53,20 @@ export interface HomeHeroContent {
   secondaryCtaAuthedHref?: string;
   backgroundClass?: string;
   textClass?: string;
+  cards?: HomeHeroCard[];
+}
+
+export interface HomeHeroCard {
+  id: string;
+  tagline?: string;
+  title: string;
+  body: string;
+  imageUrl?: string;
+  overlayOpacity?: number;
+  ctaLabel?: string;
+  ctaHref?: string;
+  order?: number;
+  status?: "DRAFT" | "PUBLISHED";
 }
 
 export interface HomeHighlightCard {

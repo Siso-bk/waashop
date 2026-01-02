@@ -42,25 +42,61 @@ const DEFAULT_HOME_HERO = {
   secondaryCtaAuthedHref: "/wallet",
   backgroundClass: "bg-black",
   textClass: "text-white",
+  cards: [],
 };
 
 type HeroResponse = typeof DEFAULT_HOME_HERO;
 
-const serializeHero = (hero?: Partial<IHeroContent> | null): HeroResponse => ({
-  tagline: hero?.tagline ?? DEFAULT_HOME_HERO.tagline,
-  headline: hero?.headline ?? DEFAULT_HOME_HERO.headline,
-  description: hero?.description ?? DEFAULT_HOME_HERO.description,
-  primaryCtaLabel: hero?.primaryCtaLabel ?? DEFAULT_HOME_HERO.primaryCtaLabel,
-  primaryCtaHref: hero?.primaryCtaHref ?? DEFAULT_HOME_HERO.primaryCtaHref,
-  primaryCtaAuthedLabel: hero?.primaryCtaAuthedLabel ?? DEFAULT_HOME_HERO.primaryCtaAuthedLabel,
-  primaryCtaAuthedHref: hero?.primaryCtaAuthedHref ?? DEFAULT_HOME_HERO.primaryCtaAuthedHref,
-  secondaryCtaLabel: hero?.secondaryCtaLabel ?? DEFAULT_HOME_HERO.secondaryCtaLabel,
-  secondaryCtaHref: hero?.secondaryCtaHref ?? DEFAULT_HOME_HERO.secondaryCtaHref,
-  secondaryCtaAuthedLabel: hero?.secondaryCtaAuthedLabel ?? DEFAULT_HOME_HERO.secondaryCtaAuthedLabel,
-  secondaryCtaAuthedHref: hero?.secondaryCtaAuthedHref ?? DEFAULT_HOME_HERO.secondaryCtaAuthedHref,
-  backgroundClass: hero?.backgroundClass ?? DEFAULT_HOME_HERO.backgroundClass,
-  textClass: hero?.textClass ?? DEFAULT_HOME_HERO.textClass,
-});
+const serializeHero = (
+  hero?: Partial<IHeroContent> | null,
+  options: { includeDisabled?: boolean } = {}
+): HeroResponse => {
+  const cards = (hero?.cards ?? DEFAULT_HOME_HERO.cards)
+    .map((card) => {
+      const status = card.status ?? (card.enabled === false ? "DRAFT" : "PUBLISHED");
+      return {
+        id: card.id,
+        tagline: card.tagline,
+        title: card.title,
+        body: card.body,
+        imageUrl: card.imageUrl,
+        overlayOpacity: card.overlayOpacity,
+        ctaLabel: card.ctaLabel,
+        ctaHref: card.ctaHref,
+        order: card.order,
+        status,
+        enabled: card.enabled,
+      };
+    })
+    .filter((card) => options.includeDisabled || card.status === "PUBLISHED")
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((card) => ({
+      id: card.id,
+      title: card.title,
+      body: card.body,
+      meta: card.meta,
+      imageUrl: card.imageUrl,
+      order: card.order,
+      status: card.status,
+    }));
+
+  return {
+    tagline: hero?.tagline ?? DEFAULT_HOME_HERO.tagline,
+    headline: hero?.headline ?? DEFAULT_HOME_HERO.headline,
+    description: hero?.description ?? DEFAULT_HOME_HERO.description,
+    primaryCtaLabel: hero?.primaryCtaLabel ?? DEFAULT_HOME_HERO.primaryCtaLabel,
+    primaryCtaHref: hero?.primaryCtaHref ?? DEFAULT_HOME_HERO.primaryCtaHref,
+    primaryCtaAuthedLabel: hero?.primaryCtaAuthedLabel ?? DEFAULT_HOME_HERO.primaryCtaAuthedLabel,
+    primaryCtaAuthedHref: hero?.primaryCtaAuthedHref ?? DEFAULT_HOME_HERO.primaryCtaAuthedHref,
+    secondaryCtaLabel: hero?.secondaryCtaLabel ?? DEFAULT_HOME_HERO.secondaryCtaLabel,
+    secondaryCtaHref: hero?.secondaryCtaHref ?? DEFAULT_HOME_HERO.secondaryCtaHref,
+    secondaryCtaAuthedLabel: hero?.secondaryCtaAuthedLabel ?? DEFAULT_HOME_HERO.secondaryCtaAuthedLabel,
+    secondaryCtaAuthedHref: hero?.secondaryCtaAuthedHref ?? DEFAULT_HOME_HERO.secondaryCtaAuthedHref,
+    backgroundClass: hero?.backgroundClass ?? DEFAULT_HOME_HERO.backgroundClass,
+    textClass: hero?.textClass ?? DEFAULT_HOME_HERO.textClass,
+    cards,
+  };
+};
 
 const DEFAULT_HOME_HIGHLIGHTS = [
   {
@@ -364,7 +400,7 @@ router.get("/home-hero", async (_req, res) => {
 router.get("/admin/home-hero", authMiddleware, requireRole("admin"), async (_req, res) => {
   await connectDB();
   const hero = await HeroContent.findOne({ slug: "home" }).lean();
-  res.json({ hero: serializeHero(hero) });
+  res.json({ hero: serializeHero(hero, { includeDisabled: true }) });
 });
 
 router.put("/admin/home-hero", authMiddleware, requireRole("admin"), async (req, res) => {
@@ -382,6 +418,23 @@ router.put("/admin/home-hero", authMiddleware, requireRole("admin"), async (req,
     secondaryCtaAuthedHref: z.string().max(200).optional(),
     backgroundClass: z.string().max(120).optional(),
     textClass: z.string().max(120).optional(),
+    cards: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(100),
+          tagline: z.string().max(120).optional(),
+          title: z.string().min(1).max(120),
+          body: z.string().min(1).max(400),
+          imageUrl: z.string().max(400).optional(),
+          overlayOpacity: z.number().min(0).max(0.95).optional(),
+          ctaLabel: z.string().max(80).optional(),
+          ctaHref: z.string().max(200).optional(),
+          order: z.number().int().min(0).optional(),
+          status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
+          enabled: z.boolean().optional(),
+        })
+      )
+      .default([]),
   });
   try {
     const payload = schema.parse(req.body);
@@ -391,7 +444,7 @@ router.put("/admin/home-hero", authMiddleware, requireRole("admin"), async (req,
       { slug: "home", ...payload },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     ).lean();
-    res.json({ hero: serializeHero(hero) });
+    res.json({ hero: serializeHero(hero, { includeDisabled: true }) });
   } catch (error) {
     console.error("Home hero update error", error);
     res.status(400).json({ error: "Unable to update home hero" });

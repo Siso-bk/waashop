@@ -9,10 +9,10 @@ import {
   getWinners,
 } from "@/lib/queries";
 import type { WinnerSpotlightDto } from "@/types";
-import { BalancePanel } from "@/components/BalancePanel";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
 import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
+import { HeroCards } from "@/components/HeroCards";
 
 export default async function HomePage() {
   const [user, boxes, hero, highlights, promoCards, challenges, winners] = await Promise.all([
@@ -24,33 +24,13 @@ export default async function HomePage() {
     getChallenges(),
     getWinners(),
   ]);
-  const isAuthenticated = Boolean(user);
-  const primaryCtaLabel = isAuthenticated
-    ? hero.primaryCtaAuthedLabel || hero.primaryCtaLabel
-    : hero.primaryCtaLabel;
-  const primaryCtaHref = isAuthenticated ? hero.primaryCtaAuthedHref || hero.primaryCtaHref : hero.primaryCtaHref;
-  const secondaryCtaLabel = isAuthenticated
-    ? hero.secondaryCtaAuthedLabel || hero.secondaryCtaLabel
-    : hero.secondaryCtaLabel;
-  const secondaryCtaHref = isAuthenticated
-    ? hero.secondaryCtaAuthedHref || hero.secondaryCtaHref
-    : hero.secondaryCtaHref;
-
   const heroBackgroundClass = hero.backgroundClass ?? "bg-black";
   const heroTextClass = hero.textClass ?? "text-white";
   const heroPrefersLightText = heroTextClass.includes("white");
-  const heroAccentText = heroPrefersLightText ? "text-white/60" : "text-black/60";
-  const heroMutedText = heroPrefersLightText ? "text-white/70" : "text-black/70";
-  const heroSubtleText = heroPrefersLightText ? "text-white/50" : "text-black/50";
-  const heroStrongText = heroPrefersLightText ? "text-white" : "text-black";
-  const heroPanelClasses = heroPrefersLightText
-    ? "rounded-3xl border border-white/15 bg-white/5 p-6 backdrop-blur"
-    : "rounded-3xl border border-black/10 bg-white p-6 shadow-sm";
-  const heroPanelHeaderText = heroAccentText;
-  const heroPanelUserText = heroStrongText;
-  const heroEmptyStateClasses = heroPrefersLightText
-    ? "rounded-2xl border border-white/20 bg-white/5 p-4 text-sm text-white/80"
-    : "rounded-2xl border border-black/10 bg-black/5 p-4 text-sm text-black/70";
+  const heroBorderClass = heroPrefersLightText ? "border-white/10" : "border-black/10";
+  const heroCards = hero.cards || [];
+
+  const isAuthenticated = !!user;
 
   const highlightCards = highlights.map((card) => {
     const ctaLabel = isAuthenticated ? card.authedCtaLabel || card.guestCtaLabel : card.guestCtaLabel;
@@ -72,70 +52,13 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      <section
-        className={`rounded-[32px] border border-black/10 px-6 py-10 sm:px-10 ${heroBackgroundClass} ${heroTextClass}`}
-      >
-        <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-4">
-            <p className={`text-xs font-semibold uppercase tracking-[0.35em] ${heroAccentText}`}>{hero.tagline}</p>
-            <h1 className="text-4xl font-semibold leading-tight">{hero.headline}</h1>
-            <p className={`text-sm ${heroMutedText}`}>{hero.description}</p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              {primaryCtaLabel && primaryCtaHref && (
-                <Link
-                  href={primaryCtaHref}
-                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
-                >
-                  {primaryCtaLabel}
-                </Link>
-              )}
-              {secondaryCtaLabel && secondaryCtaHref && (
-                <Link
-                  href={secondaryCtaHref}
-                  className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
-                >
-                  {secondaryCtaLabel}
-                </Link>
-              )}
-            </div>
-            <div className={`grid gap-4 pt-4 text-xs ${heroMutedText} sm:grid-cols-3`}>
-              <div>
-                <p className={`uppercase tracking-[0.3em] ${heroSubtleText}`}>Drops</p>
-                <p className={`mt-2 text-2xl font-semibold ${heroStrongText}`}>{boxes.length || "—"}</p>
-              </div>
-              <div>
-                <p className={`uppercase tracking-[0.3em] ${heroSubtleText}`}>Guaranteed min</p>
-                <p className={`mt-2 text-2xl font-semibold ${heroStrongText}`}>
-                  {boxes[0]?.guaranteedMinPoints ?? 600} pts
-                </p>
-              </div>
-              <div>
-                <p className={`uppercase tracking-[0.3em] ${heroSubtleText}`}>Ledger</p>
-                <p className={`mt-2 text-2xl font-semibold ${heroStrongText}`}>Instant · tamperproof</p>
-              </div>
-            </div>
-          </div>
-          <div className={heroPanelClasses}>
-            <div className={`flex items-center justify-between text-xs uppercase tracking-[0.3em] ${heroPanelHeaderText}`}>
-              <span>Status</span>
-              <span className={`font-semibold ${heroPanelUserText}`}>
-                {user ? `Hi, ${user.firstName || "Shopper"}` : "Guest"}
-              </span>
-            </div>
-            <div className="mt-4">
-              {user ? (
-                <BalancePanel
-                  coins={user.coinsBalance}
-                  points={user.pointsBalance}
-                  tone={heroPrefersLightText ? "dark" : "light"}
-                />
-              ) : (
-                <div className={heroEmptyStateClasses}>Sign in to load your wallet instantly.</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+      {heroCards.length > 0 && (
+        <section
+          className={`rounded-[32px] border px-6 py-8 sm:px-10 ${heroBorderClass} ${heroBackgroundClass} ${heroTextClass}`}
+        >
+          <HeroCards cards={heroCards} prefersLightText={heroPrefersLightText} />
+        </section>
+      )}
 
       <section className="grid gap-4 sm:grid-cols-2">
         {highlightCards.map((card) => (
