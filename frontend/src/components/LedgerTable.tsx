@@ -19,14 +19,13 @@ export function LedgerTable({ entries }: Props) {
           <tr>
             <th className="px-4 py-3 text-left font-normal">Reason</th>
             <th className="px-4 py-3 text-right font-normal">Coins</th>
-            <th className="px-4 py-3 text-right font-normal">Points</th>
             <th className="px-4 py-3 text-right font-normal">Date</th>
           </tr>
         </thead>
         <tbody>
           {entries.length === 0 && (
             <tr>
-              <td className="px-4 py-6 text-center text-gray-500" colSpan={4}>
+              <td className="px-4 py-6 text-center text-gray-500" colSpan={3}>
                 No ledger entries yet.
               </td>
             </tr>
@@ -35,7 +34,6 @@ export function LedgerTable({ entries }: Props) {
             <tr key={entry.id} className="border-t border-black/5">
               <td className="px-4 py-3 font-medium text-black">{entry.reason}</td>
               <td className="px-4 py-3 text-right text-gray-600">{formatDelta(entry.deltaCoins, "coins")}</td>
-              <td className="px-4 py-3 text-right text-gray-600">{formatDelta(entry.deltaPoints, "pts")}</td>
               <td className="px-4 py-3 text-right text-gray-500">
                 {new Date(entry.createdAt).toLocaleString(undefined, {
                   month: "short",

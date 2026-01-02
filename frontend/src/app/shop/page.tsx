@@ -35,7 +35,7 @@ export default async function ShopPage() {
             </div>
             <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
             <p className="text-sm text-gray-600">
-              Guaranteed {box.guaranteedMinPoints} pts · crypto-secure randomness · top tier cooldown
+              Guaranteed {box.guaranteedMinPoints} coins · crypto-secure randomness · top tier cooldown
             </p>
             <div className="mt-4">
               <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinPoints} />

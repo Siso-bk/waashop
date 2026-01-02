@@ -23,7 +23,7 @@ export default async function WalletPage() {
         <h1 className="text-2xl font-semibold text-black">Balances & ledger</h1>
         <p className="text-sm text-gray-600">Track every debit and credit in one place.</p>
       </header>
-      <BalancePanel coins={user.coinsBalance} points={user.pointsBalance} />
+      <BalancePanel coins={user.coinsBalance} />
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -43,7 +43,7 @@ export default async function WalletPage() {
               </div>
               <h3 className="mt-2 text-lg font-semibold text-black">{box.name}</h3>
               <p className="text-xs text-gray-500">
-                Guaranteed {box.guaranteedMinPoints} pts · top tier cooldown {box.rewardTiers.find(t => t.isTop)?.probability
+                Guaranteed {box.guaranteedMinPoints} coins · top tier cooldown {box.rewardTiers.find(t => t.isTop)?.probability
                   ? `${(box.rewardTiers.find(t => t.isTop)!.probability * 100).toFixed(2)}%`
                   : "—"}
               </p>

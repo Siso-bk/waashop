@@ -10,13 +10,13 @@ export function RewardTable({ tiers, guaranteedMin }: Props) {
     <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
       <div className="flex items-baseline justify-between">
         <h3 className="text-sm font-semibold text-black">Reward table</h3>
-        <p className="text-xs text-gray-500">Guaranteed: {guaranteedMin} pts</p>
+        <p className="text-xs text-gray-500">Guaranteed: {guaranteedMin} coins</p>
       </div>
       <div className="mt-3 overflow-hidden rounded-xl border border-black/10">
         <table className="w-full text-left text-sm">
           <thead className="bg-black text-xs uppercase tracking-[0.3em] text-white/80">
             <tr>
-              <th className="px-3 py-3 font-normal">Points</th>
+              <th className="px-3 py-3 font-normal">Coins</th>
               <th className="px-3 py-3 font-normal">Probability</th>
               <th className="px-3 py-3 font-normal">Tier</th>
             </tr>

@@ -34,7 +34,7 @@ export default async function BoxDetails({ params }: Props) {
           </div>
           <div className="rounded-2xl border border-black/10 bg-black px-6 py-4 text-right text-white">
             <p className="text-xs uppercase tracking-[0.3em] text-white/60">Guaranteed minimum</p>
-            <p className="text-2xl font-semibold">{box.guaranteedMinPoints} pts</p>
+            <p className="text-2xl font-semibold">{box.guaranteedMinPoints} coins</p>
           </div>
         </div>
         <p className="mt-4 text-sm text-gray-500">

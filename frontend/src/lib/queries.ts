@@ -90,7 +90,7 @@ const FALLBACK_HOME_HERO: HomeHeroContent = {
       id: "hero-card-2",
       tagline: "Always synced",
       title: "Wallet-first",
-      body: "Coins and points move with you across the Mini App, web, and dashboard.",
+      body: "Coins move with you across the Mini App, web, and dashboard.",
       imageUrl: "",
       overlayOpacity: 0.35,
       order: 1,

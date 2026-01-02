@@ -22,7 +22,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<null | {
     purchaseId: string;
-    rewardPoints: number;
+        rewardPoints: number;
     tier?: { points: number; probability: number; isTop?: boolean };
   }>(null);
   const [showResult, setShowResult] = useState(false);
@@ -77,7 +77,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
           <div className="max-w-sm rounded-3xl border border-white/10 bg-black p-6 text-center text-white shadow-xl">
             <p className="text-xs uppercase tracking-[0.3em] text-white/60">Mystery reward</p>
             <p className="mt-2 text-4xl font-semibold animate-pulse">
-              +{result.rewardPoints} pts
+              +{result.rewardPoints} coins
             </p>
             {result.tier?.isTop && <p className="mt-1 text-white/70">Top tier unlocked</p>}
             <p className="mt-2 text-xs text-white/60">Purchase #{result.purchaseId}</p>
