@@ -30,7 +30,7 @@ export function HeroCards({ cards, prefersLightText }: Props) {
     <div className="space-y-4">
       {activeCard && (
         <div
-          className={`rounded-[28px] border p-6 ${
+          className={`rounded-[28px] border p-5 ${
             prefersLightText
               ? "border-white/25 bg-white/10 text-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
               : "border-black/10 bg-white text-black/80 shadow-[0_25px_60px_rgba(0,0,0,0.08)]"
@@ -41,18 +41,18 @@ export function HeroCards({ cards, prefersLightText }: Props) {
               {activeCard.tagline && (
                 <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${tagText}`}>{activeCard.tagline}</p>
               )}
-              <h3 className="mt-2 text-2xl font-semibold">{activeCard.title}</h3>
+              <h3 className="mt-2 text-xl font-semibold">{activeCard.title}</h3>
             </div>
             {activeCard.ctaLabel && activeCard.ctaHref && (
               <Link
                 href={activeCard.ctaHref}
-                className={`inline-flex items-center justify-center rounded-full px-6 py-2 text-xs font-semibold transition ${buttonClass}`}
+                className={`inline-flex items-center justify-center rounded-full px-5 py-2 text-xs font-semibold transition ${buttonClass}`}
               >
                 {activeCard.ctaLabel}
               </Link>
             )}
           </div>
-          <p className="mt-4 text-sm leading-relaxed">{activeCard.body}</p>
+          <p className={`mt-3 text-sm leading-relaxed ${bodyText}`}>{activeCard.body}</p>
         </div>
       )}
       <div className="flex gap-3 overflow-x-auto pb-2">

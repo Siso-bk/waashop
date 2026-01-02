@@ -1,6 +1,5 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { PageHeader } from "@/components/PageHeader";
 import { PendingButton } from "@/components/PendingButton";
 import { HeroCardsEditor } from "@/components/HeroCardsEditor";
 import { backendFetch } from "@/lib/backendClient";
@@ -27,14 +26,28 @@ export default async function AdminHomeHeroPage({ searchParams }: PageProps) {
   const { hero } = await getAdminHomeHero();
   const status = statusValue;
   const message = messageValue ? decodeURIComponent(messageValue) : null;
+  const totalCards = hero.cards?.length ?? 0;
+  const publishedCards = hero.cards?.filter((card) => card.status !== "DRAFT").length ?? 0;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Admin"
-        title="Home Hero"
-        description="Manage the homepage hero cards."
-      />
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">Admin</p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900">Home Hero Cards</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Create, reorder, and publish the hero cards shown on the Waashop homepage.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+            <span className="rounded-full border border-slate-200 px-3 py-2">Total {totalCards}</span>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
+              Published {publishedCards}
+            </span>
+          </div>
+        </div>
+      </section>
       {status === "updated" && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           Hero content updated successfully.
@@ -102,30 +115,30 @@ async function updateHomeHero(formData: FormData) {
 
   try {
     const cardCount = Number(formData.get("cardCount") || 0);
-      const cards = [];
-      for (let index = 0; index < cardCount; index += 1) {
-        const getCardValue = (key: string, required = false) => {
-          const value = formData.get(`card-${index}-${key}`);
-          if (required && (!value || typeof value !== "string" || !value.trim())) {
-            throw new Error(`Missing ${key} for card ${index + 1}`);
-          }
-          return typeof value === "string" ? value.trim() : "";
-        };
-        const opacityRaw = getCardValue("overlayOpacity");
-        const overlayOpacity = opacityRaw ? Number(opacityRaw) : undefined;
-        cards.push({
-          id: getCardValue("id", true),
-          tagline: getCardValue("tagline") || undefined,
-          title: getCardValue("title", true),
-          body: getCardValue("body", true),
-          imageUrl: getCardValue("imageUrl") || undefined,
-          overlayOpacity,
-          ctaLabel: getCardValue("ctaLabel") || undefined,
-          ctaHref: getCardValue("ctaHref") || undefined,
-          order: Number(getCardValue("order") || index),
-          status: getCardValue("status") === "DRAFT" ? "DRAFT" : "PUBLISHED",
-        });
-      }
+    const cards = [];
+    for (let index = 0; index < cardCount; index += 1) {
+      const getCardValue = (key: string, required = false) => {
+        const value = formData.get(`card-${index}-${key}`);
+        if (required && (!value || typeof value !== "string" || !value.trim())) {
+          throw new Error(`Missing ${key} for card ${index + 1}`);
+        }
+        return typeof value === "string" ? value.trim() : "";
+      };
+      const opacityRaw = getCardValue("overlayOpacity");
+      const overlayOpacity = opacityRaw ? Number(opacityRaw) : undefined;
+      cards.push({
+        id: getCardValue("id", true),
+        tagline: getCardValue("tagline") || undefined,
+        title: getCardValue("title", true),
+        body: getCardValue("body", true),
+        imageUrl: getCardValue("imageUrl") || undefined,
+        overlayOpacity,
+        ctaLabel: getCardValue("ctaLabel") || undefined,
+        ctaHref: getCardValue("ctaHref") || undefined,
+        order: Number(getCardValue("order") || index),
+        status: getCardValue("status") === "DRAFT" ? "DRAFT" : "PUBLISHED",
+      });
+    }
 
     const payload = {
       tagline: requireString("tagline"),
