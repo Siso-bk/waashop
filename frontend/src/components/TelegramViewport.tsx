@@ -11,6 +11,8 @@ type TelegramWebApp = {
   setBackgroundColor?: (color: string) => void;
   viewportHeight?: number;
   viewportStableHeight?: number;
+  disableVerticalSwipes?: () => void;
+  enableClosingConfirmation?: () => void;
   onEvent?: (event: string, cb: () => void) => void;
   offEvent?: (event: string, cb: () => void) => void;
 };
@@ -54,6 +56,12 @@ export function TelegramViewport() {
         }
         if (typeof webApp.requestFullscreen === "function") {
           webApp.requestFullscreen();
+        }
+        if (typeof webApp.disableVerticalSwipes === "function") {
+          webApp.disableVerticalSwipes();
+        }
+        if (typeof webApp.enableClosingConfirmation === "function") {
+          webApp.enableClosingConfirmation();
         }
         if (typeof webApp.onEvent === "function") {
           webApp.onEvent("viewportChanged", handleViewportChange);
