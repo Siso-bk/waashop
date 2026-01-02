@@ -18,6 +18,20 @@ body {
   line-height: 1.6;
 }
 
+@supports (overscroll-behavior-y: none) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+@supports (touch-action: pan-x) {
+  html,
+  body {
+    touch-action: pan-x;
+  }
+}
+
 @layer base {
   a {
     color: inherit;
