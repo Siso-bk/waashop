@@ -1,7 +1,7 @@
 import { Schema, model, models, Document, Types } from "mongoose";
 
 export interface IRewardTier {
-  points: number;
+  minis: number;
   probability: number;
   isTop?: boolean;
 }
@@ -15,10 +15,10 @@ export interface IProduct extends Document {
   description?: string;
   type: ProductType;
   status: ProductStatus;
-  priceCoins: number;
-  guaranteedMinPoints?: number;
+  priceMinis: number;
+  guaranteedMinMinis?: number;
   rewardTiers?: IRewardTier[];
-  ticketPriceCoins?: number;
+  ticketPriceMinis?: number;
   ticketCount?: number;
   ticketsSold?: number;
   challengeWinnerUserId?: Types.ObjectId | null;
@@ -28,7 +28,7 @@ export interface IProduct extends Document {
 
 const RewardTierSchema = new Schema<IRewardTier>(
   {
-    points: { type: Number, required: true },
+    points: { type: Number, required: true, alias: "minis" },
     probability: { type: Number, required: true },
     isTop: { type: Boolean, default: false },
   },
@@ -42,10 +42,10 @@ const ProductSchema = new Schema<IProduct>(
     description: { type: String },
     type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE"], default: "MYSTERY_BOX" },
     status: { type: String, enum: ["DRAFT", "PENDING", "ACTIVE", "INACTIVE"], default: "DRAFT" },
-    priceCoins: { type: Number, required: true },
-    guaranteedMinPoints: { type: Number },
+    priceCoins: { type: Number, required: true, alias: "priceMinis" },
+    guaranteedMinPoints: { type: Number, alias: "guaranteedMinMinis" },
     rewardTiers: { type: [RewardTierSchema], default: undefined },
-    ticketPriceCoins: { type: Number },
+    ticketPriceCoins: { type: Number, alias: "ticketPriceMinis" },
     ticketCount: { type: Number },
     ticketsSold: { type: Number, default: 0 },
     challengeWinnerUserId: { type: Schema.Types.ObjectId, ref: "User" },

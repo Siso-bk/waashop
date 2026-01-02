@@ -107,9 +107,9 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
   }
 
   if (type === "CHALLENGE") {
-    const ticketPriceCoins = Number(formData.get("ticketPriceCoins"));
+    const ticketPriceMinis = Number(formData.get("ticketPriceMinis"));
     const ticketCount = Number(formData.get("ticketCount"));
-    if (!Number.isFinite(ticketPriceCoins) || ticketPriceCoins <= 0) {
+    if (!Number.isFinite(ticketPriceMinis) || ticketPriceMinis <= 0) {
       return { error: "Ticket price must be positive" };
     }
     if (!Number.isFinite(ticketCount) || ticketCount <= 0) {
@@ -120,19 +120,19 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
         type: "CHALLENGE",
         name,
         description: typeof description === "string" ? description : undefined,
-        ticketPriceCoins,
+        ticketPriceMinis,
         ticketCount,
       },
     };
   }
 
-  const priceCoins = Number(formData.get("priceCoins"));
-  const guaranteedMinPoints = Number(formData.get("guaranteedMinPoints"));
+  const priceMinis = Number(formData.get("priceMinis"));
+  const guaranteedMinMinis = Number(formData.get("guaranteedMinMinis"));
   const tiersRaw = formData.get("rewardTiers");
-  if (!Number.isFinite(priceCoins) || priceCoins <= 0) {
+  if (!Number.isFinite(priceMinis) || priceMinis <= 0) {
     return { error: "Price must be a positive number" };
   }
-  if (!Number.isFinite(guaranteedMinPoints) || guaranteedMinPoints <= 0) {
+  if (!Number.isFinite(guaranteedMinMinis) || guaranteedMinMinis <= 0) {
     return { error: "Guaranteed minimum must be a positive number" };
   }
   if (!tiersRaw || typeof tiersRaw !== "string") {
@@ -151,13 +151,13 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
   }
 
   const tiers = rewardTiers.map((tier) => ({
-    points: Number(tier.points),
+    minis: Number(tier.minis),
     probability: Number(tier.probability),
     isTop: Boolean(tier.isTop),
   }));
 
-  if (tiers.some((tier) => !Number.isFinite(tier.points) || !Number.isFinite(tier.probability))) {
-    return { error: "Each tier requires numeric points/probability" };
+  if (tiers.some((tier) => !Number.isFinite(tier.minis) || !Number.isFinite(tier.probability))) {
+    return { error: "Each tier requires numeric MIN/probability" };
   }
   const probabilitySum = tiers.reduce((acc, tier) => acc + tier.probability, 0);
   if (Math.abs(probabilitySum - 1) > 0.01) {
@@ -172,8 +172,8 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
       type: "MYSTERY_BOX",
       name,
       description: typeof description === "string" ? description : undefined,
-      priceCoins,
-      guaranteedMinPoints,
+      priceMinis,
+      guaranteedMinMinis,
       rewardTiers: tiers,
     },
   };

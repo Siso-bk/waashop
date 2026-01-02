@@ -143,7 +143,7 @@ export default async function HomePage() {
                     {challenge.description && <p className="text-sm text-gray-600">{challenge.description}</p>}
                   </header>
                   <p className="text-xs text-gray-500">
-                    {remaining} of {challenge.ticketCount} tickets remain · {challenge.ticketPriceCoins.toLocaleString()} coins each
+                    {remaining} of {challenge.ticketCount} tickets remain · {challenge.ticketPriceMinis.toLocaleString()}MIN each
                   </p>
                   <ChallengePurchaseButton challenge={challenge} />
                 </article>
@@ -183,15 +183,15 @@ export default async function HomePage() {
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>Box {box.boxId}</span>
                 <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                  {box.priceCoins.toLocaleString()} coins
+                  {box.priceMinis.toLocaleString()}MIN
                 </span>
               </div>
               <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
               <p className="text-sm text-gray-600">
-                Guaranteed {box.guaranteedMinPoints} coins · crypto-secure randomness · top tier cooldown
+                Guaranteed {box.guaranteedMinMinis}MIN · crypto-secure randomness · top tier cooldown
               </p>
               <div className="mt-4">
-                <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinPoints} />
+                <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />
               </div>
               <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
                 <span>Server draw + automatic ledger entries</span>

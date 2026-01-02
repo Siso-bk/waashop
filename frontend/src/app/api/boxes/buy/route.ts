@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
   try {
     const payload = await request.json();
-    const data = await backendFetch<{ purchaseId: string; rewardPoints: number; tier?: unknown }>("/api/boxes/buy", {
+    const data = await backendFetch<{ purchaseId: string; rewardMinis: number; tier?: unknown }>("/api/boxes/buy", {
       method: "POST",
       body: JSON.stringify(payload),
     });

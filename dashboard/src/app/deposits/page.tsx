@@ -17,8 +17,8 @@ export default async function DepositsPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Wallet"
-        title="Add coins to Waashop"
-        description="Submit your payment receipt and let the admin credit your coins. You’ll be notified once it’s reviewed."
+        title="Add MIN to Waashop"
+        description="Submit your payment receipt and let the admin credit your MIN. You’ll be notified once it’s reviewed."
         actions={
           <Link href="/" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
             Back to overview
@@ -30,13 +30,13 @@ export default async function DepositsPage() {
         <h2 className="text-base font-semibold text-slate-900">Submit deposit request</h2>
         <p className="mt-1 text-sm text-slate-500">
           Send your payment to the usual account, then share the reference and a proof link below. The team will verify
-          and credit your coins.
+          and credit your MIN.
         </p>
         <form action={createDeposit} className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="text-sm text-slate-600">
-            Amount (coins)
+            Amount (MIN)
             <input
-              name="amountCoins"
+              name="amountMinis"
               type="number"
               min={1}
               step={1}
@@ -122,7 +122,7 @@ async function DepositTable() {
           {deposits.map((entry) => (
             <tr key={entry.id} className="border-t border-slate-100">
               <td className="px-4 py-3 text-xs text-slate-500">{new Date(entry.createdAt).toLocaleString()}</td>
-              <td className="px-4 py-3 font-semibold text-slate-900">{entry.amountCoins.toLocaleString()} coins</td>
+              <td className="px-4 py-3 font-semibold text-slate-900">{entry.amountMinis.toLocaleString()}MIN</td>
               <td className="px-4 py-3 text-xs text-slate-600">
                 <p>{entry.paymentMethod}</p>
                 {entry.paymentReference && <p className="text-slate-400">{entry.paymentReference}</p>}
@@ -197,17 +197,17 @@ function DepositTableSkeleton() {
 
 async function createDeposit(formData: FormData) {
   "use server";
-  const amountCoinsRaw = formData.get("amountCoins");
+  const amountMinisRaw = formData.get("amountMinis");
   const paymentMethod = formData.get("paymentMethod");
-  if (!amountCoinsRaw || !paymentMethod) {
+  if (!amountMinisRaw || !paymentMethod) {
     return;
   }
-  const amountCoins = Number(amountCoinsRaw);
-  if (!Number.isFinite(amountCoins) || amountCoins <= 0) {
+  const amountMinis = Number(amountMinisRaw);
+  if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
     return;
   }
   const payload = {
-    amountCoins,
+    amountMinis,
     currency: valueOrUndefined(formData.get("currency")),
     paymentMethod: String(paymentMethod),
     paymentReference: valueOrUndefined(formData.get("paymentReference")),

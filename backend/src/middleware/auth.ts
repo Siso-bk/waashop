@@ -77,8 +77,7 @@ const authenticatePaiToken = async (token: string): Promise<IUser | null> => {
       email,
       telegramId: `pai:${profile.id}`,
       firstName: profile.name,
-      coinsBalance: 0,
-      pointsBalance: 0,
+      minisBalance: 0,
       roles: ["customer"],
     });
     await user.save();

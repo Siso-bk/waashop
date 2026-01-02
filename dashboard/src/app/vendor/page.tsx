@@ -199,14 +199,14 @@ function ProductCard({ product }: { product: ProductDto }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-semibold text-slate-900">{product.name}</p>
-          <p className="text-xs text-slate-500">{product.priceCoins.toLocaleString()} coins</p>
+          <p className="text-xs text-slate-500">{product.priceMinis.toLocaleString()}MIN</p>
         </div>
         <StatusBadge status={product.status} />
       </div>
       <p className="mt-2 text-sm text-slate-500">{product.description || "No description"}</p>
       {product.type === "CHALLENGE" ? (
         <p className="mt-2 text-xs text-slate-500">
-          Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets sold · {product.ticketPriceCoins?.toLocaleString() || ""} coins
+          Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets sold · {product.ticketPriceMinis?.toLocaleString() || ""}MIN
         </p>
       ) : null}
       {product.status === "PENDING" && product.type === "MYSTERY_BOX" && (
@@ -231,14 +231,14 @@ function ProductCard({ product }: { product: ProductDto }) {
               <div className="grid gap-3 sm:grid-cols-2">
                 <input
                   type="number"
-                  name="priceCoins"
-                  defaultValue={product.priceCoins}
+                  name="priceMinis"
+                  defaultValue={product.priceMinis}
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
                 />
                 <input
                   type="number"
-                  name="guaranteedMinPoints"
-                  defaultValue={product.guaranteedMinPoints}
+                  name="guaranteedMinMinis"
+                  defaultValue={product.guaranteedMinMinis}
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
                 />
               </div>

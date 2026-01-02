@@ -49,11 +49,11 @@ async function ProductsTable() {
                 <p className="font-semibold text-slate-900">{product.name}</p>
                 {product.type === "CHALLENGE" ? (
                   <p className="text-xs text-slate-500">
-                    Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets · {product.ticketPriceCoins?.toLocaleString() || "0"} coins
+                    Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets · {product.ticketPriceMinis?.toLocaleString() || "0"}MIN
                   </p>
                 ) : (
                   <p className="text-xs text-slate-500">
-                    {product.rewardTiers?.length || 0} reward tiers · {product.priceCoins.toLocaleString()} coins
+                    {product.rewardTiers?.length || 0} reward tiers · {product.priceMinis.toLocaleString()}MIN
                   </p>
                 )}
               </td>
@@ -85,14 +85,14 @@ async function ProductsTable() {
                         <div className="grid gap-2 sm:grid-cols-2">
                           <input
                             type="number"
-                            name="priceCoins"
-                            defaultValue={product.priceCoins}
+                            name="priceMinis"
+                            defaultValue={product.priceMinis}
                             className="w-full rounded-lg border border-slate-200 px-2 py-1"
                           />
                           <input
                             type="number"
-                            name="guaranteedMinPoints"
-                            defaultValue={product.guaranteedMinPoints}
+                            name="guaranteedMinMinis"
+                            defaultValue={product.guaranteedMinMinis}
                             className="w-full rounded-lg border border-slate-200 px-2 py-1"
                           />
                         </div>
@@ -227,17 +227,17 @@ async function adminDeleteProduct(formData: FormData) {
 const extractProductPayload = (formData: FormData): { data?: unknown; error?: string } => {
   const name = formData.get("productName");
   const description = formData.get("productDescription");
-  const priceCoins = Number(formData.get("priceCoins"));
-  const guaranteedMinPoints = Number(formData.get("guaranteedMinPoints"));
+  const priceMinis = Number(formData.get("priceMinis"));
+  const guaranteedMinMinis = Number(formData.get("guaranteedMinMinis"));
   const tiersRaw = formData.get("rewardTiers");
 
   if (!name || typeof name !== "string") {
     return { error: "Product name is required" };
   }
-  if (!Number.isFinite(priceCoins) || priceCoins <= 0) {
+  if (!Number.isFinite(priceMinis) || priceMinis <= 0) {
     return { error: "Price must be positive" };
   }
-  if (!Number.isFinite(guaranteedMinPoints) || guaranteedMinPoints <= 0) {
+  if (!Number.isFinite(guaranteedMinMinis) || guaranteedMinMinis <= 0) {
     return { error: "Guaranteed minimum must be positive" };
   }
   if (!tiersRaw || typeof tiersRaw !== "string") {
@@ -256,13 +256,13 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
   }
 
   const tiers = rewardTiers.map((tier) => ({
-    points: Number(tier.points),
+    minis: Number(tier.minis),
     probability: Number(tier.probability),
     isTop: Boolean(tier.isTop),
   }));
 
-  if (tiers.some((tier) => !Number.isFinite(tier.points) || !Number.isFinite(tier.probability))) {
-    return { error: "Each tier requires numeric points/probability" };
+  if (tiers.some((tier) => !Number.isFinite(tier.minis) || !Number.isFinite(tier.probability))) {
+    return { error: "Each tier requires numeric MIN/probability" };
   }
   const probabilitySum = tiers.reduce((acc, tier) => acc + tier.probability, 0);
   if (Math.abs(probabilitySum - 1) > 0.01) {
@@ -273,8 +273,8 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
     data: {
       name,
       description: typeof description === "string" ? description : undefined,
-      priceCoins,
-      guaranteedMinPoints,
+      priceMinis,
+      guaranteedMinMinis,
       rewardTiers: tiers,
     },
   };

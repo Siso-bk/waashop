@@ -1,5 +1,5 @@
 export interface RewardTier {
-  points: number;
+  minis: number;
   probability: number;
   isTop?: boolean;
 }
@@ -8,15 +8,14 @@ export interface MysteryBoxDto {
   id: string;
   boxId: string;
   name: string;
-  priceCoins: number;
-  guaranteedMinPoints: number;
+  priceMinis: number;
+  guaranteedMinMinis: number;
   rewardTiers: RewardTier[];
 }
 
 export interface LedgerEntryDto {
   id: string;
-  deltaCoins: number;
-  deltaPoints: number;
+  deltaMinis: number;
   reason: string;
   meta?: Record<string, unknown>;
   createdAt: string;
@@ -29,8 +28,7 @@ export interface UserProfile {
   firstName?: string;
   lastName?: string;
   username?: string;
-  coinsBalance: number;
-  pointsBalance: number;
+  minisBalance: number;
   lastTopWinAt?: string;
 }
 
@@ -96,7 +94,7 @@ export interface ChallengeProduct {
   id: string;
   name: string;
   description?: string;
-  ticketPriceCoins: number;
+  ticketPriceMinis: number;
   ticketCount: number;
   ticketsSold: number;
   vendor?: { _id: string; name: string } | string;

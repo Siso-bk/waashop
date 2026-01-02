@@ -5,8 +5,7 @@ export interface UserProfile {
   firstName?: string;
   lastName?: string;
   username?: string;
-  coinsBalance: number;
-  pointsBalance: number;
+  minisBalance: number;
   lastTopWinAt?: string;
   roles: string[];
 }
@@ -22,7 +21,7 @@ export interface VendorProfile {
 }
 
 export interface RewardTierDto {
-  points: number;
+  minis: number;
   probability: number;
   isTop?: boolean;
 }
@@ -34,10 +33,10 @@ export interface ProductDto {
   description?: string;
   type: "MYSTERY_BOX" | "STANDARD" | "CHALLENGE";
   status: "DRAFT" | "PENDING" | "ACTIVE" | "INACTIVE";
-  priceCoins: number;
-  guaranteedMinPoints?: number;
+  priceMinis: number;
+  guaranteedMinMinis?: number;
   rewardTiers?: RewardTierDto[];
-  ticketPriceCoins?: number;
+  ticketPriceMinis?: number;
   ticketCount?: number;
   ticketsSold?: number;
   createdAt: string;
@@ -110,8 +109,7 @@ export interface AdminUser {
   lastName?: string;
   username?: string;
   roles: string[];
-  coinsBalance: number;
-  pointsBalance: number;
+  minisBalance: number;
 }
 
 export interface PlatformSettingsDto {
@@ -127,7 +125,7 @@ export interface DepositRequestDto {
   username?: string;
   firstName?: string;
   lastName?: string;
-  amountCoins: number;
+  amountMinis: number;
   currency?: string;
   paymentMethod: string;
   paymentReference?: string;
@@ -137,7 +135,7 @@ export interface DepositRequestDto {
   adminNote?: string;
   reviewedBy?: string;
   reviewedAt?: string;
-  coinsCredited?: number;
+  minisCredited?: number;
   createdAt: string;
   updatedAt: string;
 }

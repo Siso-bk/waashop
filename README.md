@@ -1,6 +1,6 @@
 # Waashop
 
-An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-app coins on mystery boxes, receive guaranteed points, and every purchase is processed server-side with crypto-secure randomness and Mongo-backed ledgers.
+An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-app MIN on mystery boxes, receive guaranteed MIN, and every purchase is processed server-side with crypto-secure randomness and Mongo-backed ledgers.
 
 ## Monorepo Structure
 | `/frontend` | Shopper-facing Next.js app (Mini App + web). Handles PAI authentication, wallet UI, and mystery box purchases. |
@@ -49,7 +49,7 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 | `POST` | `/api/auth/email-status` | Returns `{ exists: boolean }` for the given email so the UI can branch between login/registration. |
 | `GET` | `/api/me` | Requires `Authorization: Bearer <token>`. Returns balances/profile. |
 | `GET` | `/api/boxes` | Lists active boxes with reward tiers & probabilities. |
-| `POST` | `/api/boxes/buy` | Atomic purchase; deducts coins, runs secure random reward, writes ledgers/purchase. Body `{ boxId, purchaseId }`. |
+| `POST` | `/api/boxes/buy` | Atomic purchase; deducts MIN, runs secure random reward, writes ledgers/purchase. Body `{ boxId, purchaseId }`. |
 | `GET` | `/api/ledger` | Paginated ledger history (`page`, `limit`). |
 | `POST` | `/api/vendors` | Authenticated user submits/updates a vendor profile (status defaults to `PENDING`). |
 | `GET` | `/api/vendors/me` | Vendor can view their profile & approval status. |
@@ -77,9 +77,9 @@ An ecommerce + virtual wallet experience for Telegram Mini Apps. Users spend in-
 > parameter Waashop cannot capture the token, so the built-in forms remain the fallback.
 
 ## Business Logic Highlights
-- **Transparent rewards**: Each mystery box exposes its tier probabilities; the API enforces crypto-secure randomness and guarantees a minimum point payout.
+- **Transparent rewards**: Each mystery box exposes its tier probabilities; the API enforces crypto-secure randomness and guarantees a minimum MIN payout.
 - **Top-tier cooldown**: Users can only hit the top tier every 7 days; otherwise they’re downgraded to the next best tier.
-- **Wallet ledger**: Every purchase writes a coin debit + points credit entry so `/wallet` stays auditable.
+- **Wallet ledger**: Every purchase writes a MIN debit + MIN credit entry so `/wallet` stays auditable.
 - **Idempotent purchases**: Clients supply a `purchaseId`; duplicates are ignored to prevent double credits.
 - **Separation of concerns**: Next.js handles the Mini App UX, while the Express API can scale independently on Render.
 

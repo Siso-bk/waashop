@@ -12,26 +12,26 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE">("MYSTERY_BOX");
   const [tiers, setTiers] = useState([
-    { points: "600", probability: "0.55", isTop: false },
-    { points: "800", probability: "0.25", isTop: false },
-    { points: "1000", probability: "0.15", isTop: false },
-    { points: "3000", probability: "0.04", isTop: false },
-    { points: "10000", probability: "0.01", isTop: true },
+    { minis: "600", probability: "0.55", isTop: false },
+    { minis: "800", probability: "0.25", isTop: false },
+    { minis: "1000", probability: "0.15", isTop: false },
+    { minis: "3000", probability: "0.04", isTop: false },
+    { minis: "10000", probability: "0.01", isTop: true },
   ]);
   const isLocked = disabled || pending;
 
   const rewardTiersJson = useMemo(() => {
     const normalized = tiers
       .map((tier) => ({
-        points: Number(tier.points),
+        minis: Number(tier.minis),
         probability: Number(tier.probability),
         isTop: Boolean(tier.isTop),
       }))
-      .filter((tier) => Number.isFinite(tier.points) && Number.isFinite(tier.probability) && tier.points > 0 && tier.probability > 0);
+      .filter((tier) => Number.isFinite(tier.minis) && Number.isFinite(tier.probability) && tier.minis > 0 && tier.probability > 0);
     return JSON.stringify(normalized, null, 2);
   }, [tiers]);
 
-  const updateTier = (index: number, key: "points" | "probability" | "isTop", value: string | boolean) => {
+  const updateTier = (index: number, key: "minis" | "probability" | "isTop", value: string | boolean) => {
     setTiers((prev) =>
       prev.map((tier, idx) => {
         if (idx !== index) return tier;
@@ -41,7 +41,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   };
 
   const addTier = () => {
-    setTiers((prev) => [...prev, { points: "", probability: "", isTop: false }]);
+    setTiers((prev) => [...prev, { minis: "", probability: "", isTop: false }]);
   };
 
   const removeTier = (index: number) => {
@@ -94,12 +94,12 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium text-slate-600" htmlFor="priceCoins">
-                Price (coins)
+              <label className="text-sm font-medium text-slate-600" htmlFor="priceMinis">
+                Price (MIN)
               </label>
               <input
-                id="priceCoins"
-                name="priceCoins"
+                id="priceMinis"
+                name="priceMinis"
                 type="number"
                 min={1}
                 required
@@ -108,12 +108,12 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-600" htmlFor="guaranteedMinPoints">
-                Guaranteed minimum points
+              <label className="text-sm font-medium text-slate-600" htmlFor="guaranteedMinMinis">
+                Guaranteed minimum MIN
               </label>
               <input
-                id="guaranteedMinPoints"
-                name="guaranteedMinPoints"
+                id="guaranteedMinMinis"
+                name="guaranteedMinMinis"
                 type="number"
                 min={1}
                 required
@@ -125,7 +125,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           <div>
             <label className="text-sm font-medium text-slate-600">Reward tiers</label>
             <p className="mt-1 text-xs text-slate-500">
-              Define each tier&apos;s points, probability, and whether it&apos;s a top prize. We&apos;ll generate the JSON for you.
+              Define each tier&apos;s MIN, probability, and whether it&apos;s a top prize. We&apos;ll generate the JSON for you.
             </p>
             <div className="mt-3 space-y-3">
               {tiers.map((tier, idx) => (
@@ -133,10 +133,10 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                   <input
                     type="number"
                     min={1}
-                    placeholder="Points"
-                    value={tier.points}
+                    placeholder="MIN"
+                    value={tier.minis}
                     disabled={isLocked}
-                    onChange={(event) => updateTier(idx, "points", event.target.value)}
+                    onChange={(event) => updateTier(idx, "minis", event.target.value)}
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-100"
                   />
                   <input
@@ -189,12 +189,12 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="text-sm font-medium text-slate-600" htmlFor="ticketPriceCoins">
-              Ticket price (coins)
+            <label className="text-sm font-medium text-slate-600" htmlFor="ticketPriceMinis">
+              Ticket price (MIN)
             </label>
             <input
-              id="ticketPriceCoins"
-              name="ticketPriceCoins"
+              id="ticketPriceMinis"
+              name="ticketPriceMinis"
               type="number"
               min={1}
               required

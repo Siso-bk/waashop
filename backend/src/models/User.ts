@@ -6,8 +6,7 @@ export interface IUser extends Document {
   lastName?: string;
   username?: string;
   email?: string;
-  coinsBalance: number;
-  pointsBalance: number;
+  minisBalance: number;
   lastTopWinAt?: Date | null;
   roles: string[];
   createdAt: Date;
@@ -21,8 +20,7 @@ const UserSchema = new Schema<IUser>(
     lastName: String,
     username: String,
     email: { type: String },
-    coinsBalance: { type: Number, default: 0 },
-    pointsBalance: { type: Number, default: 0 },
+    coinsBalance: { type: Number, default: 0, alias: "minisBalance" },
     lastTopWinAt: { type: Date },
     roles: { type: [String], default: ["customer"] },
   },

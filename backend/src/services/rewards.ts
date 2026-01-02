@@ -22,7 +22,7 @@ const selectTier = (tiers: IRewardTier[]) => {
 };
 
 const fallbackTier = (tiers: IRewardTier[]) =>
-  tiers.filter((tier) => !tier.isTop).sort((a, b) => b.points - a.points)[0];
+  tiers.filter((tier) => !tier.isTop).sort((a, b) => b.minis - a.minis)[0];
 
 export const resolveReward = (product: IProduct, user: IUser) => {
   const tiers = product.rewardTiers || [];
@@ -44,6 +44,6 @@ export const resolveReward = (product: IProduct, user: IUser) => {
     }
   }
 
-  const rewardPoints = Math.max(awardedTier.points, product.guaranteedMinPoints || 0);
-  return { tier: awardedTier, rewardPoints, awardedTop };
+  const rewardMinis = Math.max(awardedTier.minis, product.guaranteedMinMinis || 0);
+  return { tier: awardedTier, rewardMinis, awardedTop };
 };

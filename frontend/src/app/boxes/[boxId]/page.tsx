@@ -30,18 +30,18 @@ export default async function BoxDetails({ params }: Props) {
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Box</p>
             <h1 className="text-3xl font-semibold text-black">{box.name}</h1>
-            <p className="text-sm text-gray-600">{box.priceCoins.toLocaleString()} coins</p>
+            <p className="text-sm text-gray-600">{box.priceMinis.toLocaleString()}MIN</p>
           </div>
           <div className="rounded-2xl border border-black/10 bg-black px-6 py-4 text-right text-white">
             <p className="text-xs uppercase tracking-[0.3em] text-white/60">Guaranteed minimum</p>
-            <p className="text-2xl font-semibold">{box.guaranteedMinPoints} coins</p>
+            <p className="text-2xl font-semibold">{box.guaranteedMinMinis}MIN</p>
           </div>
         </div>
         <p className="mt-4 text-sm text-gray-500">
           Rewards are calculated on the server with crypto-secure randomness. Top tier prizes have a 7 day cooldown per user and downgrade to the highest non-top tier if on cooldown.
         </p>
         <div className="mt-6">
-          <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinPoints} />
+          <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />
         </div>
         <div className="mt-6">
           <BoxPurchaseButton box={box} disabled={!user} />

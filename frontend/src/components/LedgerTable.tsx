@@ -7,7 +7,7 @@ interface Props {
 const formatDelta = (value: number, suffix: string) => {
   if (!value) return "-";
   const sign = value > 0 ? "+" : "";
-  return `${sign}${value} ${suffix}`;
+  return `${sign}${value}${suffix}`;
 };
 
 export function LedgerTable({ entries }: Props) {
@@ -18,7 +18,7 @@ export function LedgerTable({ entries }: Props) {
         <thead className="bg-black text-xs uppercase tracking-[0.3em] text-white/70">
           <tr>
             <th className="px-4 py-3 text-left font-normal">Reason</th>
-            <th className="px-4 py-3 text-right font-normal">Coins</th>
+            <th className="px-4 py-3 text-right font-normal">MIN</th>
             <th className="px-4 py-3 text-right font-normal">Date</th>
           </tr>
         </thead>
@@ -33,7 +33,7 @@ export function LedgerTable({ entries }: Props) {
           {entries.map((entry) => (
             <tr key={entry.id} className="border-t border-black/5">
               <td className="px-4 py-3 font-medium text-black">{entry.reason}</td>
-              <td className="px-4 py-3 text-right text-gray-600">{formatDelta(entry.deltaCoins, "coins")}</td>
+              <td className="px-4 py-3 text-right text-gray-600">{formatDelta(entry.deltaMinis, "MIN")}</td>
               <td className="px-4 py-3 text-right text-gray-500">
                 {new Date(entry.createdAt).toLocaleString(undefined, {
                   month: "short",

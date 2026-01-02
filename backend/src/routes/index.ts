@@ -113,6 +113,31 @@ const serializeHero = (
   };
 };
 
+const normalizeRewardTiers = (tiers?: any[]) =>
+  (tiers || []).map((tier) => ({
+    minis: tier.minis ?? tier.coins ?? tier.points ?? 0,
+    probability: tier.probability,
+    isTop: tier.isTop,
+  }));
+
+const normalizeProduct = (product: any) => ({
+  _id: product._id,
+  vendorId: product.vendorId,
+  name: product.name,
+  description: product.description,
+  type: product.type,
+  status: product.status,
+  priceMinis: product.priceMinis ?? product.priceCoins ?? 0,
+  guaranteedMinMinis: product.guaranteedMinMinis ?? product.guaranteedMinCoins ?? product.guaranteedMinPoints ?? 0,
+  rewardTiers: normalizeRewardTiers(product.rewardTiers),
+  ticketPriceMinis: product.ticketPriceMinis ?? product.ticketPriceCoins ?? undefined,
+  ticketCount: product.ticketCount,
+  ticketsSold: product.ticketsSold,
+  challengeWinnerUserId: product.challengeWinnerUserId,
+  createdAt: product.createdAt,
+  updatedAt: product.updatedAt,
+});
+
 const DEFAULT_HOME_HIGHLIGHTS = [
   {
     key: "new",
@@ -230,7 +255,7 @@ const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.Ob
     username,
     firstName,
     lastName,
-    amountCoins: deposit.amountCoins,
+    amountMinis: deposit.amountMinis ?? (deposit as any).amountCoins,
     currency: deposit.currency,
     paymentMethod: deposit.paymentMethod,
     paymentReference: deposit.paymentReference,
@@ -240,7 +265,7 @@ const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.Ob
     adminNote: deposit.adminNote,
     reviewedBy: deposit.reviewedBy ? deposit.reviewedBy.toString() : undefined,
     reviewedAt: deposit.reviewedAt?.toISOString(),
-    coinsCredited: deposit.coinsCredited,
+    minisCredited: deposit.minisCredited ?? (deposit as any).coinsCredited,
     createdAt: deposit.createdAt.toISOString(),
     updatedAt: deposit.updatedAt.toISOString(),
   };
@@ -264,15 +289,14 @@ const chargeSubmissionFee = async (
   meta: Record<string, unknown>
 ) => {
   if (!amount || amount <= 0) return;
-  if (user.coinsBalance < amount) {
+  if (user.minisBalance < amount) {
     throw new Error("Insufficient balance to pay submission fee");
   }
-  user.coinsBalance -= amount;
+  user.minisBalance -= amount;
   await user.save();
   await Ledger.create({
     userId: user._id,
-    deltaCoins: -amount,
-    deltaPoints: 0,
+    deltaMinis: -amount,
     reason,
     meta,
   });
@@ -650,8 +674,7 @@ router.get(
         lastName: user.lastName,
         username: user.username,
         roles: user.roles,
-        coinsBalance: user.coinsBalance,
-        pointsBalance: user.pointsBalance,
+        minisBalance: (user as any).minisBalance ?? user.coinsBalance,
       })),
     });
   }
@@ -689,8 +712,7 @@ router.post(
       .object({
         userId: z.string().optional(),
         email: z.string().email().optional(),
-        coinsDelta: z.number().finite().optional().default(0),
-        pointsDelta: z.number().finite().optional().default(0),
+        minisDelta: z.number().finite().optional().default(0),
         note: z.string().max(200).optional(),
       })
       .refine((data) => Boolean(data.userId || data.email), {
@@ -700,10 +722,9 @@ router.post(
 
     try {
       const payload = schema.parse(req.body);
-      const coinsDelta = payload.coinsDelta || 0;
-      const pointsDelta = payload.pointsDelta || 0;
-      if (coinsDelta === 0 && pointsDelta === 0) {
-        return res.status(400).json({ error: "Provide a coins or points delta" });
+      const minisDelta = payload.minisDelta || 0;
+      if (minisDelta === 0) {
+        return res.status(400).json({ error: "Provide a minis delta" });
       }
 
       await connectDB();
@@ -715,20 +736,17 @@ router.post(
         return res.status(404).json({ error: "User not found" });
       }
 
-      const nextCoins = user.coinsBalance + coinsDelta;
-      const nextPoints = user.pointsBalance + pointsDelta;
-      if (nextCoins < 0 || nextPoints < 0) {
+      const nextMinis = user.minisBalance + minisDelta;
+      if (nextMinis < 0) {
         return res.status(400).json({ error: "Adjustment would result in negative balance" });
       }
 
-      user.coinsBalance = nextCoins;
-      user.pointsBalance = nextPoints;
+      user.minisBalance = nextMinis;
       await user.save();
 
       await Ledger.create({
         userId: user._id,
-        deltaCoins: coinsDelta,
-        deltaPoints: pointsDelta,
+        deltaMinis: minisDelta,
         reason: "ADMIN_MANUAL_ADJUSTMENT",
         meta: {
           adminUserId: req.userId,
@@ -738,8 +756,7 @@ router.post(
 
       res.json({
         userId: user._id.toString(),
-        coinsBalance: user.coinsBalance,
-        pointsBalance: user.pointsBalance,
+        minisBalance: user.minisBalance,
       });
     } catch (error) {
       console.error("Ledger adjust error", error);
@@ -756,7 +773,7 @@ router.get("/deposits", authMiddleware, async (req, res) => {
 
 router.post("/deposits", authMiddleware, async (req, res) => {
   const schema = z.object({
-    amountCoins: z.number().finite().min(1),
+    amountMinis: z.number().finite().min(1),
     currency: z.string().max(20).optional(),
     paymentMethod: z.string().min(1).max(100),
     paymentReference: z.string().max(120).optional(),
@@ -769,7 +786,7 @@ router.post("/deposits", authMiddleware, async (req, res) => {
     await connectDB();
     const deposit = await DepositRequest.create({
       userId: req.userId,
-      amountCoins: payload.amountCoins,
+      amountMinis: payload.amountMinis,
       currency: payload.currency,
       paymentMethod: payload.paymentMethod,
       paymentReference: payload.paymentReference,
@@ -779,9 +796,9 @@ router.post("/deposits", authMiddleware, async (req, res) => {
     });
     await createNotification(req.userId, {
       type: "DEPOSIT_SUBMITTED",
-      title: `Deposit submitted: ${payload.amountCoins} coins`,
+      title: `Deposit submitted: ${payload.amountMinis}MIN`,
       body: "We received your receipt and will review it shortly.",
-      meta: { depositId: deposit._id, amountCoins: payload.amountCoins },
+      meta: { depositId: deposit._id, amountMinis: payload.amountMinis },
     });
     res.status(201).json({ deposit: serializeDeposit(deposit) });
   } catch (error) {
@@ -844,21 +861,20 @@ router.post(
         if (!user) {
           return { error: "User not found" } as const;
         }
-        const creditAmount = deposit.amountCoins;
-        user.coinsBalance += creditAmount;
+        const creditAmount = deposit.amountMinis;
+        user.minisBalance += creditAmount;
         deposit.status = "APPROVED";
         deposit.adminNote = payload.adminNote;
         deposit.reviewedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
         deposit.reviewedAt = new Date();
-        deposit.coinsCredited = creditAmount;
+        deposit.minisCredited = creditAmount;
         if (session) {
           await Promise.all([user.save({ session }), deposit.save({ session })]);
           await Ledger.create(
             [
               {
                 userId: user._id,
-                deltaCoins: creditAmount,
-                deltaPoints: 0,
+                deltaMinis: creditAmount,
                 reason: "DEPOSIT_CREDIT",
                 meta: {
                   depositId: deposit._id,
@@ -873,8 +889,7 @@ router.post(
           await Promise.all([user.save(), deposit.save()]);
           await Ledger.create({
             userId: user._id,
-            deltaCoins: creditAmount,
-            deltaPoints: 0,
+            deltaMinis: creditAmount,
             reason: "DEPOSIT_CREDIT",
             meta: {
               depositId: deposit._id,
@@ -894,16 +909,16 @@ router.post(
         .populate("userId", "email username firstName lastName")
         .exec();
       const serialized = serializeDeposit(populated || result.deposit);
-      const amountText = Number(serialized.amountCoins).toLocaleString();
+      const amountText = Number(serialized.amountMinis).toLocaleString();
       await createNotification(result.deposit.userId, {
         type: "DEPOSIT_APPROVED",
-        title: `Deposit approved: ${amountText} coins`,
-        body: "Coins are now available in your Waashop wallet.",
-        meta: { depositId: serialized.id, amountCoins: serialized.amountCoins },
+        title: `Deposit approved: ${amountText}MIN`,
+        body: "MIN are now available in your Waashop wallet.",
+        meta: { depositId: serialized.id, amountMinis: serialized.amountMinis },
       });
       await sendTelegramNotification(
         result.userTelegramId,
-        `✅ Your Waashop deposit for ${amountText} coins has been approved.\nCoins are now available in your wallet.`
+        `✅ Your Waashop deposit for ${amountText}MIN has been approved.\nMIN are now available in your wallet.`
       );
       res.json({ deposit: serialized });
     } catch (error) {
@@ -942,16 +957,16 @@ router.post(
         .populate("userId", "email username firstName lastName")
         .exec();
       const serialized = serializeDeposit(populated || deposit);
-      const amountText = Number(serialized.amountCoins).toLocaleString();
+      const amountText = Number(serialized.amountMinis).toLocaleString();
       await createNotification(deposit.userId, {
         type: "DEPOSIT_REJECTED",
-        title: `Deposit rejected: ${amountText} coins`,
+        title: `Deposit rejected: ${amountText}MIN`,
         body: payload.adminNote || "Please contact support for help completing your deposit.",
-        meta: { depositId: serialized.id, amountCoins: serialized.amountCoins },
+        meta: { depositId: serialized.id, amountMinis: serialized.amountMinis },
       });
       await sendTelegramNotification(
         user?.telegramId,
-        `⚠️ Your Waashop deposit for ${amountText} coins was rejected.` +
+        `⚠️ Your Waashop deposit for ${amountText}MIN was rejected.` +
           (payload.adminNote ? ` Reason: ${payload.adminNote}` : " Please contact support for assistance.")
       );
       res.json({ deposit: serialized });
@@ -1291,7 +1306,7 @@ router.patch(
 
 /** Product management */
 const rewardTierSchema = z.object({
-  points: z.number().int().positive(),
+  minis: z.number().int().positive(),
   probability: z.number().positive(),
   isTop: z.boolean().optional(),
 });
@@ -1299,15 +1314,15 @@ const rewardTierSchema = z.object({
 const mysteryBoxSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
-  priceCoins: z.number().int().positive(),
-  guaranteedMinPoints: z.number().int().positive(),
+  priceMinis: z.number().int().positive(),
+  guaranteedMinMinis: z.number().int().positive(),
   rewardTiers: z.array(rewardTierSchema).min(1),
 });
 
 const challengeSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
-  ticketPriceCoins: z.number().int().positive(),
+  ticketPriceMinis: z.number().int().positive(),
   ticketCount: z.number().int().positive(),
 });
 
@@ -1333,13 +1348,13 @@ router.post(
           description: payload.description,
           type: "CHALLENGE",
           status: "PENDING",
-          ticketPriceCoins: payload.ticketPriceCoins,
+          ticketPriceMinis: payload.ticketPriceMinis,
           ticketCount: payload.ticketCount,
           ticketsSold: 0,
-          priceCoins: payload.ticketPriceCoins,
+          priceMinis: payload.ticketPriceMinis,
         });
         await product.save();
-        return res.json({ product });
+        return res.json({ product: normalizeProduct(product) });
       }
       const payload = mysteryBoxSchema.parse(req.body);
       const totalProbability = payload.rewardTiers.reduce((acc, tier) => acc + tier.probability, 0);
@@ -1353,14 +1368,14 @@ router.post(
         vendorId: req.vendorDoc!._id,
         name: payload.name,
         description: payload.description,
-        priceCoins: payload.priceCoins,
-        guaranteedMinPoints: payload.guaranteedMinPoints,
+        priceMinis: payload.priceMinis,
+        guaranteedMinMinis: payload.guaranteedMinMinis,
         rewardTiers: payload.rewardTiers,
         type: "MYSTERY_BOX",
         status: "PENDING",
       });
       await product.save();
-      res.json({ product });
+      res.json({ product: normalizeProduct(product) });
     } catch (error) {
       console.error("Create product error", error);
       res.status(400).json({ error: "Unable to create product" });
@@ -1387,12 +1402,12 @@ router.patch(
       Object.assign(product, {
         name: payload.name,
         description: payload.description,
-        priceCoins: payload.priceCoins,
-        guaranteedMinPoints: payload.guaranteedMinPoints,
+        priceMinis: payload.priceMinis,
+        guaranteedMinMinis: payload.guaranteedMinMinis,
         rewardTiers: payload.rewardTiers,
       });
       await product.save();
-      res.json({ product });
+      res.json({ product: normalizeProduct(product) });
     } catch (error) {
       console.error("Update product error", error);
       res.status(400).json({ error: "Unable to update product" });
@@ -1426,7 +1441,7 @@ router.get(
   requireApprovedVendor,
   async (req, res) => {
     const products = await Product.find({ vendorId: req.vendorDoc!._id }).sort({ createdAt: -1 }).lean();
-    res.json({ products });
+    res.json({ products: products.map((product) => normalizeProduct(product)) });
   }
 );
 
@@ -1437,7 +1452,7 @@ router.get(
   async (req, res) => {
     await connectDB();
     const products = await Product.find().sort({ createdAt: -1 }).lean();
-    res.json({ products });
+    res.json({ products: products.map((product) => normalizeProduct(product)) });
   }
 );
 
@@ -1456,12 +1471,12 @@ router.patch(
       Object.assign(product, {
         name: payload.name,
         description: payload.description,
-        priceCoins: payload.priceCoins,
-        guaranteedMinPoints: payload.guaranteedMinPoints,
+        priceMinis: payload.priceMinis,
+        guaranteedMinMinis: payload.guaranteedMinMinis,
         rewardTiers: payload.rewardTiers,
       });
       await product.save();
-      res.json({ product });
+      res.json({ product: normalizeProduct(product) });
     } catch (error) {
       console.error("Admin update product error", error);
       res.status(400).json({ error: "Unable to update product" });
@@ -1517,9 +1532,13 @@ router.get("/boxes", async (_req, res) => {
       id: product._id.toString(),
       boxId: product._id.toString(),
       name: product.name,
-      priceCoins: product.priceCoins,
-      guaranteedMinPoints: product.guaranteedMinPoints,
-      rewardTiers: product.rewardTiers,
+      priceMinis: (product as any).priceMinis ?? (product as any).priceCoins ?? 0,
+      guaranteedMinMinis: (product as any).guaranteedMinMinis ?? (product as any).guaranteedMinCoins ?? (product as any).guaranteedMinPoints ?? 0,
+      rewardTiers: (product.rewardTiers || []).map((tier: any) => ({
+        minis: tier.minis ?? tier.coins ?? tier.points ?? 0,
+        probability: tier.probability,
+        isTop: tier.isTop,
+      })),
       vendor: product.vendorId,
     })),
   });
@@ -1535,7 +1554,7 @@ router.get("/challenges", async (_req, res) => {
       id: challenge._id.toString(),
       name: challenge.name,
       description: challenge.description,
-      ticketPriceCoins: challenge.ticketPriceCoins,
+      ticketPriceMinis: (challenge as any).ticketPriceMinis ?? challenge.ticketPriceCoins,
       ticketCount: challenge.ticketCount,
       ticketsSold: challenge.ticketsSold,
       vendor: challenge.vendorId,
@@ -1586,7 +1605,8 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
 
       if (!userDoc) throw new Error("User not found");
       if (!product) return { error: "Mystery box not found" } as const;
-      if (userDoc.coinsBalance < product.priceCoins) {
+      const priceMinis = (product as any).priceMinis ?? (product as any).priceCoins;
+      if (userDoc.minisBalance < priceMinis) {
         return { error: "Insufficient balance" } as const;
       }
 
@@ -1594,25 +1614,25 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
         purchaseId,
         userId: userDoc._id,
         boxId,
-        priceCoins: product.priceCoins,
+        priceMinis,
         status: "PENDING",
       });
       if (session) await purchase.save({ session });
       else await purchase.save();
 
-      userDoc.coinsBalance -= product.priceCoins;
-      const { rewardPoints: grossRewardPoints, awardedTop, tier } = resolveReward(product, userDoc);
-      let platformFeePoints = 0;
+      userDoc.minisBalance -= priceMinis;
+      const { rewardMinis: grossRewardMinis, awardedTop, tier } = resolveReward(product, userDoc);
+      let platformFeeMinis = 0;
       if (awardedTop && topWinnerFeePercent > 0) {
-        platformFeePoints = Math.min(
-          grossRewardPoints,
-          Math.max(0, Math.round((grossRewardPoints * topWinnerFeePercent) / 100))
+        platformFeeMinis = Math.min(
+          grossRewardMinis,
+          Math.max(0, Math.round((grossRewardMinis * topWinnerFeePercent) / 100))
         );
       }
-      const netRewardPoints = grossRewardPoints - platformFeePoints;
-      userDoc.pointsBalance += grossRewardPoints;
-      if (platformFeePoints > 0) {
-        userDoc.pointsBalance -= platformFeePoints;
+      const netRewardMinis = grossRewardMinis - platformFeeMinis;
+      userDoc.minisBalance += grossRewardMinis;
+      if (platformFeeMinis > 0) {
+        userDoc.minisBalance -= platformFeeMinis;
       }
       if (awardedTop) {
         userDoc.lastTopWinAt = new Date();
@@ -1621,35 +1641,32 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
       const rewardMeta: Record<string, unknown> = {
         productId: product._id,
         purchaseId,
-        tierPoints: tier.points,
+        tierMinis: tier.minis,
         awardedTop,
-        netPoints: netRewardPoints,
-        grossPoints: grossRewardPoints,
-        platformFeePoints,
+        netMinis: netRewardMinis,
+        grossMinis: grossRewardMinis,
+        platformFeeMinis,
         feePercent: topWinnerFeePercent,
       };
 
       const ledgerEntries = [
         {
           userId: userDoc._id,
-          deltaCoins: -product.priceCoins,
-          deltaPoints: 0,
+          deltaMinis: -priceMinis,
           reason: "BOX_PURCHASE_DEBIT",
           meta: { productId: product._id, purchaseId },
         },
         {
           userId: userDoc._id,
-          deltaCoins: 0,
-          deltaPoints: grossRewardPoints,
+          deltaMinis: grossRewardMinis,
           reason: "BOX_REWARD_CREDIT",
           meta: rewardMeta,
         },
       ];
-      if (platformFeePoints > 0) {
+      if (platformFeeMinis > 0) {
         ledgerEntries.push({
           userId: userDoc._id,
-          deltaCoins: 0,
-          deltaPoints: -platformFeePoints,
+          deltaMinis: -platformFeeMinis,
           reason: "TOP_WINNER_FEE",
           meta: { ...rewardMeta, feeApplied: true },
         });
@@ -1663,7 +1680,7 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
         await Ledger.insertMany(ledgerEntries);
       }
 
-      purchase.rewardPoints = netRewardPoints;
+      purchase.rewardMinis = netRewardMinis;
       purchase.status = "COMPLETED";
       if (session) await purchase.save({ session });
       else await purchase.save();
@@ -1671,9 +1688,9 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
       return {
         purchase,
         userDoc,
-        netRewardPoints,
-        grossRewardPoints,
-        platformFeePoints,
+        netRewardMinis,
+        grossRewardMinis,
+        platformFeeMinis,
         tier,
       } as const;
     });
@@ -1684,13 +1701,12 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
 
     res.json({
       purchaseId,
-      rewardPoints: result.netRewardPoints,
-      grossRewardPoints: result.grossRewardPoints,
-      platformFeePoints: result.platformFeePoints,
+      rewardMinis: result.netRewardMinis,
+      grossRewardMinis: result.grossRewardMinis,
+      platformFeeMinis: result.platformFeeMinis,
       tier: result.tier,
       balances: {
-        coins: result.userDoc.coinsBalance,
-        points: result.userDoc.pointsBalance,
+        minis: result.userDoc.minisBalance,
       },
     });
   } catch (error) {
@@ -1710,7 +1726,8 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
       const productQuery = Product.findOne({ _id: req.params.id, type: "CHALLENGE", status: "ACTIVE" });
       if (session) productQuery.session(session);
       const product = await productQuery;
-      if (!product || !product.ticketCount || !product.ticketPriceCoins) {
+      const ticketPriceMinis = (product as any).ticketPriceMinis ?? (product as any).ticketPriceCoins;
+      if (!product || !product.ticketCount || !ticketPriceMinis) {
         return { error: "Challenge not found" } as const;
       }
       if (product.challengeWinnerUserId) {
@@ -1731,8 +1748,8 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
       if (!userDoc) {
         return { error: "User not found" } as const;
       }
-      const totalCost = quantity * product.ticketPriceCoins;
-      if (userDoc.coinsBalance < totalCost) {
+      const totalCost = quantity * ticketPriceMinis;
+      if (userDoc.minisBalance < totalCost) {
         return { error: "Insufficient balance" } as const;
       }
 
@@ -1746,9 +1763,9 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
         vendorOwner = await ownerQuery;
       }
 
-      userDoc.coinsBalance -= totalCost;
+      userDoc.minisBalance -= totalCost;
       if (vendorOwner) {
-        vendorOwner.coinsBalance += totalCost;
+        vendorOwner.minisBalance += totalCost;
       }
 
       const startTicket = (product.ticketsSold || 0) + 1;
@@ -1775,8 +1792,7 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
       const ledgerEntries = [
         {
           userId: userDoc._id,
-          deltaCoins: -totalCost,
-          deltaPoints: 0,
+          deltaMinis: -totalCost,
           reason: "CHALLENGE_TICKET_PURCHASE",
           meta: { productId: product._id, quantity },
         },
@@ -1784,8 +1800,7 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
       if (vendorOwner) {
         ledgerEntries.push({
           userId: vendorOwner._id,
-          deltaCoins: totalCost,
-          deltaPoints: 0,
+          deltaMinis: totalCost,
           reason: "CHALLENGE_TICKET_REVENUE",
           meta: { productId: product._id, quantity },
         });
@@ -1850,7 +1865,13 @@ router.get("/ledger", authMiddleware, async (req, res) => {
   ]);
 
   res.json({
-    items,
+    items: items.map((entry: any) => ({
+      id: entry._id?.toString?.() || entry.id,
+      deltaMinis: entry.deltaMinis ?? entry.deltaCoins ?? 0,
+      reason: entry.reason,
+      meta: entry.meta || {},
+      createdAt: entry.createdAt,
+    })),
     page: params.page,
     total,
     pageSize: params.limit,
@@ -1866,7 +1887,7 @@ router.post("/admin/seed", async (req, res) => {
 
   const user = await User.findOneAndUpdate(
     { telegramId: "999999" },
-    { $setOnInsert: { coinsBalance: 10000, pointsBalance: 0, roles: ["customer", "vendor", "admin"] } },
+    { $setOnInsert: { coinsBalance: 10000, roles: ["customer", "vendor", "admin"] } },
     { upsert: true, new: true }
   );
 
@@ -1880,7 +1901,7 @@ router.post("/admin/seed", async (req, res) => {
   }
 
   await Product.findOneAndUpdate(
-    { name: "Mystery Points Box" },
+    { name: "Mystery MIN Box" },
     {
       vendorId: vendor._id,
       description: "Seeded product",

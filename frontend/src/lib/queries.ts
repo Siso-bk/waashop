@@ -22,8 +22,8 @@ const mapBox = (box: RawBox): MysteryBoxDto => ({
   id: typeof box._id === "string" ? box._id : box._id?.toString?.() || box.id,
   boxId: box.boxId,
   name: box.name,
-  priceCoins: box.priceCoins,
-  guaranteedMinPoints: box.guaranteedMinPoints,
+  priceMinis: box.priceMinis,
+  guaranteedMinMinis: box.guaranteedMinMinis,
   rewardTiers: box.rewardTiers,
 });
 
@@ -50,8 +50,7 @@ export const getRecentLedger = async (limit = 50): Promise<LedgerEntryDto[]> => 
   const data = await backendFetch<{ items: RawLedger[] }>(`/api/ledger?limit=${limit}`);
   return data.items.map((entry) => ({
     id: typeof entry._id === "string" ? entry._id : entry._id?.toString?.() || entry.id,
-    deltaCoins: entry.deltaCoins,
-    deltaPoints: entry.deltaPoints,
+    deltaMinis: entry.deltaMinis,
     reason: entry.reason,
     meta: entry.meta || {},
     createdAt: entry.createdAt,
@@ -90,7 +89,7 @@ const FALLBACK_HOME_HERO: HomeHeroContent = {
       id: "hero-card-2",
       tagline: "Always synced",
       title: "Wallet-first",
-      body: "Coins move with you across the Mini App, web, and dashboard.",
+      body: "MIN move with you across the Mini App, web, and dashboard.",
       imageUrl: "",
       overlayOpacity: 0.35,
       order: 1,

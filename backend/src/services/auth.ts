@@ -99,8 +99,7 @@ export const upsertTelegramUser = async (profile: TelegramWebAppUser) => {
       firstName: profile.first_name,
       lastName: profile.last_name,
       username: profile.username,
-      coinsBalance: env.NODE_ENV === "production" ? 0 : 5000,
-      pointsBalance: 0,
+      minisBalance: env.NODE_ENV === "production" ? 0 : 5000,
     });
   } else {
     user.firstName = profile.first_name || user.firstName;
@@ -124,8 +123,7 @@ export const serializeUser = (user: IUser) => ({
   lastName: user.lastName,
   username: user.username,
   email: user.email,
-  coinsBalance: user.coinsBalance,
-  pointsBalance: user.pointsBalance,
+  minisBalance: user.minisBalance,
   lastTopWinAt: user.lastTopWinAt,
   roles: user.roles || [],
 });

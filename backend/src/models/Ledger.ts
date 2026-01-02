@@ -2,8 +2,7 @@ import { Schema, model, models, Document, Types } from "mongoose";
 
 export interface ILedger extends Document {
   userId: Types.ObjectId;
-  deltaCoins: number;
-  deltaPoints: number;
+  deltaMinis: number;
   reason: string;
   meta?: Record<string, unknown>;
   createdAt: Date;
@@ -12,8 +11,7 @@ export interface ILedger extends Document {
 const LedgerSchema = new Schema<ILedger>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    deltaCoins: { type: Number, default: 0 },
-    deltaPoints: { type: Number, default: 0 },
+    deltaCoins: { type: Number, default: 0, alias: "deltaMinis" },
     reason: { type: String, required: true },
     meta: { type: Schema.Types.Mixed },
   },
