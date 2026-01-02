@@ -27,6 +27,19 @@ import { resolveReward } from "../services/rewards";
 
 const router = Router();
 
+type HeroCard = {
+  id: string;
+  tagline?: string;
+  title: string;
+  body: string;
+  imageUrl?: string;
+  overlayOpacity?: number;
+  ctaLabel?: string;
+  ctaHref?: string;
+  order?: number;
+  status?: "DRAFT" | "PUBLISHED";
+};
+
 const DEFAULT_HOME_HERO = {
   tagline: "Waashop",
   headline: "Mystery drops with honest odds and a wallet that travels with you.",
@@ -42,7 +55,7 @@ const DEFAULT_HOME_HERO = {
   secondaryCtaAuthedHref: "/wallet",
   backgroundClass: "bg-black",
   textClass: "text-white",
-  cards: [],
+  cards: [] as HeroCard[],
 };
 
 type HeroResponse = typeof DEFAULT_HOME_HERO;
@@ -72,10 +85,13 @@ const serializeHero = (
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map((card) => ({
       id: card.id,
+      tagline: card.tagline,
       title: card.title,
       body: card.body,
-      meta: card.meta,
       imageUrl: card.imageUrl,
+      overlayOpacity: card.overlayOpacity,
+      ctaLabel: card.ctaLabel,
+      ctaHref: card.ctaHref,
       order: card.order,
       status: card.status,
     }));
