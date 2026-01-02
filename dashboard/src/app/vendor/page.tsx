@@ -199,14 +199,14 @@ function ProductCard({ product }: { product: ProductDto }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-semibold text-slate-900">{product.name}</p>
-          <p className="text-xs text-slate-500">{product.priceMinis.toLocaleString()}MIN</p>
+          <p className="text-xs text-slate-500">{product.priceMinis.toLocaleString()} MINIS</p>
         </div>
         <StatusBadge status={product.status} />
       </div>
       <p className="mt-2 text-sm text-slate-500">{product.description || "No description"}</p>
       {product.type === "CHALLENGE" ? (
         <p className="mt-2 text-xs text-slate-500">
-          Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets sold · {product.ticketPriceMinis?.toLocaleString() || ""}MIN
+          Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets sold · {product.ticketPriceMinis?.toLocaleString() || ""} MINIS
         </p>
       ) : null}
       {product.status === "PENDING" && product.type === "MYSTERY_BOX" && (

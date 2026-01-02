@@ -44,6 +44,6 @@ export const resolveReward = (product: IProduct, user: IUser) => {
     }
   }
 
-  const rewardMinis = Math.max(awardedTier.minis, product.guaranteedMinMinis || 0);
+  const rewardMinis = Math.max(awardedTier.minis, product.guaranteedMinPoints || 0);
   return { tier: awardedTier, rewardMinis, awardedTop };
 };

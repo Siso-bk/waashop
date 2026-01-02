@@ -57,7 +57,7 @@ async function UsersTable() {
                 </div>
               </td>
               <td className="px-4 py-3 text-xs text-slate-500">
-                <p>MIN: {entry.minisBalance.toLocaleString()}</p>
+                <p>MINIS: {entry.minisBalance.toLocaleString()}</p>
               </td>
               <td className="px-4 py-3">
                 <RoleForm user={entry} />
@@ -156,7 +156,7 @@ function BalanceAdjustForm({ user }: { user: AdminUser }) {
   return (
     <form action={adjustBalances} className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
       <input type="hidden" name="userId" value={user.id} />
-      <input type="number" name="minisDelta" step="1" placeholder="+/- MIN" className="w-28 rounded-lg border border-slate-200 px-2 py-1" />
+      <input type="number" name="minisDelta" step="1" placeholder="+/- MINIS" className="w-28 rounded-lg border border-slate-200 px-2 py-1" />
       <input type="text" name="note" placeholder="Optional note" className="w-32 flex-1 rounded-lg border border-slate-200 px-2 py-1" />
       <PendingButton pendingLabel="Updating..." className="rounded-lg bg-slate-900 px-3 py-1.5 font-semibold text-white">
         Adjust

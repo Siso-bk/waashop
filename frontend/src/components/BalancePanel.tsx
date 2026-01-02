@@ -16,9 +16,9 @@ export function BalancePanel({ minis, tone = "light" }: Props) {
   return (
     <div>
       <div className={container}>
-        <p className={`text-xs uppercase tracking-[0.3em] ${label}`}>MIN</p>
+        <p className={`text-xs uppercase tracking-[0.3em] ${label}`}>MINIS</p>
         <p className="mt-2 text-3xl font-semibold">{(minis ?? 0).toLocaleString()}</p>
-        <p className={`text-xs ${description}`}>Spend MIN to open boxes</p>
+        <p className={`text-xs ${description}`}>Spend MINIS to open boxes</p>
       </div>
     </div>
   );

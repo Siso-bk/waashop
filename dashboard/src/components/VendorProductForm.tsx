@@ -95,7 +95,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="text-sm font-medium text-slate-600" htmlFor="priceMinis">
-                Price (MIN)
+                Price (MINI)
               </label>
               <input
                 id="priceMinis"
@@ -109,7 +109,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
             </div>
             <div>
               <label className="text-sm font-medium text-slate-600" htmlFor="guaranteedMinMinis">
-                Guaranteed minimum MIN
+                Guaranteed minimum MINI
               </label>
               <input
                 id="guaranteedMinMinis"
@@ -125,7 +125,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           <div>
             <label className="text-sm font-medium text-slate-600">Reward tiers</label>
             <p className="mt-1 text-xs text-slate-500">
-              Define each tier&apos;s MIN, probability, and whether it&apos;s a top prize. We&apos;ll generate the JSON for you.
+              Define each tier&apos;s MINI, probability, and whether it&apos;s a top prize. We&apos;ll generate the JSON for you.
             </p>
             <div className="mt-3 space-y-3">
               {tiers.map((tier, idx) => (
@@ -133,7 +133,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                   <input
                     type="number"
                     min={1}
-                    placeholder="MIN"
+                    placeholder="MINI"
                     value={tier.minis}
                     disabled={isLocked}
                     onChange={(event) => updateTier(idx, "minis", event.target.value)}
@@ -190,7 +190,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="text-sm font-medium text-slate-600" htmlFor="ticketPriceMinis">
-              Ticket price (MIN)
+              Ticket price (MINI)
             </label>
             <input
               id="ticketPriceMinis"

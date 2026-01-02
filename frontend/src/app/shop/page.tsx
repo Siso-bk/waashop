@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getActiveBoxes, getSessionUser } from "@/lib/queries";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
+import { formatMinis } from "@/lib/minis";
 
 export default async function ShopPage() {
   const [boxes, user] = await Promise.all([getActiveBoxes(), getSessionUser()]);
@@ -30,12 +31,12 @@ export default async function ShopPage() {
             <div className="flex items-center justify-between text-xs text-gray-500">
               <span>Box {box.boxId}</span>
               <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                {(box.priceMinis ?? 0).toLocaleString()}MIN
+                {formatMinis(box.priceMinis ?? 0)}
               </span>
             </div>
             <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
             <p className="text-sm text-gray-600">
-              Guaranteed {box.guaranteedMinMinis}MIN · crypto-secure randomness · top tier cooldown
+              Guaranteed {formatMinis(box.guaranteedMinMinis)} · crypto-secure randomness · top tier cooldown
             </p>
             <div className="mt-4">
               <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />

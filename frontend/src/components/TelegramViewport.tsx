@@ -6,6 +6,13 @@ type TelegramWebApp = {
   isExpanded?: boolean;
   expand: () => void;
   ready?: () => void;
+  requestFullscreen?: () => void;
+  setHeaderColor?: (color: string) => void;
+  setBackgroundColor?: (color: string) => void;
+  viewportHeight?: number;
+  viewportStableHeight?: number;
+  onEvent?: (event: string, cb: () => void) => void;
+  offEvent?: (event: string, cb: () => void) => void;
 };
 
 declare global {
@@ -18,6 +25,14 @@ declare global {
 
 export function TelegramViewport() {
   useEffect(() => {
+    const syncViewportVars = (webApp?: TelegramWebApp) => {
+      const height = webApp?.viewportHeight || window.innerHeight;
+      const stableHeight = webApp?.viewportStableHeight || height;
+      document.documentElement.style.setProperty("--tg-viewport-height", `${height}px`);
+      document.documentElement.style.setProperty("--tg-viewport-stable-height", `${stableHeight}px`);
+    };
+    const handleViewportChange = () => syncViewportVars(window.Telegram?.WebApp);
+
     const attemptExpand = () => {
       const webApp = window.Telegram?.WebApp;
       if (!webApp) {
@@ -27,8 +42,21 @@ export function TelegramViewport() {
         if (typeof webApp.ready === "function") {
           webApp.ready();
         }
+        syncViewportVars(webApp);
+        if (typeof webApp.setHeaderColor === "function") {
+          webApp.setHeaderColor("#ffffff");
+        }
+        if (typeof webApp.setBackgroundColor === "function") {
+          webApp.setBackgroundColor("#f5f5f2");
+        }
         if (typeof webApp.expand === "function" && !webApp.isExpanded) {
           webApp.expand();
+        }
+        if (typeof webApp.requestFullscreen === "function") {
+          webApp.requestFullscreen();
+        }
+        if (typeof webApp.onEvent === "function") {
+          webApp.onEvent("viewportChanged", handleViewportChange);
         }
       } catch {
         // ignore failures; Telegram prevents errors from bubbling to UI
@@ -48,7 +76,13 @@ export function TelegramViewport() {
       }
     }, 150);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      const webApp = window.Telegram?.WebApp;
+      if (webApp && typeof webApp.offEvent === "function") {
+        webApp.offEvent("viewportChanged", handleViewportChange);
+      }
+    };
   }, []);
 
   return null;

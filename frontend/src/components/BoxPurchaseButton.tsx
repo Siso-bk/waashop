@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MysteryBoxDto } from "@/types";
+import { formatMinis } from "@/lib/minis";
 
 interface Props {
   box: MysteryBoxDto;
@@ -69,7 +70,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
         disabled={disabled || isLoading}
         className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        {isLoading ? "Processing..." : `Open for ${box.priceMinis}MIN`}
+        {isLoading ? "Processing..." : `Open for ${formatMinis(box.priceMinis ?? 0)}`}
       </button>
       {error && <p className="text-sm text-red-500">{error}</p>}
       {result && showResult && (
@@ -77,7 +78,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
           <div className="max-w-sm rounded-3xl border border-white/10 bg-black p-6 text-center text-white shadow-xl">
             <p className="text-xs uppercase tracking-[0.3em] text-white/60">Mystery reward</p>
             <p className="mt-2 text-4xl font-semibold animate-pulse">
-              +{result.rewardMinis}MIN
+              +{formatMinis(result.rewardMinis)}
             </p>
             {result.tier?.isTop && <p className="mt-1 text-white/70">Top tier unlocked</p>}
             <p className="mt-2 text-xs text-white/60">Purchase #{result.purchaseId}</p>

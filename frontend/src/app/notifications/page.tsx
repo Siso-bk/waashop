@@ -12,7 +12,7 @@ const demoNotifications = [
   {
     id: "n2",
     title: "Wallet synced",
-    body: "We refreshed your MIN balance across Waashop and Telegram.",
+    body: "We refreshed your MINIS balance across Waashop and Telegram.",
     timestamp: "Yesterday · 9:14 AM",
     accent: "bg-white text-black",
   },

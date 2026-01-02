@@ -282,6 +282,12 @@ const serializeNotification = (notification: any) => ({
   readAt: notification.readAt ? notification.readAt.toISOString() : undefined,
 });
 
+const formatMinis = (value: number) => {
+  const amount = Number.isFinite(value) ? value : 0;
+  const unit = Math.abs(amount) === 1 ? "MINI" : "MINIS";
+  return `${amount.toLocaleString()} ${unit}`;
+};
+
 const chargeSubmissionFee = async (
   user: IUser,
   amount: number,
@@ -796,7 +802,7 @@ router.post("/deposits", authMiddleware, async (req, res) => {
     });
     await createNotification(req.userId, {
       type: "DEPOSIT_SUBMITTED",
-      title: `Deposit submitted: ${payload.amountMinis}MIN`,
+      title: `Deposit submitted: ${formatMinis(payload.amountMinis)}`,
       body: "We received your receipt and will review it shortly.",
       meta: { depositId: deposit._id, amountMinis: payload.amountMinis },
     });
@@ -909,16 +915,16 @@ router.post(
         .populate("userId", "email username firstName lastName")
         .exec();
       const serialized = serializeDeposit(populated || result.deposit);
-      const amountText = Number(serialized.amountMinis).toLocaleString();
+      const amountText = formatMinis(serialized.amountMinis);
       await createNotification(result.deposit.userId, {
         type: "DEPOSIT_APPROVED",
-        title: `Deposit approved: ${amountText}MIN`,
-        body: "MIN are now available in your Waashop wallet.",
+        title: `Deposit approved: ${amountText}`,
+        body: "MINIS are now available in your Waashop wallet.",
         meta: { depositId: serialized.id, amountMinis: serialized.amountMinis },
       });
       await sendTelegramNotification(
         result.userTelegramId,
-        `✅ Your Waashop deposit for ${amountText}MIN has been approved.\nMIN are now available in your wallet.`
+        `✅ Your Waashop deposit for ${amountText} has been approved.\nMINIS are now available in your wallet.`
       );
       res.json({ deposit: serialized });
     } catch (error) {
@@ -957,16 +963,16 @@ router.post(
         .populate("userId", "email username firstName lastName")
         .exec();
       const serialized = serializeDeposit(populated || deposit);
-      const amountText = Number(serialized.amountMinis).toLocaleString();
+      const amountText = formatMinis(serialized.amountMinis);
       await createNotification(deposit.userId, {
         type: "DEPOSIT_REJECTED",
-        title: `Deposit rejected: ${amountText}MIN`,
+        title: `Deposit rejected: ${amountText}`,
         body: payload.adminNote || "Please contact support for help completing your deposit.",
         meta: { depositId: serialized.id, amountMinis: serialized.amountMinis },
       });
       await sendTelegramNotification(
         user?.telegramId,
-        `⚠️ Your Waashop deposit for ${amountText}MIN was rejected.` +
+        `⚠️ Your Waashop deposit for ${amountText} was rejected.` +
           (payload.adminNote ? ` Reason: ${payload.adminNote}` : " Please contact support for assistance.")
       );
       res.json({ deposit: serialized });
@@ -1901,7 +1907,7 @@ router.post("/admin/seed", async (req, res) => {
   }
 
   await Product.findOneAndUpdate(
-    { name: "Mystery MIN Box" },
+    { name: "Mystery MINI Box" },
     {
       vendorId: vendor._id,
       description: "Seeded product",

@@ -49,11 +49,11 @@ async function ProductsTable() {
                 <p className="font-semibold text-slate-900">{product.name}</p>
                 {product.type === "CHALLENGE" ? (
                   <p className="text-xs text-slate-500">
-                    Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets · {product.ticketPriceMinis?.toLocaleString() || "0"}MIN
+                    Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets · {product.ticketPriceMinis?.toLocaleString() || "0"} MINIS
                   </p>
                 ) : (
                   <p className="text-xs text-slate-500">
-                    {product.rewardTiers?.length || 0} reward tiers · {product.priceMinis.toLocaleString()}MIN
+                    {product.rewardTiers?.length || 0} reward tiers · {product.priceMinis.toLocaleString()} MINIS
                   </p>
                 )}
               </td>
@@ -262,7 +262,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
   }));
 
   if (tiers.some((tier) => !Number.isFinite(tier.minis) || !Number.isFinite(tier.probability))) {
-    return { error: "Each tier requires numeric MIN/probability" };
+    return { error: "Each tier requires numeric MINI/probability" };
   }
   const probabilitySum = tiers.reduce((acc, tier) => acc + tier.probability, 0);
   if (Math.abs(probabilitySum - 1) > 0.01) {

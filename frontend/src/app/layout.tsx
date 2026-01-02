@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-[#f5f5f2] text-[#0b0b0b] antialiased">
-        <div className="min-h-screen">
+        <div className="min-h-[var(--tg-viewport-stable-height,100vh)]">
           <TelegramViewport />
           <header className="sticky top-0 z-40 border-b border-black/10 bg-white/90 backdrop-blur">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">

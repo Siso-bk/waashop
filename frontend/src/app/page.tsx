@@ -13,6 +13,7 @@ import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
 import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
 import { HeroCards } from "@/components/HeroCards";
+import { formatMinis } from "@/lib/minis";
 
 export default async function HomePage() {
   const [user, boxes, hero, highlights, promoCards, challenges, winners] = await Promise.all([
@@ -143,7 +144,7 @@ export default async function HomePage() {
                     {challenge.description && <p className="text-sm text-gray-600">{challenge.description}</p>}
                   </header>
                   <p className="text-xs text-gray-500">
-                    {remaining} of {challenge.ticketCount} tickets remain · {(challenge.ticketPriceMinis ?? 0).toLocaleString()}MIN each
+                    {remaining} of {challenge.ticketCount} tickets remain · {formatMinis(challenge.ticketPriceMinis ?? 0)} each
                   </p>
                   <ChallengePurchaseButton challenge={challenge} />
                 </article>
@@ -183,12 +184,12 @@ export default async function HomePage() {
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>Box {box.boxId}</span>
                 <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                  {(box.priceMinis ?? 0).toLocaleString()}MIN
+                  {formatMinis(box.priceMinis ?? 0)}
                 </span>
               </div>
               <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
               <p className="text-sm text-gray-600">
-                Guaranteed {box.guaranteedMinMinis}MIN · crypto-secure randomness · top tier cooldown
+                Guaranteed {formatMinis(box.guaranteedMinMinis)} · crypto-secure randomness · top tier cooldown
               </p>
               <div className="mt-4">
                 <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />

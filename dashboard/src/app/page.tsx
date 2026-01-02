@@ -53,7 +53,7 @@ async function DepositBanners() {
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.3em]">Deposit processing</p>
-            <p className="mt-1 text-base font-semibold">{pendingDeposit.amountMinis.toLocaleString()}MIN under review</p>
+            <p className="mt-1 text-base font-semibold">{pendingDeposit.amountMinis.toLocaleString()} MINIS under review</p>
             <p className="text-xs text-amber-800/80">
               Submitted {new Date(pendingDeposit.createdAt).toLocaleString()}. We’ll notify you once it’s approved or rejected.
             </p>
@@ -67,7 +67,7 @@ async function DepositBanners() {
           <div>
             <p className="text-xs uppercase tracking-[0.3em]">Deposit update</p>
             <p className="mt-1 text-base font-semibold">
-              {latestResolved.amountMinis.toLocaleString()}MIN{" "}
+              {latestResolved.amountMinis.toLocaleString()} MINIS{" "}
               {latestResolved.status === "APPROVED" ? "credited" : "rejected"}
             </p>
             <p className="text-xs">{new Date(latestResolved.updatedAt).toLocaleString()}</p>
@@ -123,7 +123,7 @@ async function AccountCard() {
       <p className="text-sm text-slate-500">Roles: {user.roles.join(", ")}</p>
       <div className="mt-4 text-sm">
         <div>
-          <p className="text-slate-500">MIN</p>
+          <p className="text-slate-500">MINIS</p>
           <p className="text-2xl font-semibold text-indigo-600">{user.minisBalance.toLocaleString()}</p>
         </div>
       </div>
@@ -177,7 +177,7 @@ async function AdminActions() {
     { href: "/admin/home-hero", title: "Edit homepage hero", body: "Update copy and CTAs without redeploying." },
     { href: "/admin/home-highlights", title: "Edit homepage callouts", body: "Control the cards under the hero." },
     { href: "/admin/promo-cards", title: "Review promo cards", body: "Approve sponsored placements." },
-    { href: "/admin/deposits", title: "Process deposits", body: "Approve receipts and credit MIN." },
+    { href: "/admin/deposits", title: "Process deposits", body: "Approve receipts and credit MINIS." },
     { href: "/admin/users", title: "Manage roles", body: "Promote admins and vendors." },
     { href: "/admin/settings", title: "Platform settings", body: "Update submission fees." },
     { href: "/admin/winners", title: "Post winners", body: "Highlight challenge and mystery champions." },

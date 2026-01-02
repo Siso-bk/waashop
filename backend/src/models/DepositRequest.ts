@@ -4,6 +4,7 @@ export type DepositStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface IDepositRequest extends Document {
   userId: Types.ObjectId;
+  amountCoins: number;
   amountMinis: number;
   currency?: string;
   paymentMethod: string;
@@ -14,6 +15,7 @@ export interface IDepositRequest extends Document {
   adminNote?: string;
   reviewedBy?: Types.ObjectId | null;
   reviewedAt?: Date | null;
+  coinsCredited?: number;
   minisCredited?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -22,7 +24,7 @@ export interface IDepositRequest extends Document {
 const DepositRequestSchema = new Schema<IDepositRequest>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    amountCoins: { type: Number, required: true, alias: "amountMinis" },
+    amountCoins: { type: Number, required: true },
     currency: { type: String },
     paymentMethod: { type: String, required: true },
     paymentReference: { type: String },
@@ -32,12 +34,26 @@ const DepositRequestSchema = new Schema<IDepositRequest>(
     adminNote: { type: String },
     reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
     reviewedAt: { type: Date },
-    coinsCredited: { type: Number, alias: "minisCredited" },
+    coinsCredited: { type: Number },
   },
   { timestamps: true }
 );
 
 DepositRequestSchema.index({ userId: 1, createdAt: -1 });
 DepositRequestSchema.index({ status: 1, createdAt: -1 });
+DepositRequestSchema.virtual("amountMinis")
+  .get(function (this: IDepositRequest) {
+    return this.amountCoins;
+  })
+  .set(function (this: IDepositRequest, value: number) {
+    this.amountCoins = value;
+  });
+DepositRequestSchema.virtual("minisCredited")
+  .get(function (this: IDepositRequest) {
+    return this.coinsCredited;
+  })
+  .set(function (this: IDepositRequest, value: number) {
+    this.coinsCredited = value;
+  });
 
 export default models.DepositRequest || model<IDepositRequest>("DepositRequest", DepositRequestSchema);

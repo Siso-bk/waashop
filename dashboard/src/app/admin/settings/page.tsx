@@ -22,7 +22,7 @@ export default async function AdminSettingsPage() {
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <form action={updateFees} className="space-y-4">
           <label className="block text-sm text-slate-600">
-            Mystery box fee (MIN)
+            Mystery box fee (MINI)
             <input
               name="feeMysteryBox"
               type="number"
@@ -32,7 +32,7 @@ export default async function AdminSettingsPage() {
             />
           </label>
           <label className="block text-sm text-slate-600">
-            Challenge fee (MIN)
+            Challenge fee (MINI)
             <input
               name="feeChallenge"
               type="number"
@@ -42,7 +42,7 @@ export default async function AdminSettingsPage() {
             />
           </label>
           <label className="block text-sm text-slate-600">
-            Promo card fee (MIN)
+            Promo card fee (MINI)
             <input
               name="feePromoCard"
               type="number"

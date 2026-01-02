@@ -18,7 +18,7 @@ export default async function AdminDepositsPage() {
   }
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Admin" title="Deposit queue" description="Review payment proofs and credit MIN." />
+      <PageHeader eyebrow="Admin" title="Deposit queue" description="Review payment proofs and credit MINIS." />
       <Suspense fallback={<DepositsSkeleton />}>
         <DepositsTable />
       </Suspense>
@@ -56,7 +56,7 @@ async function DepositsTable() {
                 )}
               </td>
               <td className="px-4 py-3 font-semibold text-slate-900">
-                {entry.amountMinis.toLocaleString()}MIN
+                {entry.amountMinis.toLocaleString()} MINIS
                 {entry.currency && <p className="text-xs font-normal text-slate-500">Paid in {entry.currency}</p>}
               </td>
               <td className="px-4 py-3 text-xs text-slate-600">
