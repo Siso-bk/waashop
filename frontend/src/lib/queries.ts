@@ -10,8 +10,13 @@ import {
   WinnerSpotlightDto,
 } from "@/types";
 
-type RawBox = MysteryBoxDto & {
+type RawBox = Partial<MysteryBoxDto> & {
   _id?: { toString: () => string } | string;
+  priceMinis?: number;
+  priceCoins?: number;
+  guaranteedMinMinis?: number;
+  guaranteedMinCoins?: number;
+  rewardTiers?: MysteryBoxDto["rewardTiers"];
 };
 
 type RawLedger = LedgerEntryDto & {
@@ -19,12 +24,12 @@ type RawLedger = LedgerEntryDto & {
 };
 
 const mapBox = (box: RawBox): MysteryBoxDto => ({
-  id: typeof box._id === "string" ? box._id : box._id?.toString?.() || box.id,
-  boxId: box.boxId,
-  name: box.name,
-  priceMinis: (box as any).priceMinis ?? (box as any).priceCoins ?? 0,
-  guaranteedMinMinis: (box as any).guaranteedMinMinis ?? (box as any).guaranteedMinCoins ?? 0,
-  rewardTiers: (box as any).rewardTiers ?? [],
+  id: typeof box._id === "string" ? box._id : box._id?.toString?.() ?? box.id ?? "",
+  boxId: box.boxId ?? "",
+  name: box.name ?? "",
+  priceMinis: box.priceMinis ?? box.priceCoins ?? 0,
+  guaranteedMinMinis: box.guaranteedMinMinis ?? box.guaranteedMinCoins ?? 0,
+  rewardTiers: box.rewardTiers ?? [],
 });
 
 export const getActiveBoxes = async (): Promise<MysteryBoxDto[]> => {

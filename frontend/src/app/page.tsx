@@ -166,14 +166,7 @@ export default async function HomePage() {
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Boxes</p>
             <h2 className="text-2xl font-semibold text-black">Live drops</h2>
-            <p className="text-sm text-gray-600">Inspect tiers, review ledger impact, then draw.</p>
           </div>
-          <Link
-            href="/wallet"
-            className="text-sm font-semibold text-black underline decoration-black/30 underline-offset-4"
-          >
-            Wallet & ledger
-          </Link>
         </div>
         <div className="flex gap-6 overflow-x-auto pb-3">
           {boxes.map((box) => (
@@ -189,19 +182,13 @@ export default async function HomePage() {
               </div>
               <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
               <p className="text-sm text-gray-600">
-                Guaranteed {formatMinis(box.guaranteedMinMinis)} · crypto-secure randomness · top tier cooldown
+                Guaranteed {formatMinis(box.guaranteedMinMinis)}
               </p>
               <div className="mt-4">
                 <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />
               </div>
               <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
                 <span>Server draw + automatic ledger entries</span>
-                <Link
-                  href={`/boxes/${box.boxId}`}
-                  className="font-semibold text-black underline decoration-black/15 underline-offset-4"
-                >
-                  Details
-                </Link>
               </div>
               <div className="mt-6">
                 <BoxPurchaseButton box={box} disabled={!user} />
@@ -222,7 +209,7 @@ export default async function HomePage() {
             <p className="text-xs uppercase tracking-[0.3em] text-white/50">Vendors</p>
             <h3 className="text-xl font-semibold">Drop products on Waashop</h3>
             <p className="text-sm text-white/80">
-              One approval unlocks inventory management, payouts, and analytics across every touchpoint.
+              One approval unlocks Product, mystery-box and challenge post opportunities.
             </p>
           </div>
           <Link
