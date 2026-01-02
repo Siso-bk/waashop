@@ -18,7 +18,7 @@ export function BalancePanel({ minis, tone = "light" }: Props) {
       <div className={container}>
         <p className={`text-xs uppercase tracking-[0.3em] ${label}`}>MINIS</p>
         <p className="mt-2 text-3xl font-semibold">{(minis ?? 0).toLocaleString()}</p>
-        <p className={`text-xs ${description}`}>Spend MINIS to open boxes</p>
+        <p className={`text-xs ${description}`}>Total balance you have is equal to ETB.</p>
       </div>
     </div>
   );
