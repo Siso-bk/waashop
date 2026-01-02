@@ -115,7 +115,7 @@ const serializeHero = (
 
 const normalizeRewardTiers = (tiers?: any[]) =>
   (tiers || []).map((tier) => ({
-    minis: tier.minis ?? tier.coins ?? tier.points ?? 0,
+    minis: tier.minis ?? 0,
     probability: tier.probability,
     isTop: tier.isTop,
   }));
@@ -127,10 +127,10 @@ const normalizeProduct = (product: any) => ({
   description: product.description,
   type: product.type,
   status: product.status,
-  priceMinis: product.priceMinis ?? product.priceCoins ?? 0,
-  guaranteedMinMinis: product.guaranteedMinMinis ?? product.guaranteedMinCoins ?? product.guaranteedMinPoints ?? 0,
+  priceMinis: product.priceMinis ?? 0,
+  guaranteedMinMinis: product.guaranteedMinMinis ?? 0,
   rewardTiers: normalizeRewardTiers(product.rewardTiers),
-  ticketPriceMinis: product.ticketPriceMinis ?? product.ticketPriceCoins ?? undefined,
+  ticketPriceMinis: product.ticketPriceMinis ?? undefined,
   ticketCount: product.ticketCount,
   ticketsSold: product.ticketsSold,
   challengeWinnerUserId: product.challengeWinnerUserId,
@@ -255,7 +255,7 @@ const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.Ob
     username,
     firstName,
     lastName,
-    amountMinis: deposit.amountMinis ?? (deposit as any).amountCoins,
+    amountMinis: deposit.amountMinis,
     currency: deposit.currency,
     paymentMethod: deposit.paymentMethod,
     paymentReference: deposit.paymentReference,
@@ -265,7 +265,7 @@ const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.Ob
     adminNote: deposit.adminNote,
     reviewedBy: deposit.reviewedBy ? deposit.reviewedBy.toString() : undefined,
     reviewedAt: deposit.reviewedAt?.toISOString(),
-    minisCredited: deposit.minisCredited ?? (deposit as any).coinsCredited,
+    minisCredited: deposit.minisCredited,
     createdAt: deposit.createdAt.toISOString(),
     updatedAt: deposit.updatedAt.toISOString(),
   };
@@ -289,8 +289,8 @@ const formatMinis = (value: number) => {
 };
 
 const ensureMinisBalance = (user: IUser) => {
-  if (!Number.isFinite(user.coinsBalance)) {
-    user.coinsBalance = 0;
+  if (!Number.isFinite(user.minisBalance)) {
+    user.minisBalance = 0;
   }
 };
 
@@ -687,7 +687,7 @@ router.get(
         lastName: user.lastName,
         username: user.username,
         roles: user.roles,
-        minisBalance: (user as any).minisBalance ?? user.coinsBalance,
+        minisBalance: user.minisBalance,
       })),
     });
   }
@@ -749,6 +749,7 @@ router.post(
         return res.status(404).json({ error: "User not found" });
       }
 
+      ensureMinisBalance(user);
       const nextMinis = user.minisBalance + minisDelta;
       if (nextMinis < 0) {
         return res.status(400).json({ error: "Adjustment would result in negative balance" });
@@ -1546,10 +1547,10 @@ router.get("/boxes", async (_req, res) => {
       id: product._id.toString(),
       boxId: product._id.toString(),
       name: product.name,
-      priceMinis: (product as any).priceMinis ?? (product as any).priceCoins ?? 0,
-      guaranteedMinMinis: (product as any).guaranteedMinMinis ?? (product as any).guaranteedMinCoins ?? (product as any).guaranteedMinPoints ?? 0,
+      priceMinis: (product as any).priceMinis ?? 0,
+      guaranteedMinMinis: (product as any).guaranteedMinMinis ?? 0,
       rewardTiers: (product.rewardTiers || []).map((tier: any) => ({
-        minis: tier.minis ?? tier.coins ?? tier.points ?? 0,
+        minis: tier.minis ?? 0,
         probability: tier.probability,
         isTop: tier.isTop,
       })),
@@ -1568,7 +1569,7 @@ router.get("/challenges", async (_req, res) => {
       id: challenge._id.toString(),
       name: challenge.name,
       description: challenge.description,
-      ticketPriceMinis: (challenge as any).ticketPriceMinis ?? challenge.ticketPriceCoins,
+      ticketPriceMinis: (challenge as any).ticketPriceMinis ?? 0,
       ticketCount: challenge.ticketCount,
       ticketsSold: challenge.ticketsSold,
       vendor: challenge.vendorId,
@@ -1620,7 +1621,10 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
       if (!userDoc) throw new Error("User not found");
       if (!product) return { error: "Mystery box not found" } as const;
       ensureMinisBalance(userDoc);
-      const priceMinis = (product as any).priceMinis ?? (product as any).priceCoins;
+      const priceMinis = (product as any).priceMinis ?? 0;
+      if (!priceMinis) {
+        return { error: "Mystery box price not configured" } as const;
+      }
       if (userDoc.minisBalance < priceMinis) {
         return { error: "Insufficient balance" } as const;
       }
@@ -1741,7 +1745,7 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
       const productQuery = Product.findOne({ _id: req.params.id, type: "CHALLENGE", status: "ACTIVE" });
       if (session) productQuery.session(session);
       const product = await productQuery;
-      const ticketPriceMinis = (product as any).ticketPriceMinis ?? (product as any).ticketPriceCoins;
+      const ticketPriceMinis = (product as any).ticketPriceMinis ?? 0;
       if (!product || !product.ticketCount || !ticketPriceMinis) {
         return { error: "Challenge not found" } as const;
       }
@@ -1763,6 +1767,7 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
       if (!userDoc) {
         return { error: "User not found" } as const;
       }
+      ensureMinisBalance(userDoc);
       const totalCost = quantity * ticketPriceMinis;
       if (userDoc.minisBalance < totalCost) {
         return { error: "Insufficient balance" } as const;
@@ -1776,6 +1781,9 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
         const ownerQuery = User.findById(vendorDoc.ownerUserId);
         if (session) ownerQuery.session(session);
         vendorOwner = await ownerQuery;
+      }
+      if (vendorOwner) {
+        ensureMinisBalance(vendorOwner);
       }
 
       userDoc.minisBalance -= totalCost;
@@ -1882,7 +1890,7 @@ router.get("/ledger", authMiddleware, async (req, res) => {
   res.json({
     items: items.map((entry: any) => ({
       id: entry._id?.toString?.() || entry.id,
-      deltaMinis: entry.deltaMinis ?? entry.deltaCoins ?? 0,
+      deltaMinis: entry.deltaMinis ?? 0,
       reason: entry.reason,
       meta: entry.meta || {},
       createdAt: entry.createdAt,
@@ -1902,7 +1910,7 @@ router.post("/admin/seed", async (req, res) => {
 
   const user = await User.findOneAndUpdate(
     { telegramId: "999999" },
-    { $setOnInsert: { coinsBalance: 10000, roles: ["customer", "vendor", "admin"] } },
+    { $setOnInsert: { minisBalance: 10000, roles: ["customer", "vendor", "admin"] } },
     { upsert: true, new: true }
   );
 
@@ -1920,14 +1928,14 @@ router.post("/admin/seed", async (req, res) => {
     {
       vendorId: vendor._id,
       description: "Seeded product",
-      priceCoins: 1000,
-      guaranteedMinPoints: 600,
+      priceMinis: 1000,
+      guaranteedMinMinis: 600,
       rewardTiers: [
-        { points: 600, probability: 0.55 },
-        { points: 800, probability: 0.25 },
-        { points: 1000, probability: 0.15 },
-        { points: 3000, probability: 0.04 },
-        { points: 10000, probability: 0.01, isTop: true },
+        { minis: 600, probability: 0.55 },
+        { minis: 800, probability: 0.25 },
+        { minis: 1000, probability: 0.15 },
+        { minis: 3000, probability: 0.04 },
+        { minis: 10000, probability: 0.01, isTop: true },
       ],
       type: "MYSTERY_BOX",
       status: "ACTIVE",

@@ -17,7 +17,7 @@ export default async function WalletPage() {
 
   const [entries, boxes] = await Promise.all([getRecentLedger(50), getActiveBoxes()]);
 
-  const minis = (user as { minisBalance?: number; coinsBalance?: number }).minisBalance ?? (user as { coinsBalance?: number }).coinsBalance ?? 0;
+  const minis = (user as { minisBalance?: number }).minisBalance ?? 0;
 
   return (
     <div className="space-y-6">

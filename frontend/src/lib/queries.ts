@@ -13,9 +13,7 @@ import {
 type RawBox = Partial<MysteryBoxDto> & {
   _id?: { toString: () => string } | string;
   priceMinis?: number;
-  priceCoins?: number;
   guaranteedMinMinis?: number;
-  guaranteedMinCoins?: number;
   rewardTiers?: MysteryBoxDto["rewardTiers"];
 };
 
@@ -27,8 +25,8 @@ const mapBox = (box: RawBox): MysteryBoxDto => ({
   id: typeof box._id === "string" ? box._id : box._id?.toString?.() ?? box.id ?? "",
   boxId: box.boxId ?? "",
   name: box.name ?? "",
-  priceMinis: box.priceMinis ?? box.priceCoins ?? 0,
-  guaranteedMinMinis: box.guaranteedMinMinis ?? box.guaranteedMinCoins ?? 0,
+  priceMinis: box.priceMinis ?? 0,
+  guaranteedMinMinis: box.guaranteedMinMinis ?? 0,
   rewardTiers: box.rewardTiers ?? [],
 });
 

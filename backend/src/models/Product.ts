@@ -1,7 +1,6 @@
 import { Schema, model, models, Document, Types } from "mongoose";
 
 export interface IRewardTier {
-  points: number;
   minis: number;
   probability: number;
   isTop?: boolean;
@@ -16,10 +15,10 @@ export interface IProduct extends Document {
   description?: string;
   type: ProductType;
   status: ProductStatus;
-  priceCoins: number;
-  guaranteedMinPoints?: number;
+  priceMinis: number;
+  guaranteedMinMinis?: number;
   rewardTiers?: IRewardTier[];
-  ticketPriceCoins?: number;
+  ticketPriceMinis?: number;
   ticketCount?: number;
   ticketsSold?: number;
   challengeWinnerUserId?: Types.ObjectId | null;
@@ -29,7 +28,7 @@ export interface IProduct extends Document {
 
 const RewardTierSchema = new Schema<IRewardTier>(
   {
-    points: { type: Number, required: true },
+    minis: { type: Number, required: true },
     probability: { type: Number, required: true },
     isTop: { type: Boolean, default: false },
   },
@@ -43,10 +42,10 @@ const ProductSchema = new Schema<IProduct>(
     description: { type: String },
     type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE"], default: "MYSTERY_BOX" },
     status: { type: String, enum: ["DRAFT", "PENDING", "ACTIVE", "INACTIVE"], default: "DRAFT" },
-    priceCoins: { type: Number, required: true },
-    guaranteedMinPoints: { type: Number },
+    priceMinis: { type: Number, required: true },
+    guaranteedMinMinis: { type: Number },
     rewardTiers: { type: [RewardTierSchema], default: undefined },
-    ticketPriceCoins: { type: Number },
+    ticketPriceMinis: { type: Number },
     ticketCount: { type: Number },
     ticketsSold: { type: Number, default: 0 },
     challengeWinnerUserId: { type: Schema.Types.ObjectId, ref: "User" },
@@ -55,26 +54,5 @@ const ProductSchema = new Schema<IProduct>(
 );
 
 ProductSchema.index({ status: 1, type: 1 });
-ProductSchema.virtual("priceMinis")
-  .get(function (this: IProduct) {
-    return this.priceCoins;
-  })
-  .set(function (this: IProduct, value: number) {
-    this.priceCoins = value;
-  });
-ProductSchema.virtual("guaranteedMinMinis")
-  .get(function (this: IProduct) {
-    return this.guaranteedMinPoints;
-  })
-  .set(function (this: IProduct, value: number) {
-    this.guaranteedMinPoints = value;
-  });
-ProductSchema.virtual("ticketPriceMinis")
-  .get(function (this: IProduct) {
-    return this.ticketPriceCoins;
-  })
-  .set(function (this: IProduct, value: number) {
-    this.ticketPriceCoins = value;
-  });
 
 export default models.Product || model<IProduct>("Product", ProductSchema);

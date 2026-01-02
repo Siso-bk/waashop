@@ -6,7 +6,6 @@ export interface IUser extends Document {
   lastName?: string;
   username?: string;
   email?: string;
-  coinsBalance: number;
   minisBalance: number;
   lastTopWinAt?: Date | null;
   roles: string[];
@@ -21,7 +20,7 @@ const UserSchema = new Schema<IUser>(
     lastName: String,
     username: String,
     email: { type: String },
-    coinsBalance: { type: Number, default: 0 },
+    minisBalance: { type: Number, default: 0 },
     lastTopWinAt: { type: Date },
     roles: { type: [String], default: ["customer"] },
   },
@@ -29,12 +28,5 @@ const UserSchema = new Schema<IUser>(
 );
 
 UserSchema.index({ email: 1 }, { unique: true, sparse: true });
-UserSchema.virtual("minisBalance")
-  .get(function (this: IUser) {
-    return this.coinsBalance;
-  })
-  .set(function (this: IUser, value: number) {
-    this.coinsBalance = value;
-  });
 
 export default models.User || model<IUser>("User", UserSchema);
