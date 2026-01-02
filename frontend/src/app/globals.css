@@ -25,10 +25,10 @@ body {
   }
 }
 
-@supports (touch-action: pan-x) {
+@supports (touch-action: pan-y) {
   html,
   body {
-    touch-action: pan-x;
+    touch-action: pan-y;
   }
 }
 

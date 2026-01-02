@@ -91,10 +91,27 @@ export function TelegramViewport() {
     window.addEventListener("pointerdown", handleUserGesture, { passive: true });
     window.addEventListener("touchstart", handleUserGesture, { passive: true });
 
+    let startY = 0;
+    const handleTouchStart = (event: TouchEvent) => {
+      startY = event.touches[0]?.clientY ?? 0;
+    };
+    const handleTouchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0]?.clientY ?? 0;
+      const delta = currentY - startY;
+      const scrollEl = document.scrollingElement || document.documentElement;
+      if (delta > 0 && scrollEl.scrollTop <= 0) {
+        event.preventDefault();
+      }
+    };
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+
     if (attemptExpand()) {
       return () => {
         window.removeEventListener("pointerdown", handleUserGesture);
         window.removeEventListener("touchstart", handleUserGesture);
+        document.removeEventListener("touchstart", handleTouchStart);
+        document.removeEventListener("touchmove", handleTouchMove);
       };
     }
 
@@ -114,6 +131,8 @@ export function TelegramViewport() {
       }
       window.removeEventListener("pointerdown", handleUserGesture);
       window.removeEventListener("touchstart", handleUserGesture);
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", handleTouchMove);
     };
   }, []);
 
