@@ -13,7 +13,8 @@ const formatDelta = (value: number, suffix: string) => {
 export function LedgerTable({ entries }: Props) {
   return (
     <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto">
+        <table className="min-w-[640px] w-full text-sm">
         <thead className="bg-black text-xs uppercase tracking-[0.3em] text-white/70">
           <tr>
             <th className="px-4 py-3 text-left font-normal">Reason</th>
@@ -47,6 +48,7 @@ export function LedgerTable({ entries }: Props) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
