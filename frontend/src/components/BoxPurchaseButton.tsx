@@ -38,6 +38,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ boxId: box.boxId, purchaseId }),
       });
 

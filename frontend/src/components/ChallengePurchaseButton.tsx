@@ -24,6 +24,7 @@ export function ChallengePurchaseButton({ challenge }: Props) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ quantity: 1 }),
       });
       const data = await response.json();
