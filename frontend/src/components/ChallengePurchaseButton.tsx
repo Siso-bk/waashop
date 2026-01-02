@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ChallengeProduct } from "@/types";
-import { SESSION_COOKIE } from "@/lib/constants";
 
 interface Props {
   challenge: ChallengeProduct;
@@ -20,24 +19,10 @@ export function ChallengePurchaseButton({ challenge }: Props) {
     setError(null);
     setSuccess(null);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (!apiBase) {
-        throw new Error("Missing API base URL");
-      }
-      const token = document.cookie
-        .split(";")
-        .map((cookie) => cookie.trim())
-        .find((cookie) => cookie.startsWith(`${SESSION_COOKIE}=`))
-        ?.split("=")[1];
-      if (!token) {
-        setError("Please sign in before buying.");
-        return;
-      }
-      const response = await fetch(`${apiBase}/api/challenges/${challenge.id}/buy`, {
+      const response = await fetch(`/api/challenges/${challenge.id}/buy`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ quantity: 1 }),
       });

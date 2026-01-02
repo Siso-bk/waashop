@@ -94,9 +94,9 @@ export default async function HomePage() {
             </div>
             <p className="text-sm text-gray-500">Sponsored cards curated by Waashop.</p>
           </div>
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-3">
             {promoCards.map((card) => (
-              <article key={card.id} className="flex flex-col gap-4 rounded-2xl border border-black/10 p-4">
+              <article key={card.id} className="flex min-w-[240px] flex-col gap-4 rounded-2xl border border-black/10 p-4">
                 {card.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -132,11 +132,11 @@ export default async function HomePage() {
             </div>
             <p className="text-sm text-gray-500">Buy tickets. Winner takes the prize.</p>
           </div>
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-3">
             {challenges.map((challenge) => {
               const remaining = Math.max(challenge.ticketCount - challenge.ticketsSold, 0);
               return (
-                <article key={challenge.id} className="flex flex-col gap-3 rounded-2xl border border-black/10 p-4">
+                <article key={challenge.id} className="flex min-w-[240px] flex-col gap-3 rounded-2xl border border-black/10 p-4">
                   <header>
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Challenge</p>
                     <h3 className="text-xl font-semibold text-black">{challenge.name}</h3>
@@ -174,11 +174,11 @@ export default async function HomePage() {
             Wallet & ledger
           </Link>
         </div>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="flex gap-6 overflow-x-auto pb-3">
           {boxes.map((box) => (
             <article
               key={box.boxId}
-              className="flex flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
+              className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
             >
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>Box {box.boxId}</span>

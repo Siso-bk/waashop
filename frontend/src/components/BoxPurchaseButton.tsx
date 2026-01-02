@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MysteryBoxDto } from "@/types";
-import { SESSION_COOKIE } from "@/lib/constants";
 
 interface Props {
   box: MysteryBoxDto;
@@ -34,28 +33,10 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
     setShowResult(false);
     try {
       const purchaseId = newPurchaseId();
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (!apiBase) {
-        throw new Error("Missing API base URL");
-      }
-
-      const token = document.cookie
-        .split(";")
-        .map((cookie) => cookie.trim())
-        .find((cookie) => cookie.startsWith(`${SESSION_COOKIE}=`))
-        ?.split("=")[1];
-
-      if (!token) {
-        setError("Please sign in before buying.");
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${apiBase}/api/boxes/buy`, {
+      const response = await fetch("/api/boxes/buy", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ boxId: box.boxId, purchaseId }),
       });

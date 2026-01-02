@@ -21,11 +21,11 @@ export default async function ShopPage() {
           </Link>
         )}
       </header>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="flex gap-6 overflow-x-auto pb-3">
         {boxes.map((box) => (
           <article
             key={box.boxId}
-            className="flex flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
+            className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
           >
             <div className="flex items-center justify-between text-xs text-gray-500">
               <span>Box {box.boxId}</span>
