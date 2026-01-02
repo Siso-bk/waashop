@@ -33,7 +33,20 @@ export function TelegramViewport() {
       document.documentElement.style.setProperty("--tg-viewport-height", `${height}px`);
       document.documentElement.style.setProperty("--tg-viewport-stable-height", `${stableHeight}px`);
     };
-    const handleViewportChange = () => syncViewportVars(window.Telegram?.WebApp);
+    const handleViewportChange = () => {
+      const webApp = window.Telegram?.WebApp;
+      syncViewportVars(webApp);
+      if (!webApp) return;
+      if (typeof webApp.expand === "function" && !webApp.isExpanded) {
+        webApp.expand();
+      }
+      if (typeof webApp.requestFullscreen === "function") {
+        webApp.requestFullscreen();
+      }
+      if (typeof webApp.disableVerticalSwipes === "function") {
+        webApp.disableVerticalSwipes();
+      }
+    };
 
     const attemptExpand = () => {
       const webApp = window.Telegram?.WebApp;

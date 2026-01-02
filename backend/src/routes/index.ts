@@ -1943,7 +1943,7 @@ router.post("/telegram/webhook", async (req, res) => {
       const keyboard =
         webAppUrl && webAppUrl.startsWith("http")
           ? {
-              keyboard: [
+              inline_keyboard: [
                 [
                   {
                     text: "Open Waashop",
@@ -1951,7 +1951,6 @@ router.post("/telegram/webhook", async (req, res) => {
                   },
                 ],
               ],
-              resize_keyboard: true,
             }
           : undefined;
 
@@ -1971,7 +1970,7 @@ router.post("/telegram/webhook", async (req, res) => {
           chat_id: message.chat.id,
           text: welcomeText,
           reply_markup: keyboard,
-          web_app: webAppUrl ? { initial_state: JSON.stringify(initialState) } : undefined,
+          web_app: webAppUrl ? { url: webAppUrl, initial_state: JSON.stringify(initialState) } : undefined,
         }),
       }).catch((error) => console.error("Telegram sendMessage error", error));
     }
