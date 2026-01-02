@@ -116,6 +116,9 @@ export interface PlatformSettingsDto {
   feeMysteryBox: number;
   feeChallenge: number;
   feePromoCard: number;
+  feeTopWinnerPercent: number;
+  transferLimitMinis: number;
+  transferFeePercent: number;
 }
 
 export interface DepositRequestDto {
@@ -153,6 +156,28 @@ export interface WithdrawalRequestDto {
   accountName?: string;
   note?: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
+  adminNote?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TransferRequestDto {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  recipientHandle: string;
+  senderEmail?: string;
+  senderUsername?: string;
+  senderName?: string;
+  recipientEmail?: string;
+  recipientUsername?: string;
+  recipientName?: string;
+  amountMinis: number;
+  feeMinis: number;
+  status: "PENDING" | "COMPLETED" | "REJECTED";
+  note?: string;
   adminNote?: string;
   reviewedBy?: string;
   reviewedAt?: string;

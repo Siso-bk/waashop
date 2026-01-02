@@ -7,6 +7,19 @@ import { formatMinis } from "@/lib/minis";
 import { backendFetch } from "@/lib/backendClient";
 import { revalidatePath } from "next/cache";
 
+type TransferDto = {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  recipientHandle: string;
+  amountMinis: number;
+  feeMinis: number;
+  status: "PENDING" | "COMPLETED" | "REJECTED";
+  note?: string;
+  adminNote?: string;
+  createdAt: string;
+};
+
 export default async function WalletPage() {
   const user = await getSessionUser();
   if (!user) {
@@ -17,7 +30,11 @@ export default async function WalletPage() {
     );
   }
 
-  const [entries, boxes] = await Promise.all([getRecentLedger(50), getActiveBoxes()]);
+  const [entries, boxes, transfers] = await Promise.all([
+    getRecentLedger(50),
+    getActiveBoxes(),
+    backendFetch<{ outgoing: TransferDto[]; incoming: TransferDto[] }>("/api/transfers"),
+  ]);
 
   const minis = (user as { minisBalance?: number }).minisBalance ?? 0;
 
@@ -29,8 +46,36 @@ export default async function WalletPage() {
         <p className="text-sm text-gray-600">Buy, sell, deposit, and withdraw MINIS.</p>
       </header>
       <BalancePanel minis={minis} />
+      <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 sm:grid-cols-4">
+          <a
+            href="#send-minis"
+            className="flex items-center justify-center rounded-full border border-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+          >
+            Send
+          </a>
+          <a
+            href="#receive-minis"
+            className="flex items-center justify-center rounded-full border border-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+          >
+            Receive
+          </a>
+          <a
+            href="#deposit-minis"
+            className="flex items-center justify-center rounded-full bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900"
+          >
+            Deposit
+          </a>
+          <a
+            href="#withdraw-minis"
+            className="flex items-center justify-center rounded-full border border-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+          >
+            Withdraw
+          </a>
+        </div>
+      </section>
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm" id="deposit-minis">
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Buy minis</p>
           <h2 className="mt-2 text-lg font-semibold text-black">Deposit & top up</h2>
           <p className="mt-1 text-sm text-gray-600">
@@ -81,7 +126,7 @@ export default async function WalletPage() {
             </button>
           </form>
         </div>
-        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm" id="withdraw-minis">
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Sell minis</p>
           <h2 className="mt-2 text-lg font-semibold text-black">Withdraw to cash</h2>
           <p className="mt-1 text-sm text-gray-600">
@@ -126,6 +171,85 @@ export default async function WalletPage() {
               Submit withdrawal
             </button>
           </form>
+        </div>
+      </section>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm" id="send-minis">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Send minis</p>
+          <h2 className="mt-2 text-lg font-semibold text-black">Transfer to another user</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Use email or username. Transfers above the admin limit require approval.
+          </p>
+          <form action={createTransfer} className="mt-4 space-y-3 text-sm text-gray-700">
+            <input
+              name="recipient"
+              required
+              placeholder="Recipient email or username"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <input
+              name="amountMinis"
+              type="number"
+              min={1}
+              step={1}
+              required
+              placeholder="Amount (MINIS)"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <textarea
+              name="note"
+              rows={2}
+              placeholder="Note (optional)"
+              className="w-full rounded-xl border border-black/10 px-3 py-2"
+            />
+            <button
+              type="submit"
+              className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-900"
+            >
+              Send transfer
+            </button>
+          </form>
+          <div className="mt-4 space-y-2 text-xs text-gray-600">
+            {transfers.outgoing.slice(0, 3).map((transfer) => (
+              <div key={transfer.id} className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2">
+                <div>
+                  <p className="text-gray-500">To {transfer.recipientHandle}</p>
+                  <p className="font-semibold text-black">{formatMinis(transfer.amountMinis)}</p>
+                </div>
+                <span className="rounded-full border border-black/10 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                  {transfer.status}
+                </span>
+              </div>
+            ))}
+            {transfers.outgoing.length === 0 && <p>No outgoing transfers yet.</p>}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm" id="receive-minis">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Receive minis</p>
+          <h2 className="mt-2 text-lg font-semibold text-black">Share your wallet details</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Share your email or username to receive transfers.
+          </p>
+          <div className="mt-4 rounded-2xl border border-dashed border-black/15 bg-gray-50 px-4 py-3 text-sm">
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Your handle</p>
+            <p className="mt-1 font-semibold text-black">
+              {user.email || user.username || user.telegramId || "No handle yet"}
+            </p>
+          </div>
+          <div className="mt-4 space-y-2 text-xs text-gray-600">
+            {transfers.incoming.slice(0, 3).map((transfer) => (
+              <div key={transfer.id} className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2">
+                <div>
+                  <p className="text-gray-500">Incoming</p>
+                  <p className="font-semibold text-black">{formatMinis(transfer.amountMinis)}</p>
+                </div>
+                <span className="rounded-full border border-black/10 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                  {transfer.status}
+                </span>
+              </div>
+            ))}
+            {transfers.incoming.length === 0 && <p>No incoming transfers yet.</p>}
+          </div>
         </div>
       </section>
       <section className="space-y-3">
@@ -208,6 +332,29 @@ async function createWithdrawal(formData: FormData) {
     note: valueOrUndefined(formData.get("note")),
   };
   await backendFetch("/api/withdrawals", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  revalidatePath("/wallet");
+}
+
+async function createTransfer(formData: FormData) {
+  "use server";
+  const recipient = formData.get("recipient");
+  const amountMinisRaw = formData.get("amountMinis");
+  if (!recipient || typeof recipient !== "string" || !amountMinisRaw) {
+    return;
+  }
+  const amountMinis = Number(amountMinisRaw);
+  if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
+    return;
+  }
+  const payload = {
+    recipient: recipient.trim(),
+    amountMinis,
+    note: valueOrUndefined(formData.get("note")),
+  };
+  await backendFetch("/api/transfers", {
     method: "POST",
     body: JSON.stringify(payload),
   });

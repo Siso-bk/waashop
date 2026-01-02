@@ -21,6 +21,7 @@ import ChallengeEntry from "../models/ChallengeEntry";
 import WinnerSpotlight, { WinnerType } from "../models/WinnerSpotlight";
 import DepositRequest, { IDepositRequest } from "../models/DepositRequest";
 import WithdrawalRequest, { IWithdrawalRequest } from "../models/WithdrawalRequest";
+import TransferRequest, { ITransferRequest } from "../models/TransferRequest";
 import Notification from "../models/Notification";
 import { getPlatformSettings, updatePlatformSettings } from "../services/settings";
 import { withMongoSession, connectDB } from "../lib/db";
@@ -315,6 +316,22 @@ const serializeWithdrawal = (
     updatedAt: withdrawal.updatedAt.toISOString(),
   };
 };
+
+const serializeTransfer = (transfer: ITransferRequest) => ({
+  id: transfer._id.toString(),
+  senderId: transfer.senderId.toString(),
+  recipientId: transfer.recipientId.toString(),
+  recipientHandle: transfer.recipientHandle,
+  amountMinis: transfer.amountMinis,
+  feeMinis: transfer.feeMinis,
+  status: transfer.status,
+  note: transfer.note,
+  adminNote: transfer.adminNote,
+  reviewedBy: transfer.reviewedBy ? transfer.reviewedBy.toString() : undefined,
+  reviewedAt: transfer.reviewedAt?.toISOString(),
+  createdAt: transfer.createdAt.toISOString(),
+  updatedAt: transfer.updatedAt.toISOString(),
+});
 
 const serializeNotification = (notification: any) => ({
   id: notification._id.toString(),
@@ -1222,6 +1239,272 @@ router.post(
   }
 );
 
+router.get("/transfers", authMiddleware, async (req, res) => {
+  await connectDB();
+  const [outgoing, incoming] = await Promise.all([
+    TransferRequest.find({ senderId: req.userId }).sort({ createdAt: -1 }).limit(50).lean(),
+    TransferRequest.find({ recipientId: req.userId }).sort({ createdAt: -1 }).limit(50).lean(),
+  ]);
+  res.json({
+    outgoing: outgoing.map((transfer) => serializeTransfer(transfer as ITransferRequest)),
+    incoming: incoming.map((transfer) => serializeTransfer(transfer as ITransferRequest)),
+  });
+});
+
+router.post("/transfers", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    recipient: z.string().min(2).max(120),
+    amountMinis: z.number().finite().min(1),
+    note: z.string().max(500).optional(),
+  });
+
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const sender = await User.findById(req.userId).exec();
+    if (!sender) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    ensureMinisBalance(sender);
+
+    const recipient =
+      (await User.findOne({ email: payload.recipient }).exec()) ||
+      (await User.findOne({ username: payload.recipient }).exec());
+    if (!recipient) {
+      return res.status(404).json({ error: "Recipient not found" });
+    }
+    if (recipient._id.equals(sender._id)) {
+      return res.status(400).json({ error: "Cannot transfer to yourself" });
+    }
+
+    const settings = await getPlatformSettings();
+    const feePercent = settings.transferFeePercent || 0;
+    const feeMinis = Math.max(0, Math.round((payload.amountMinis * feePercent) / 100));
+    const total = payload.amountMinis + feeMinis;
+    if (sender.minisBalance < total) {
+      return res.status(400).json({ error: "Insufficient balance" });
+    }
+
+    const autoApproveLimit = settings.transferLimitMinis || 0;
+    const needsApproval = payload.amountMinis > autoApproveLimit;
+
+    sender.minisBalance -= total;
+    await sender.save();
+
+    const transfer = await TransferRequest.create({
+      senderId: sender._id,
+      recipientId: recipient._id,
+      recipientHandle: payload.recipient,
+      amountMinis: payload.amountMinis,
+      feeMinis,
+      status: needsApproval ? "PENDING" : "COMPLETED",
+      note: payload.note,
+    });
+
+    await Ledger.create([
+      {
+        userId: sender._id,
+        deltaMinis: -payload.amountMinis,
+        reason: "TRANSFER_SEND",
+        meta: { transferId: transfer._id, recipientId: recipient._id },
+      },
+      {
+        userId: sender._id,
+        deltaMinis: -feeMinis,
+        reason: "TRANSFER_FEE",
+        meta: { transferId: transfer._id },
+      },
+    ]);
+
+    if (!needsApproval) {
+      ensureMinisBalance(recipient);
+      recipient.minisBalance += payload.amountMinis;
+      await recipient.save();
+      await Ledger.create({
+        userId: recipient._id,
+        deltaMinis: payload.amountMinis,
+        reason: "TRANSFER_RECEIVE",
+        meta: { transferId: transfer._id, senderId: sender._id },
+      });
+    }
+
+    await createNotification(sender._id, {
+      type: needsApproval ? "TRANSFER_PENDING" : "TRANSFER_COMPLETED",
+      title: needsApproval
+        ? `Transfer pending: ${formatMinis(payload.amountMinis)}`
+        : `Transfer sent: ${formatMinis(payload.amountMinis)}`,
+      body: needsApproval
+        ? "Transfer awaits admin approval."
+        : `Sent to ${recipient.email || recipient.username || "recipient"}.`,
+      meta: { transferId: transfer._id, amountMinis: payload.amountMinis },
+    });
+    if (!needsApproval) {
+      await createNotification(recipient._id, {
+        type: "TRANSFER_RECEIVED",
+        title: `Transfer received: ${formatMinis(payload.amountMinis)}`,
+        body: `From ${sender.email || sender.username || "Waashop user"}.`,
+        meta: { transferId: transfer._id, amountMinis: payload.amountMinis },
+      });
+    }
+
+    res.status(201).json({ transfer: serializeTransfer(transfer) });
+  } catch (error) {
+    console.error("Create transfer error", error);
+    res.status(400).json({ error: "Unable to create transfer" });
+  }
+});
+
+router.get(
+  "/admin/transfers",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const querySchema = z.object({
+      status: z.enum(["PENDING", "COMPLETED", "REJECTED"]).optional(),
+    });
+    try {
+      const params = querySchema.parse(req.query);
+      await connectDB();
+      const filter = params.status ? { status: params.status } : {};
+      const transfers = await TransferRequest.find(filter)
+        .sort({ createdAt: -1 })
+        .populate("senderId", "email username firstName lastName")
+        .populate("recipientId", "email username firstName lastName")
+        .lean();
+      res.json({
+        transfers: transfers.map((transfer) => {
+          const sender = (transfer as any).senderId;
+          const recipient = (transfer as any).recipientId;
+          return {
+            ...serializeTransfer(transfer as ITransferRequest),
+            senderEmail: sender?.email,
+            senderUsername: sender?.username,
+            senderName: [sender?.firstName, sender?.lastName].filter(Boolean).join(" ") || undefined,
+            recipientEmail: recipient?.email,
+            recipientUsername: recipient?.username,
+            recipientName: [recipient?.firstName, recipient?.lastName].filter(Boolean).join(" ") || undefined,
+          };
+        }),
+      });
+    } catch (error) {
+      console.error("Admin transfers error", error);
+      res.status(400).json({ error: "Unable to load transfers" });
+    }
+  }
+);
+
+router.post(
+  "/admin/transfers/:id/approve",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({
+      adminNote: z.string().max(200).optional(),
+    });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const transfer = await TransferRequest.findById(req.params.id).exec();
+      if (!transfer) {
+        return res.status(404).json({ error: "Transfer not found" });
+      }
+      if (transfer.status !== "PENDING") {
+        return res.status(400).json({ error: "Transfer already processed" });
+      }
+
+      const recipient = await User.findById(transfer.recipientId).exec();
+      if (!recipient) {
+        return res.status(404).json({ error: "Recipient not found" });
+      }
+      ensureMinisBalance(recipient);
+      recipient.minisBalance += transfer.amountMinis;
+      transfer.status = "COMPLETED";
+      transfer.adminNote = payload.adminNote;
+      transfer.reviewedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
+      transfer.reviewedAt = new Date();
+      await Promise.all([recipient.save(), transfer.save()]);
+
+      await Ledger.create({
+        userId: recipient._id,
+        deltaMinis: transfer.amountMinis,
+        reason: "TRANSFER_RECEIVE",
+        meta: { transferId: transfer._id },
+      });
+
+      await createNotification(transfer.senderId, {
+        type: "TRANSFER_APPROVED",
+        title: `Transfer approved: ${formatMinis(transfer.amountMinis)}`,
+        body: payload.adminNote || "Your transfer was approved.",
+        meta: { transferId: transfer._id, amountMinis: transfer.amountMinis },
+      });
+      await createNotification(transfer.recipientId, {
+        type: "TRANSFER_RECEIVED",
+        title: `Transfer received: ${formatMinis(transfer.amountMinis)}`,
+        body: "A transfer has been credited to your wallet.",
+        meta: { transferId: transfer._id, amountMinis: transfer.amountMinis },
+      });
+
+      res.json({ transfer: serializeTransfer(transfer) });
+    } catch (error) {
+      console.error("Approve transfer error", error);
+      res.status(400).json({ error: "Unable to approve transfer" });
+    }
+  }
+);
+
+router.post(
+  "/admin/transfers/:id/reject",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({
+      adminNote: z.string().max(200).optional(),
+    });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const transfer = await TransferRequest.findById(req.params.id).exec();
+      if (!transfer) {
+        return res.status(404).json({ error: "Transfer not found" });
+      }
+      if (transfer.status !== "PENDING") {
+        return res.status(400).json({ error: "Transfer already processed" });
+      }
+
+      const sender = await User.findById(transfer.senderId).exec();
+      if (!sender) {
+        return res.status(404).json({ error: "Sender not found" });
+      }
+      ensureMinisBalance(sender);
+      sender.minisBalance += transfer.amountMinis + transfer.feeMinis;
+      transfer.status = "REJECTED";
+      transfer.adminNote = payload.adminNote;
+      transfer.reviewedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
+      transfer.reviewedAt = new Date();
+      await Promise.all([sender.save(), transfer.save()]);
+
+      await Ledger.create({
+        userId: sender._id,
+        deltaMinis: transfer.amountMinis + transfer.feeMinis,
+        reason: "TRANSFER_REFUND",
+        meta: { transferId: transfer._id },
+      });
+
+      await createNotification(transfer.senderId, {
+        type: "TRANSFER_REJECTED",
+        title: `Transfer rejected: ${formatMinis(transfer.amountMinis)}`,
+        body: payload.adminNote || "Your transfer request was rejected.",
+        meta: { transferId: transfer._id, amountMinis: transfer.amountMinis },
+      });
+
+      res.json({ transfer: serializeTransfer(transfer) });
+    } catch (error) {
+      console.error("Reject transfer error", error);
+      res.status(400).json({ error: "Unable to reject transfer" });
+    }
+  }
+);
+
 router.get("/notifications", authMiddleware, async (req, res) => {
   await connectDB();
   const notifications = await Notification.find({ userId: req.userId })
@@ -1269,6 +1552,8 @@ router.get(
         feeChallenge: settings.feeChallenge,
         feePromoCard: settings.feePromoCard,
         feeTopWinnerPercent: settings.feeTopWinnerPercent,
+        transferLimitMinis: settings.transferLimitMinis,
+        transferFeePercent: settings.transferFeePercent,
       },
     });
   }
@@ -1284,6 +1569,8 @@ router.patch(
       feeChallenge: z.number().nonnegative().optional(),
       feePromoCard: z.number().nonnegative().optional(),
       feeTopWinnerPercent: z.number().min(0).max(100).optional(),
+      transferLimitMinis: z.number().nonnegative().optional(),
+      transferFeePercent: z.number().min(0).max(100).optional(),
     });
     try {
       const payload = schema.parse(req.body);
@@ -1295,6 +1582,8 @@ router.patch(
           feeChallenge: doc.feeChallenge,
           feePromoCard: doc.feePromoCard,
           feeTopWinnerPercent: doc.feeTopWinnerPercent,
+          transferLimitMinis: doc.transferLimitMinis,
+          transferFeePercent: doc.transferFeePercent,
         },
       });
     } catch (error) {

@@ -17,6 +17,8 @@ export const getPlatformSettings = async () => {
       feeChallenge: env.FEE_CHALLENGE,
       feePromoCard: env.FEE_PROMO_CARD,
       feeTopWinnerPercent: env.FEE_TOP_WINNER_PERCENT,
+      transferLimitMinis: env.TRANSFER_LIMIT_MINIS,
+      transferFeePercent: env.TRANSFER_FEE_PERCENT,
     });
   }
   cachedSettings = settings as IPlatformSettings;
