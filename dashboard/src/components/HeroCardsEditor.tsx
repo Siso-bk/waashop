@@ -41,6 +41,7 @@ export function HeroCardsEditor({ initialCards }: Props) {
   );
   const [cards, setCards] = useState<CardState[]>(normalized);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(normalized[0]?.id ?? null);
 
   const updateCard = (id: string, patch: Partial<CardState>) => {
     setCards((prev) => prev.map((card) => (card.id === id ? { ...card, ...patch } : card)));
@@ -59,7 +60,11 @@ export function HeroCardsEditor({ initialCards }: Props) {
     });
   };
 
-  const addCard = () => setCards((prev) => [...prev, createCard()]);
+  const addCard = () => {
+    const nextCard = createCard();
+    setCards((prev) => [...prev, nextCard]);
+    setActiveId(nextCard.id);
+  };
   const removeCard = (id: string) => setCards((prev) => prev.filter((card) => card.id !== id));
   const handleDrop = (targetId: string) => {
     if (!dragId || dragId === targetId) return;
@@ -82,7 +87,25 @@ export function HeroCardsEditor({ initialCards }: Props) {
         {cards.length > 0 && (
           <div className="flex gap-3 overflow-x-auto pb-2">
             {cards.map((card) => (
-              <div key={card.id} className="min-w-[200px] rounded-2xl border border-slate-200 bg-white p-3">
+              <div
+                key={card.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveId(card.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setActiveId(card.id);
+                  }
+                }}
+                className={`min-w-[200px] cursor-pointer rounded-2xl border bg-white p-3 transition ${
+                  activeId === card.id
+                    ? "ring-2 ring-slate-900/40 border-slate-300"
+                    : card.status === "DRAFT"
+                      ? "border-amber-300 bg-amber-50"
+                      : "border-emerald-200 bg-emerald-50"
+                }`}
+              >
                 {card.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -93,7 +116,10 @@ export function HeroCardsEditor({ initialCards }: Props) {
                 )}
                 {card.tagline && <p className="mt-2 text-xs uppercase tracking-[0.3em] text-slate-400">{card.tagline}</p>}
                 <p className="mt-2 text-sm font-semibold text-slate-900">{card.title || "Untitled"}</p>
-                <p className="text-xs text-slate-500">{card.status || "PUBLISHED"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  {card.status || "PUBLISHED"}
+                  {activeId === card.id ? " · Editing" : ""}
+                </p>
               </div>
             ))}
           </div>
@@ -113,143 +139,159 @@ export function HeroCardsEditor({ initialCards }: Props) {
         </div>
       )}
       {cards.map((card, index) => (
-        <fieldset
-          key={card.id}
-          className="space-y-4 rounded-2xl border border-slate-200 p-4"
-          draggable
-          onDragStart={() => setDragId(card.id)}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={() => handleDrop(card.id)}
-        >
-          <legend className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-            Card {index + 1}
-          </legend>
+        <div key={card.id} className="hidden">
           <input type="hidden" name={`card-${index}-id`} value={card.id} />
           <input type="hidden" name={`card-${index}-order`} value={index} />
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => moveCard(card.id, "up")}
-                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
-              >
-                Move up
-              </button>
-              <button
-                type="button"
-                onClick={() => moveCard(card.id, "down")}
-                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
-              >
-                Move down
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                <select
-                  value={card.status || "PUBLISHED"}
-                  onChange={(event) => updateCard(card.id, { status: event.target.value as CardState["status"] })}
-                  className="rounded-full border border-slate-200 px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
-                >
-                  <option value="PUBLISHED">Published</option>
-                  <option value="DRAFT">Draft</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={() => removeCard(card.id)}
-                className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
           <input type="hidden" name={`card-${index}-status`} value={card.status || "PUBLISHED"} />
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Tagline</span>
-              <input
-                name={`card-${index}-tagline`}
-                value={card.tagline || ""}
-                onChange={(event) => updateCard(card.id, { tagline: event.target.value })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-                placeholder="Transparency"
-              />
-            </label>
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Title</span>
-              <input
-                name={`card-${index}-title`}
-                value={card.title}
-                onChange={(event) => updateCard(card.id, { title: event.target.value })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-                placeholder="Verified drops"
-                required
-              />
-            </label>
-          </div>
-          <label className="space-y-2 text-sm text-slate-600">
-            <span>Image URL</span>
-            <input
-              name={`card-${index}-imageUrl`}
-              value={card.imageUrl || ""}
-              onChange={(event) => updateCard(card.id, { imageUrl: event.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-              placeholder="https://..."
-            />
-          </label>
-          <label className="space-y-2 text-sm text-slate-600">
-            <span>Overlay opacity (0 to 0.95)</span>
-            <input
-              name={`card-${index}-overlayOpacity`}
-              type="number"
-              min={0}
-              max={0.95}
-              step={0.05}
-              value={card.overlayOpacity ?? 0.35}
-              onChange={(event) => {
-                const raw = event.target.value;
-                const nextValue = raw === "" ? 0.35 : Number(raw);
-                updateCard(card.id, { overlayOpacity: nextValue });
-              }}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-slate-600">
-            <span>Body</span>
-            <textarea
-              name={`card-${index}-body`}
-              value={card.body}
-              onChange={(event) => updateCard(card.id, { body: event.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-              rows={3}
-              placeholder="Describe the value in one or two sentences."
-              required
-            />
-          </label>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Button label (optional)</span>
-              <input
-                name={`card-${index}-ctaLabel`}
-                value={card.ctaLabel || ""}
-                onChange={(event) => updateCard(card.id, { ctaLabel: event.target.value })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-                placeholder="Shop now"
-              />
-            </label>
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Button URL (optional)</span>
-              <input
-                name={`card-${index}-ctaHref`}
-                value={card.ctaHref || ""}
-                onChange={(event) => updateCard(card.id, { ctaHref: event.target.value })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-                placeholder="/boxes/BOX_1000"
-              />
-            </label>
-          </div>
-        </fieldset>
+          <input type="hidden" name={`card-${index}-tagline`} value={card.tagline || ""} />
+          <input type="hidden" name={`card-${index}-title`} value={card.title} />
+          <input type="hidden" name={`card-${index}-body`} value={card.body} />
+          <input type="hidden" name={`card-${index}-imageUrl`} value={card.imageUrl || ""} />
+          <input type="hidden" name={`card-${index}-overlayOpacity`} value={card.overlayOpacity ?? 0.35} />
+          <input type="hidden" name={`card-${index}-ctaLabel`} value={card.ctaLabel || ""} />
+          <input type="hidden" name={`card-${index}-ctaHref`} value={card.ctaHref || ""} />
+        </div>
       ))}
+      {cards.length > 0 && activeId && (
+        (() => {
+          const activeIndex = cards.findIndex((card) => card.id === activeId);
+          const card = cards[activeIndex]!;
+          return (
+            <fieldset
+              className="space-y-4 rounded-2xl border border-slate-900/40 p-4 ring-2 ring-slate-900/20"
+              draggable
+              onDragStart={() => setDragId(card.id)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={() => handleDrop(card.id)}
+            >
+              <legend className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                Editing card {activeIndex + 1}
+              </legend>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => moveCard(card.id, "up")}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
+                  >
+                    Move up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveCard(card.id, "down")}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
+                  >
+                    Move down
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    <select
+                      value={card.status || "PUBLISHED"}
+                      onChange={(event) => updateCard(card.id, { status: event.target.value as CardState["status"] })}
+                      className="rounded-full border border-slate-200 px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
+                    >
+                      <option value="PUBLISHED">Published</option>
+                      <option value="DRAFT">Draft</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeCard(card.id)}
+                    className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-slate-600">
+                  <span>Tagline</span>
+                  <input
+                    name={`card-${activeIndex}-tagline`}
+                    value={card.tagline || ""}
+                    onChange={(event) => updateCard(card.id, { tagline: event.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                    placeholder="Transparency"
+                  />
+                </label>
+                <label className="space-y-2 text-sm text-slate-600">
+                  <span>Title</span>
+                  <input
+                    name={`card-${activeIndex}-title`}
+                    value={card.title}
+                    onChange={(event) => updateCard(card.id, { title: event.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                    placeholder="Verified drops"
+                    required
+                  />
+                </label>
+              </div>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Image URL</span>
+                <input
+                  name={`card-${activeIndex}-imageUrl`}
+                  value={card.imageUrl || ""}
+                  onChange={(event) => updateCard(card.id, { imageUrl: event.target.value })}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                  placeholder="https://..."
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Overlay opacity (0 to 0.95)</span>
+                <input
+                  name={`card-${activeIndex}-overlayOpacity`}
+                  type="number"
+                  min={0}
+                  max={0.95}
+                  step={0.05}
+                  value={card.overlayOpacity ?? 0.35}
+                  onChange={(event) => {
+                    const raw = event.target.value;
+                    const nextValue = raw === "" ? 0.35 : Number(raw);
+                    updateCard(card.id, { overlayOpacity: nextValue });
+                  }}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Body</span>
+                <textarea
+                  name={`card-${activeIndex}-body`}
+                  value={card.body}
+                  onChange={(event) => updateCard(card.id, { body: event.target.value })}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                  rows={3}
+                  placeholder="Describe the value in one or two sentences."
+                  required
+                />
+              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-slate-600">
+                  <span>Button label (optional)</span>
+                  <input
+                    name={`card-${activeIndex}-ctaLabel`}
+                    value={card.ctaLabel || ""}
+                    onChange={(event) => updateCard(card.id, { ctaLabel: event.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                    placeholder="Shop now"
+                  />
+                </label>
+                <label className="space-y-2 text-sm text-slate-600">
+                  <span>Button URL (optional)</span>
+                  <input
+                    name={`card-${activeIndex}-ctaHref`}
+                    value={card.ctaHref || ""}
+                    onChange={(event) => updateCard(card.id, { ctaHref: event.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                    placeholder="/boxes/BOX_1000"
+                  />
+                </label>
+              </div>
+            </fieldset>
+          );
+        })()
+      )}
     </div>
   );
 }
