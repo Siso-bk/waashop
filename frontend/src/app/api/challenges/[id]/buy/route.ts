@@ -1,13 +1,13 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { backendFetch } from "@/lib/backendClient";
 import { SESSION_COOKIE } from "@/lib/constants";
 
-type Params = {
-  params: { id: string };
-};
-
-export async function POST(request: Request, { params }: Params) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) {
@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: Params) {
 
   try {
     const payload = await request.json();
-    const data = await backendFetch<{ ok?: boolean }>("/api/challenges/" + params.id + "/buy", {
+    const data = await backendFetch<{ ok?: boolean }>("/api/challenges/" + id + "/buy", {
       method: "POST",
       body: JSON.stringify(payload),
     });
