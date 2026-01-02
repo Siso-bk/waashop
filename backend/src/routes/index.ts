@@ -66,7 +66,7 @@ const serializeHero = (
 ): HeroResponse => {
   const cards = (hero?.cards ?? DEFAULT_HOME_HERO.cards)
     .map((card) => {
-      const status = card.status ?? (card.enabled === false ? "DRAFT" : "PUBLISHED");
+      const status = card.status ?? "PUBLISHED";
       return {
         id: card.id,
         tagline: card.tagline,
@@ -78,7 +78,6 @@ const serializeHero = (
         ctaHref: card.ctaHref,
         order: card.order,
         status,
-        enabled: card.enabled,
       };
     })
     .filter((card) => options.includeDisabled || card.status === "PUBLISHED")
