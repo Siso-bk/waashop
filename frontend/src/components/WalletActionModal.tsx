@@ -137,23 +137,24 @@ export function WalletActionModal({
       </section>
 
       {active && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-white">
-          <div className="flex items-center justify-between border-b border-black/10 px-4 py-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{actionLabels[active].title}</p>
-              <h2 className="mt-2 text-lg font-semibold text-black">{actionLabels[active].subtitle}</h2>
-              <p className="mt-1 text-xs text-gray-500">Balance: {formatMinis(balanceMinis)}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-black/10 bg-white shadow-xl">
+            <div className="flex items-start justify-between border-b border-black/10 px-6 py-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{actionLabels[active].title}</p>
+                <h2 className="mt-2 text-lg font-semibold text-black">{actionLabels[active].subtitle}</h2>
+                <p className="mt-1 text-xs text-gray-500">Balance: {formatMinis(balanceMinis)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActive(null)}
+                aria-label="Close"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-black/15 text-black transition hover:bg-black hover:text-white"
+              >
+                ×
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setActive(null)}
-              aria-label="Close"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-black/15 text-black transition hover:bg-black hover:text-white"
-            >
-              ×
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 pb-8 pt-6">
+            <div className="max-h-[70vh] overflow-y-auto px-6 pb-8 pt-6">
             {active === "deposit" && (
               <form action={depositAction} className="space-y-4 text-sm text-gray-700">
                 <input
@@ -314,11 +315,11 @@ export function WalletActionModal({
                   </div>
                   <div className={`overflow-y-auto ${showOutgoing ? "max-h-[320px]" : "max-h-[180px]"}`}>
                     <div className="space-y-2 px-3 py-3 text-xs text-gray-600">
-                      {outgoingTransfers.slice(0, showOutgoing ? 12 : 4).map((transfer) => (
-                    <div
-                      key={transfer.id}
-                      className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2"
-                    >
+                      {outgoingTransfers.slice(0, showOutgoing ? 12 : 0).map((transfer) => (
+                        <div
+                          key={transfer.id}
+                          className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2"
+                        >
                       <div>
                         <p className="text-gray-500">To {transfer.recipientHandle}</p>
                         <p className="font-semibold text-black">{formatMinis(transfer.amountMinis)}</p>
@@ -328,7 +329,9 @@ export function WalletActionModal({
                       </span>
                     </div>
                       ))}
-                      {outgoingTransfers.length === 0 && <p>No outgoing transfers yet.</p>}
+                      {showOutgoing && outgoingTransfers.length === 0 && <p>No outgoing transfers yet.</p>}
+                      {!showOutgoing && outgoingTransfers.length > 0 && <p>Expand to view transfers.</p>}
+                      {!showOutgoing && outgoingTransfers.length === 0 && <p>No outgoing transfers yet.</p>}
                     </div>
                   </div>
                 </div>
@@ -354,11 +357,11 @@ export function WalletActionModal({
                   </div>
                   <div className={`overflow-y-auto ${showIncoming ? "max-h-[320px]" : "max-h-[180px]"}`}>
                     <div className="space-y-2 px-3 py-3 text-xs text-gray-600">
-                      {incomingTransfers.slice(0, showIncoming ? 12 : 4).map((transfer) => (
-                    <div
-                      key={transfer.id}
-                      className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2"
-                    >
+                      {incomingTransfers.slice(0, showIncoming ? 12 : 0).map((transfer) => (
+                        <div
+                          key={transfer.id}
+                          className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2"
+                        >
                       <div>
                         <p className="text-gray-500">Incoming</p>
                         <p className="font-semibold text-black">{formatMinis(transfer.amountMinis)}</p>
@@ -368,12 +371,15 @@ export function WalletActionModal({
                       </span>
                     </div>
                       ))}
-                      {incomingTransfers.length === 0 && <p>No incoming transfers yet.</p>}
+                      {showIncoming && incomingTransfers.length === 0 && <p>No incoming transfers yet.</p>}
+                      {!showIncoming && incomingTransfers.length > 0 && <p>Expand to view transfers.</p>}
+                      {!showIncoming && incomingTransfers.length === 0 && <p>No incoming transfers yet.</p>}
                     </div>
                   </div>
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

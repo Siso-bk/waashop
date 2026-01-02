@@ -16,7 +16,7 @@ const formatDelta = (value: number) => {
 
 export function LedgerTable({ entries }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const visibleEntries = expanded ? entries : entries.slice(0, 6);
+  const visibleEntries = expanded ? entries : [];
   return (
     <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">
@@ -39,7 +39,7 @@ export function LedgerTable({ entries }: Props) {
             </tr>
           </thead>
           <tbody>
-            {entries.length === 0 && (
+            {expanded && entries.length === 0 && (
               <tr>
                 <td className="px-4 py-6 text-center text-gray-500" colSpan={3}>
                   No ledger entries yet.
