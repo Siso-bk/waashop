@@ -72,8 +72,17 @@ export function TelegramViewport() {
       return true;
     };
 
+    const handleUserGesture = () => {
+      attemptExpand();
+    };
+    window.addEventListener("pointerdown", handleUserGesture, { passive: true });
+    window.addEventListener("touchstart", handleUserGesture, { passive: true });
+
     if (attemptExpand()) {
-      return;
+      return () => {
+        window.removeEventListener("pointerdown", handleUserGesture);
+        window.removeEventListener("touchstart", handleUserGesture);
+      };
     }
 
     let attempts = 0;
@@ -90,6 +99,8 @@ export function TelegramViewport() {
       if (webApp && typeof webApp.offEvent === "function") {
         webApp.offEvent("viewportChanged", handleViewportChange);
       }
+      window.removeEventListener("pointerdown", handleUserGesture);
+      window.removeEventListener("touchstart", handleUserGesture);
     };
   }, []);
 
