@@ -225,7 +225,7 @@ export default async function HomePage() {
             </p>
           </div>
           <Link
-            href="/login?vendor=1"
+            href="/vendor/apply"
             className="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
           >
             Start vendor application
