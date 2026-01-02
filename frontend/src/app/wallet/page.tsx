@@ -6,6 +6,7 @@ import Link from "next/link";
 import { formatMinis } from "@/lib/minis";
 import { backendFetch } from "@/lib/backendClient";
 import { revalidatePath } from "next/cache";
+import { WalletActionModal } from "@/components/WalletActionModal";
 
 type TransferDto = {
   id: string;
@@ -18,6 +19,11 @@ type TransferDto = {
   note?: string;
   adminNote?: string;
   createdAt: string;
+};
+
+type ActionResult = {
+  status: "idle" | "success" | "error";
+  message?: string;
 };
 
 export default async function WalletPage() {
@@ -46,212 +52,15 @@ export default async function WalletPage() {
         <p className="text-sm text-gray-600">Buy, sell, deposit, and withdraw MINIS.</p>
       </header>
       <BalancePanel minis={minis} />
-      <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 sm:grid-cols-4">
-          <a
-            href="#send-minis"
-            className="flex items-center justify-center rounded-full border border-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
-          >
-            Send
-          </a>
-          <a
-            href="#receive-minis"
-            className="flex items-center justify-center rounded-full border border-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
-          >
-            Receive
-          </a>
-          <a
-            href="#deposit-minis"
-            className="flex items-center justify-center rounded-full bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900"
-          >
-            Deposit
-          </a>
-          <a
-            href="#withdraw-minis"
-            className="flex items-center justify-center rounded-full border border-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
-          >
-            Withdraw
-          </a>
-        </div>
-      </section>
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm" id="deposit-minis">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Buy minis</p>
-          <h2 className="mt-2 text-lg font-semibold text-black">Deposit & top up</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Submit your receipt and we&apos;ll credit your balance. Status updates appear in notifications.
-          </p>
-          <form action={createDeposit} className="mt-4 space-y-3 text-sm text-gray-700">
-            <input
-              name="amountMinis"
-              type="number"
-              min={1}
-              step={1}
-              required
-              placeholder="Amount (MINIS)"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <input
-              name="currency"
-              placeholder="Currency (USD, ETB, USDT...)"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <input
-              name="paymentMethod"
-              required
-              placeholder="Payment method"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <input
-              name="paymentReference"
-              placeholder="Transaction reference"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <input
-              name="proofUrl"
-              placeholder="Proof link (optional)"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <textarea
-              name="note"
-              rows={3}
-              placeholder="Notes to admin"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-900"
-            >
-              Submit deposit
-            </button>
-          </form>
-        </div>
-        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm" id="withdraw-minis">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Sell minis</p>
-          <h2 className="mt-2 text-lg font-semibold text-black">Withdraw to cash</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Share payout details and the admin will review. You&apos;ll see updates in notifications.
-          </p>
-          <form action={createWithdrawal} className="mt-4 space-y-3 text-sm text-gray-700">
-            <input
-              name="amountMinis"
-              type="number"
-              min={1}
-              step={1}
-              required
-              placeholder="Amount (MINIS)"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <input
-              name="payoutMethod"
-              required
-              placeholder="Payout method"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <input
-              name="payoutAddress"
-              placeholder="Account / wallet address"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <input
-              name="accountName"
-              placeholder="Account name"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <textarea
-              name="note"
-              rows={3}
-              placeholder="Notes to admin"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-100"
-            >
-              Submit withdrawal
-            </button>
-          </form>
-        </div>
-      </section>
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm" id="send-minis">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Send minis</p>
-          <h2 className="mt-2 text-lg font-semibold text-black">Transfer to another user</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Use email or username. Transfers above the admin limit require approval.
-          </p>
-          <form action={createTransfer} className="mt-4 space-y-3 text-sm text-gray-700">
-            <input
-              name="recipient"
-              required
-              placeholder="Recipient email or username"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <input
-              name="amountMinis"
-              type="number"
-              min={1}
-              step={1}
-              required
-              placeholder="Amount (MINIS)"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <textarea
-              name="note"
-              rows={2}
-              placeholder="Note (optional)"
-              className="w-full rounded-xl border border-black/10 px-3 py-2"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-900"
-            >
-              Send transfer
-            </button>
-          </form>
-          <div className="mt-4 space-y-2 text-xs text-gray-600">
-            {transfers.outgoing.slice(0, 3).map((transfer) => (
-              <div key={transfer.id} className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2">
-                <div>
-                  <p className="text-gray-500">To {transfer.recipientHandle}</p>
-                  <p className="font-semibold text-black">{formatMinis(transfer.amountMinis)}</p>
-                </div>
-                <span className="rounded-full border border-black/10 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                  {transfer.status}
-                </span>
-              </div>
-            ))}
-            {transfers.outgoing.length === 0 && <p>No outgoing transfers yet.</p>}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm" id="receive-minis">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Receive minis</p>
-          <h2 className="mt-2 text-lg font-semibold text-black">Share your wallet details</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Share your email or username to receive transfers.
-          </p>
-          <div className="mt-4 rounded-2xl border border-dashed border-black/15 bg-gray-50 px-4 py-3 text-sm">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Your handle</p>
-            <p className="mt-1 font-semibold text-black">
-              {user.email || user.username || user.telegramId || "No handle yet"}
-            </p>
-          </div>
-          <div className="mt-4 space-y-2 text-xs text-gray-600">
-            {transfers.incoming.slice(0, 3).map((transfer) => (
-              <div key={transfer.id} className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2">
-                <div>
-                  <p className="text-gray-500">Incoming</p>
-                  <p className="font-semibold text-black">{formatMinis(transfer.amountMinis)}</p>
-                </div>
-                <span className="rounded-full border border-black/10 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                  {transfer.status}
-                </span>
-              </div>
-            ))}
-            {transfers.incoming.length === 0 && <p>No incoming transfers yet.</p>}
-          </div>
-        </div>
-      </section>
+      <WalletActionModal
+        balanceMinis={minis}
+        userHandle={user.email || user.username || user.telegramId || "No handle yet"}
+        outgoingTransfers={transfers.outgoing}
+        incomingTransfers={transfers.incoming}
+        createDeposit={createDeposit}
+        createWithdrawal={createWithdrawal}
+        createTransfer={createTransfer}
+      />
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -287,16 +96,16 @@ export default async function WalletPage() {
   );
 }
 
-async function createDeposit(formData: FormData) {
+async function createDeposit(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
   "use server";
   const amountMinisRaw = formData.get("amountMinis");
   const paymentMethod = formData.get("paymentMethod");
   if (!amountMinisRaw || !paymentMethod) {
-    return;
+    return { status: "error", message: "Amount and payment method are required." };
   }
   const amountMinis = Number(amountMinisRaw);
   if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
-    return;
+    return { status: "error", message: "Enter a valid amount." };
   }
   const payload = {
     amountMinis,
@@ -306,23 +115,29 @@ async function createDeposit(formData: FormData) {
     proofUrl: valueOrUndefined(formData.get("proofUrl")),
     note: valueOrUndefined(formData.get("note")),
   };
-  await backendFetch("/api/deposits", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  revalidatePath("/wallet");
+  try {
+    await backendFetch("/api/deposits", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    revalidatePath("/wallet");
+    return { status: "success", message: "Deposit submitted. We'll review it shortly." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to submit deposit.";
+    return { status: "error", message };
+  }
 }
 
-async function createWithdrawal(formData: FormData) {
+async function createWithdrawal(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
   "use server";
   const amountMinisRaw = formData.get("amountMinis");
   const payoutMethod = formData.get("payoutMethod");
   if (!amountMinisRaw || !payoutMethod) {
-    return;
+    return { status: "error", message: "Amount and payout method are required." };
   }
   const amountMinis = Number(amountMinisRaw);
   if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
-    return;
+    return { status: "error", message: "Enter a valid amount." };
   }
   const payload = {
     amountMinis,
@@ -331,34 +146,46 @@ async function createWithdrawal(formData: FormData) {
     accountName: valueOrUndefined(formData.get("accountName")),
     note: valueOrUndefined(formData.get("note")),
   };
-  await backendFetch("/api/withdrawals", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  revalidatePath("/wallet");
+  try {
+    await backendFetch("/api/withdrawals", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    revalidatePath("/wallet");
+    return { status: "success", message: "Withdrawal request submitted for review." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to submit withdrawal.";
+    return { status: "error", message };
+  }
 }
 
-async function createTransfer(formData: FormData) {
+async function createTransfer(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
   "use server";
   const recipient = formData.get("recipient");
   const amountMinisRaw = formData.get("amountMinis");
   if (!recipient || typeof recipient !== "string" || !amountMinisRaw) {
-    return;
+    return { status: "error", message: "Recipient and amount are required." };
   }
   const amountMinis = Number(amountMinisRaw);
   if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
-    return;
+    return { status: "error", message: "Enter a valid amount." };
   }
   const payload = {
     recipient: recipient.trim(),
     amountMinis,
     note: valueOrUndefined(formData.get("note")),
   };
-  await backendFetch("/api/transfers", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  revalidatePath("/wallet");
+  try {
+    await backendFetch("/api/transfers", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    revalidatePath("/wallet");
+    return { status: "success", message: "Transfer submitted." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to send transfer.";
+    return { status: "error", message };
+  }
 }
 
 const valueOrUndefined = (value: FormDataEntryValue | null) => {
