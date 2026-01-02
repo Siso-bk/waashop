@@ -30,7 +30,7 @@ export default async function BoxDetails({ params }: Props) {
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Box</p>
             <h1 className="text-3xl font-semibold text-black">{box.name}</h1>
-            <p className="text-sm text-gray-600">{box.priceMinis.toLocaleString()}MIN</p>
+            <p className="text-sm text-gray-600">{(box.priceMinis ?? 0).toLocaleString()}MIN</p>
           </div>
           <div className="rounded-2xl border border-black/10 bg-black px-6 py-4 text-right text-white">
             <p className="text-xs uppercase tracking-[0.3em] text-white/60">Guaranteed minimum</p>

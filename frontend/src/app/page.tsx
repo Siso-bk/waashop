@@ -143,7 +143,7 @@ export default async function HomePage() {
                     {challenge.description && <p className="text-sm text-gray-600">{challenge.description}</p>}
                   </header>
                   <p className="text-xs text-gray-500">
-                    {remaining} of {challenge.ticketCount} tickets remain · {challenge.ticketPriceMinis.toLocaleString()}MIN each
+                    {remaining} of {challenge.ticketCount} tickets remain · {(challenge.ticketPriceMinis ?? 0).toLocaleString()}MIN each
                   </p>
                   <ChallengePurchaseButton challenge={challenge} />
                 </article>
