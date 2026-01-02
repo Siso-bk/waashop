@@ -65,6 +65,8 @@ export function WalletActionModal({
   createTransfer,
 }: WalletActionModalProps) {
   const [active, setActive] = useState<ActionType>(null);
+  const [showOutgoing, setShowOutgoing] = useState(false);
+  const [showIncoming, setShowIncoming] = useState(false);
   const [depositState, depositAction] = useFormState(createDeposit, initialFormState);
   const [withdrawState, withdrawAction] = useFormState(createWithdrawal, initialFormState);
   const [transferState, transferAction] = useFormState(createTransfer, initialFormState);
@@ -299,8 +301,20 @@ export function WalletActionModal({
                     </p>
                   )}
                 </form>
-                <div className="space-y-2 text-xs text-gray-600">
-                  {outgoingTransfers.slice(0, 6).map((transfer) => (
+                <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
+                  <div className="flex items-center justify-between border-b border-black/5 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Recent sends</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowOutgoing((prev) => !prev)}
+                      className="rounded-full border border-black/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+                    >
+                      {showOutgoing ? "Fold" : "Expand"}
+                    </button>
+                  </div>
+                  <div className={`overflow-y-auto ${showOutgoing ? "max-h-[320px]" : "max-h-[180px]"}`}>
+                    <div className="space-y-2 px-3 py-3 text-xs text-gray-600">
+                      {outgoingTransfers.slice(0, showOutgoing ? 12 : 4).map((transfer) => (
                     <div
                       key={transfer.id}
                       className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2"
@@ -313,8 +327,10 @@ export function WalletActionModal({
                         {transfer.status}
                       </span>
                     </div>
-                  ))}
-                  {outgoingTransfers.length === 0 && <p>No outgoing transfers yet.</p>}
+                      ))}
+                      {outgoingTransfers.length === 0 && <p>No outgoing transfers yet.</p>}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -325,8 +341,20 @@ export function WalletActionModal({
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Your handle</p>
                   <p className="mt-2 font-semibold text-black">{userHandle}</p>
                 </div>
-                <div className="space-y-2 text-xs text-gray-600">
-                  {incomingTransfers.slice(0, 6).map((transfer) => (
+                <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
+                  <div className="flex items-center justify-between border-b border-black/5 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Recent receives</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowIncoming((prev) => !prev)}
+                      className="rounded-full border border-black/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+                    >
+                      {showIncoming ? "Fold" : "Expand"}
+                    </button>
+                  </div>
+                  <div className={`overflow-y-auto ${showIncoming ? "max-h-[320px]" : "max-h-[180px]"}`}>
+                    <div className="space-y-2 px-3 py-3 text-xs text-gray-600">
+                      {incomingTransfers.slice(0, showIncoming ? 12 : 4).map((transfer) => (
                     <div
                       key={transfer.id}
                       className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2"
@@ -339,8 +367,10 @@ export function WalletActionModal({
                         {transfer.status}
                       </span>
                     </div>
-                  ))}
-                  {incomingTransfers.length === 0 && <p>No incoming transfers yet.</p>}
+                      ))}
+                      {incomingTransfers.length === 0 && <p>No incoming transfers yet.</p>}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
