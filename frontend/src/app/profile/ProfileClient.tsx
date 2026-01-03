@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export type ProfilePayload = {
   firstName: string;
@@ -21,12 +20,10 @@ type Feedback = {
 };
 
 export function ProfileClient({ initialProfile }: ProfileClientProps) {
-  const router = useRouter();
   const [profile, setProfile] = useState<ProfilePayload>(initialProfile);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
 
   const normalizeHandleInput = (value: string) => {
@@ -121,48 +118,6 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
     }, 400);
     return () => clearTimeout(timer);
   }, [editing, profile.username, initialProfile.username]);
-
-  const handleLogout = async () => {
-    const confirmed =
-      typeof window !== "undefined"
-        ? window.confirm("Are you sure you want to log out of your Waashop account?")
-        : true;
-    if (!confirmed) return;
-    try {
-      await fetch("/api/auth/session", { method: "DELETE", credentials: "include" });
-    } catch {
-      // ignore failures clearing cookie
-    }
-    router.push("/login");
-    router.refresh();
-  };
-
-  const handleDelete = async () => {
-    const confirmed =
-      typeof window !== "undefined"
-        ? window.confirm("This action deletes your Waashop profile and ledger history. Continue?")
-        : true;
-    if (!confirmed) return;
-    setDeleteLoading(true);
-    setFeedback(null);
-    try {
-      const response = await fetch("/api/profile", {
-        method: "DELETE",
-        credentials: "include",
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error((data as { error?: string }).error || "Unable to delete profile.");
-      }
-      router.push("/login?accountDeleted=1");
-      router.refresh();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unable to delete profile.";
-      setFeedback({ type: "error", message });
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -292,19 +247,6 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
             className="rounded-2xl border border-black px-4 py-2 text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:bg-gray-200"
           >
             {editing ? (saving ? "Saving…" : "Save changes") : "Edit profile"}
-          </button>
-          <button
-            onClick={handleLogout}
-            className="rounded-2xl border border-black px-4 py-2 text-black transition hover:bg-black hover:text-white"
-          >
-            Logout
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={deleteLoading}
-            className="rounded-2xl border border-red-500 px-4 py-2 text-red-600 transition hover:bg-red-600 hover:text-white disabled:cursor-not-allowed disabled:border-red-200 disabled:bg-red-200 disabled:text-white"
-          >
-            Delete account
           </button>
         </div>
         {feedback && (

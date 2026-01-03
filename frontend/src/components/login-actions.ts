@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { backendFetch } from "@/lib/backendClient";
+import { paiFetch } from "@/lib/paiClient";
 
 export interface AuthActionState {
   error?: string;

@@ -11,7 +11,7 @@ const navLinks = [
   { href: "/shop", label: "Shop", icon: "🛍" },
   { href: "/info", label: "Info", icon: "ℹ️" },
   { href: "/wallet", label: "Wallet", icon: "💳" },
-  { href: "/profile", label: "Profile", icon: "👤" },
+  { href: "/account", label: "Account", icon: "👤" },
 ];
 
 
