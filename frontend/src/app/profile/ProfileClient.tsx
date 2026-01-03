@@ -174,6 +174,8 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
           <label className="space-y-1">
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">First name</span>
             <input
+              id="profile-first-name"
+              name="firstName"
               type="text"
               value={profile.firstName}
               onChange={event => setProfile({ ...profile, firstName: event.target.value })}
@@ -184,6 +186,8 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
           <label className="space-y-1">
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Last name</span>
             <input
+              id="profile-last-name"
+              name="lastName"
               type="text"
               value={profile.lastName || ""}
               onChange={event => setProfile({ ...profile, lastName: event.target.value })}
@@ -195,6 +199,8 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Username@pai</span>
             <div className="relative">
               <input
+                id="profile-username"
+                name="username"
                 type="text"
                 value={displayHandle}
                 onChange={event =>
@@ -254,6 +260,8 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
           <label className="space-y-1 sm:col-span-2">
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Email</span>
             <input
+              id="profile-email"
+              name="email"
               type="email"
               value={profile.email}
               disabled
