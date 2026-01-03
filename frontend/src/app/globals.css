@@ -5,12 +5,16 @@
   color-scheme: dark;
   --app-bg: #0b0b0b;
   --app-text: #f5f5f2;
+  --surface-bg: #111111;
+  --surface-border: rgba(245, 245, 242, 0.12);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
   --app-bg: #f5f5f2;
   --app-text: #0b0b0b;
+  --surface-bg: #ffffff;
+  --surface-border: rgba(11, 11, 11, 0.1);
 }
 
 *,
@@ -24,6 +28,21 @@ body {
   color: var(--app-text);
   font-family: "Space Grotesk", "Inter", "Helvetica Neue", Arial, sans-serif;
   line-height: 1.6;
+}
+
+[class*="bg-white"],
+[class*="bg-black"] {
+  background-color: var(--surface-bg) !important;
+  color: var(--app-text) !important;
+}
+
+[class*="text-black"],
+[class*="text-white"] {
+  color: var(--app-text) !important;
+}
+
+[class*="border-black"] {
+  border-color: var(--surface-border) !important;
 }
 
 @supports (overscroll-behavior-y: none) {
