@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { LoginForm } from "@/components/LoginForm";
 import { RegisterForm } from "@/components/RegisterForm";
 
@@ -66,6 +67,7 @@ const callWaashopAuth = async <T,>(path: string, payload: Record<string, unknown
 };
 
 export function AuthFlow() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("email");
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
@@ -131,10 +133,16 @@ export function AuthFlow() {
         });
         const body = await response.json().catch(() => ({}));
         if (!response.ok || !body?.valid) {
-          throw new Error("That username@pai is invalid. Use your email to create an account.");
+          router.push(
+            `/signup?message=${encodeURIComponent("That username@pai is invalid. Use your email to create an account.")}`
+          );
+          return;
         }
         if (body.available) {
-          throw new Error("No account found for that username. Use your email to create an account.");
+          router.push(
+            `/signup?message=${encodeURIComponent("No account found for that username. Create an account with your email.")}`
+          );
+          return;
         }
         setEmail("");
         setIdentifier(normalized);
