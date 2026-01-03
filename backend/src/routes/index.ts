@@ -520,7 +520,7 @@ router.patch("/profile", authMiddleware, async (req, res) => {
           body: JSON.stringify({ handle: normalized }),
         });
         if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
+          const data = (await response.json().catch(() => ({}))) as { error?: string };
           throw new Error(data?.error || "Unable to update PAI handle");
         }
       }
