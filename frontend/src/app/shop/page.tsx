@@ -32,26 +32,14 @@ export default async function ShopPage() {
             className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
           >
             <div className="flex items-center justify-between text-xs text-gray-500">
-              <span>Box {box.boxId}</span>
+              <span>BOX PER PRICE</span>
               <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
                 {formatMinis(box.priceMinis ?? 0)}
               </span>
             </div>
             <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
-            <p className="text-sm text-gray-600">
-              Guaranteed {formatMinis(box.guaranteedMinMinis)} · crypto-secure randomness · top tier cooldown
-            </p>
             <div className="mt-4">
               <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />
-            </div>
-            <div className="mt-5 flex items-center justify-between text-xs text-gray-500">
-              <span>Server draw + automatic ledger entries</span>
-              <Link
-                href={`/boxes/${box.boxId}`}
-                className="font-semibold text-black underline decoration-black/15 underline-offset-4"
-              >
-                Details
-              </Link>
             </div>
             <div className="mt-6">
               <BoxPurchaseButton box={box} disabled={!user} />
