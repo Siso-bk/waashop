@@ -34,15 +34,16 @@ export default async function ShopPage({
   const activeTab = tabList.find((tab) => tab.key === tabKey) ? tabKey : tabList[0]?.key;
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-1 pb-5">
       <header className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Shop</p>
         {!user && (
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Link
               href="/login"
               className="inline-flex items-center justify-center rounded-full border border-black px-4 py-2 text-xs font-semibold text-black hover:bg-black hover:text-white"
             >
-              Sign in to play
+              Sign in to Shop
             </Link>
             <p className="text-xs text-gray-500">Use your email or username@pai.</p>
           </div>
