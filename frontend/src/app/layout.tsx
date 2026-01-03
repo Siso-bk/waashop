@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { TelegramViewport } from "@/components/TelegramViewport";
 import { MobileNav } from "@/components/MobileNav";
+import { ThemeInitializer } from "@/components/ThemeInitializer";
 
 export const metadata: Metadata = {
   title: "Waashop",
@@ -23,8 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-[#f5f5f2] text-[#0b0b0b] antialiased">
+      <body className="theme-body antialiased">
         <div className="min-h-[var(--tg-viewport-stable-height,100vh)]">
+          <ThemeInitializer />
           <TelegramViewport />
           <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-8 sm:pb-10 sm:pt-10">{children}</main>
           <MobileNav />

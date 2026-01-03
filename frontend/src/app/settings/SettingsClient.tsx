@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { UserProfile } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+type ThemeMode = "light" | "dark" | "system";
 
 type SettingsClientProps = {
   user: UserProfile;
@@ -25,11 +26,14 @@ export function SettingsClient({ user }: SettingsClientProps) {
   const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [smsAlerts, setSmsAlerts] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const storedTheme = window.localStorage.getItem("waashop:theme") as ThemeMode | null;
     const storedEmailAlerts = window.localStorage.getItem("waashop:notify-email");
     const storedSmsAlerts = window.localStorage.getItem("waashop:notify-sms");
+    if (storedTheme) setThemeMode(storedTheme);
     if (storedEmailAlerts !== null) setEmailAlerts(storedEmailAlerts === "true");
     if (storedSmsAlerts !== null) setSmsAlerts(storedSmsAlerts === "true");
   }, []);
@@ -43,6 +47,20 @@ export function SettingsClient({ user }: SettingsClientProps) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("waashop:notify-sms", String(smsAlerts));
   }, [smsAlerts]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const applyTheme = (mode: ThemeMode) => {
+      if (mode === "system") {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = prefersDark ? "dark" : "light";
+        return;
+      }
+      document.documentElement.dataset.theme = mode;
+    };
+    applyTheme(themeMode);
+    window.localStorage.setItem("waashop:theme", themeMode);
+  }, [themeMode]);
 
   const handleLogout = async () => {
     const confirmed =
@@ -151,6 +169,29 @@ export function SettingsClient({ user }: SettingsClientProps) {
             {feedback.message}
           </p>
         )}
+      </section>
+
+      <section className="space-y-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+        <div>
+          <p className="text-sm font-semibold text-black">Theme mode</p>
+          <p className="text-xs text-gray-500">Choose how Waashop looks on this device.</p>
+        </div>
+        <div className="grid gap-3 text-sm text-gray-700 sm:grid-cols-3">
+          {(["light", "dark", "system"] as ThemeMode[]).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setThemeMode(mode)}
+              className={`rounded-2xl border px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] transition ${
+                themeMode === mode
+                  ? "border-black bg-black text-white"
+                  : "border-black/10 bg-white text-gray-600 hover:border-black/30"
+              }`}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="space-y-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">

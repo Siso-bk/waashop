@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { loginAction, type AuthActionState } from "@/components/login-actions";
+import { PasswordResetInline } from "@/components/PasswordResetInline";
 
 const initialState: AuthActionState = {};
 
@@ -12,6 +13,8 @@ export function LoginForm({ identifier }: { identifier: string }) {
   const { pending } = useFormStatus();
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+  const resetEmail = isEmail ? identifier : "";
 
   useEffect(() => {
     if (state.redirectTo) {
@@ -47,6 +50,7 @@ export function LoginForm({ identifier }: { identifier: string }) {
         </div>
       </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
+      <PasswordResetInline initialEmail={resetEmail} />
       <button
         type="submit"
         disabled={pending}

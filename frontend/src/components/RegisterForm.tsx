@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { registerAction, type AuthActionState } from "@/components/login-actions";
+import { PasswordResetInline } from "@/components/PasswordResetInline";
 
 const initialState: AuthActionState = {};
 
@@ -84,6 +85,7 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
         </div>
       </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
+      <PasswordResetInline initialEmail={email} />
       {onBack && (
         <button
           type="button"
