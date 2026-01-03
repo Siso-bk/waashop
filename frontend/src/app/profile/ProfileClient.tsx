@@ -229,6 +229,27 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               </span>
             </div>
             <p className="text-xs text-gray-500">Public handle used for transfers.</p>
+            {editing && displayHandle && (
+              <p
+                className={`text-xs ${
+                  handleStatus === "available"
+                    ? "text-emerald-600"
+                    : handleStatus === "taken" || handleStatus === "invalid"
+                    ? "text-red-500"
+                    : "text-gray-500"
+                }`}
+              >
+                {handleStatus === "checking"
+                  ? "Checking availability…"
+                  : handleStatus === "available"
+                  ? "Username is available."
+                  : handleStatus === "taken"
+                  ? "That username is already taken."
+                  : handleStatus === "invalid"
+                  ? "Username is invalid."
+                  : ""}
+              </p>
+            )}
           </label>
           <label className="space-y-1 sm:col-span-2">
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Email</span>
