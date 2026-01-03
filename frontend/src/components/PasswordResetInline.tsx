@@ -46,7 +46,8 @@ export function PasswordResetInline({ initialEmail = "" }: PasswordResetInlinePr
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-gray-500 underline underline-offset-2"
+        className="text-xs font-semibold underline underline-offset-2 opacity-70"
+        style={{ color: "var(--app-text)" }}
       >
         Forgot password?
       </button>
@@ -56,16 +57,19 @@ export function PasswordResetInline({ initialEmail = "" }: PasswordResetInlinePr
   return (
     <div className="space-y-2 rounded-2xl border border-black/10 bg-white p-3 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Reset password</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] opacity-70" style={{ color: "var(--app-text)" }}>
+          Reset password
+        </p>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-400"
+          className="text-[10px] font-semibold uppercase tracking-[0.3em] opacity-60"
+          style={{ color: "var(--app-text)" }}
         >
           Close
         </button>
       </div>
-      <label className="space-y-1 text-xs text-gray-500">
+      <label className="space-y-1 text-xs opacity-70" style={{ color: "var(--app-text)" }}>
         Email
         <input
           type="email"
@@ -87,6 +91,15 @@ export function PasswordResetInline({ initialEmail = "" }: PasswordResetInlinePr
         <p className={`text-xs ${status === "error" ? "text-red-500" : "text-emerald-600"}`}>
           {message}
         </p>
+      )}
+      {status === "success" && (
+        <a
+          href={`/reset?email=${encodeURIComponent(email.trim())}`}
+          className="text-xs font-semibold uppercase tracking-[0.3em] underline underline-offset-2 opacity-70"
+          style={{ color: "var(--app-text)" }}
+        >
+          Enter reset code
+        </a>
       )}
     </div>
   );
