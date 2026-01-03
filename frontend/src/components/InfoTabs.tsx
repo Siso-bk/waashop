@@ -71,7 +71,7 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
           onClick={() => setActiveTab("orders")}
           className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] transition ${
             activeTab === "orders"
-              ? "border-black bg-black text-white"
+              ? "border-grey bg-black text-white"
               : "border-black/10 bg-white text-gray-500 hover:border-black/30"
           }`}
         >
@@ -82,7 +82,7 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
           onClick={() => setActiveTab("notifications")}
           className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] transition ${
             activeTab === "notifications"
-              ? "border-black bg-black text-white"
+              ? "border-grey bg-black text-white"
               : "border-black/10 bg-white text-gray-500 hover:border-black/30"
           }`}
         >
