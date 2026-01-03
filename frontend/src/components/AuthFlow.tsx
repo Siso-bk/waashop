@@ -133,22 +133,21 @@ export function AuthFlow() {
           cache: "no-store",
         });
         const body = await response.json().catch(() => ({}));
-        if (!response.ok || !body?.valid) {
-          router.push(
-            `/signup?message=${encodeURIComponent("That username@pai is invalid. Use your email to create an account.")}`
-          );
-          return;
-        }
-        if (body.available) {
-          router.push(
-            `/signup?message=${encodeURIComponent("No account found for that username. Create an account with your email.")}`
-          );
-          return;
+        let statusMessage = "Welcome back! Enter your password to continue.";
+        if (response.ok && body?.valid) {
+          if (body.available) {
+            router.push(
+              `/signup?message=${encodeURIComponent("No account found for that username. Create an account with your email.")}`
+            );
+            return;
+          }
+        } else {
+          statusMessage = "We couldn't verify your handle. Try your password.";
         }
         setEmail("");
-        setIdentifier(normalized);
+        setIdentifier(handle);
         setPhase("login");
-        setStatus("Welcome back! Enter your password to continue.");
+        setStatus(statusMessage);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unable to check email";

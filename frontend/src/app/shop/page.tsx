@@ -36,7 +36,6 @@ export default async function ShopPage({
   return (
     <div className="space-y-6 pb-20">
       <header className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Shop</p>
         {!user && (
           <div className="space-y-2">
             <Link
