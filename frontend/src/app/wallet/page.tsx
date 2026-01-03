@@ -62,7 +62,7 @@ export default async function WalletPage({
   const initialAction = prefillRecipient || prefillAmount ? "send" : null;
 
   return (
-    <div className="space-y-6">
+    <div className="wallet-theme space-y-6">
       <header className="space-y-1">
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Wallet</p>
         <h1 className="text-2xl font-semibold text-black">Balance</h1>
