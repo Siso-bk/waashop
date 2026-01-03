@@ -45,6 +45,38 @@ body {
   border-color: var(--surface-border) !important;
 }
 
+:root[data-theme="dark"] .text-gray-400 {
+  color: rgba(245, 245, 242, 0.55) !important;
+}
+
+:root[data-theme="dark"] .text-gray-500 {
+  color: rgba(245, 245, 242, 0.6) !important;
+}
+
+:root[data-theme="dark"] .text-gray-600 {
+  color: rgba(245, 245, 242, 0.72) !important;
+}
+
+:root[data-theme="dark"] .text-gray-700 {
+  color: rgba(245, 245, 242, 0.8) !important;
+}
+
+:root[data-theme="dark"] .border-black\/10 {
+  border-color: rgba(245, 245, 242, 0.18) !important;
+}
+
+:root[data-theme="dark"] .border-black\/15 {
+  border-color: rgba(245, 245, 242, 0.26) !important;
+}
+
+:root[data-theme="dark"] .border-black\/20 {
+  border-color: rgba(245, 245, 242, 0.32) !important;
+}
+
+:root[data-theme="dark"] .border-black\/30 {
+  border-color: rgba(245, 245, 242, 0.45) !important;
+}
+
 @supports (overscroll-behavior-y: none) {
   html,
   body {

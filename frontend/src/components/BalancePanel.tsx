@@ -1,18 +1,19 @@
  "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatMinis } from "@/lib/minis";
 
 interface Props {
   minis?: number;
-  tone?: "light" | "dark";
+  tone?: "light" | "dark" | "auto";
 }
 
-export function BalancePanel({ minis, tone = "light" }: Props) {
+export function BalancePanel({ minis, tone = "auto" }: Props) {
   const prevMinis = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const valueRef = useRef<HTMLParagraphElement | null>(null);
-  const isDark = tone === "dark";
+  const [themeTone, setThemeTone] = useState<"light" | "dark">("light");
+  const isDark = tone === "dark" || (tone === "auto" && themeTone === "dark");
   const current = minis ?? 0;
   const containerBase =
     "rounded-2xl p-4 transition-colors duration-700" +
@@ -38,6 +39,15 @@ export function BalancePanel({ minis, tone = "light" }: Props) {
     if (Number.isFinite(parsed)) {
       prevMinis.current = parsed;
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const getTone = () => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+    setThemeTone(getTone());
+    const observer = new MutationObserver(() => setThemeTone(getTone()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
