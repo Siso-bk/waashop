@@ -39,7 +39,7 @@ const initialFormState: FormState = { status: "idle" };
 const actionLabels: Record<Exclude<ActionType, null>, { title: string; subtitle: string }> = {
   send: {
     title: "Send MINIS",
-    subtitle: "Transfer to another user. Large transfers wait for admin approval.",
+    subtitle: "Transfer to another user. Use their email or username@pai.",
   },
   receive: {
     title: "Receive MINIS",
@@ -268,7 +268,7 @@ export function WalletActionModal({
                   <input
                     name="recipient"
                     required
-                    placeholder="Recipient email or username"
+                    placeholder="Recipient email or username@pai"
                     className="w-full rounded-xl border border-black/10 px-3 py-2"
                   />
                   <input

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -27,11 +27,27 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+
+  const normalizeHandleInput = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("@")) return trimmed.slice(1);
+    if (trimmed.endsWith("@pai")) return trimmed.slice(0, -4);
+    if (trimmed.endsWith(".pai")) return trimmed.slice(0, -4);
+    return trimmed;
+  };
+
+  const displayHandle = profile.username ? `${profile.username}@pai` : "";
 
   const handleSave = async () => {
     if (!editing) {
       setEditing(true);
       setFeedback(null);
+      return;
+    }
+    if (profile.username && (handleStatus === "taken" || handleStatus === "invalid")) {
+      setFeedback({ type: "error", message: "Choose an available username before saving." });
       return;
     }
     setSaving(true);
@@ -64,6 +80,40 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!editing) {
+      setHandleStatus("idle");
+      return;
+    }
+    const candidate = profile.username?.trim() || "";
+    const initialHandle = initialProfile.username || "";
+    if (!candidate) {
+      setHandleStatus("idle");
+      return;
+    }
+    if (candidate === initialHandle) {
+      setHandleStatus("available");
+      return;
+    }
+    setHandleStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/profile?check=1&handle=${encodeURIComponent(candidate)}`, {
+          cache: "no-store",
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.valid) {
+          setHandleStatus("invalid");
+          return;
+        }
+        setHandleStatus(data.available ? "available" : "taken");
+      } catch {
+        setHandleStatus("invalid");
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [editing, profile.username, initialProfile.username]);
 
   const handleLogout = async () => {
     try {
@@ -109,7 +159,9 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Profile</p>
           <h1 className="text-2xl font-semibold text-black">{profile.firstName || "Waashop shopper"}</h1>
           <p className="text-xs text-gray-500">
-            {profile.username ? `${profile.username}@pai` : "Set your username@pai to enable transfers."}
+            {profile.username
+              ? `${profile.username}@pai`
+              : "Transfers support email or username@pai. Set your username@pai to receive faster."}
           </p>
         </div>
         <Link href="/wallet" className="text-xs font-semibold text-black underline underline-offset-4">
@@ -141,16 +193,38 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
           </label>
           <label className="space-y-1 sm:col-span-2">
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Username@pai</span>
-            <input
-              type="text"
-              value={displayHandle}
-              onChange={event =>
-                setProfile({ ...profile, username: normalizeHandleInput(event.target.value) })
-              }
-              disabled={!editing}
-              placeholder="username@pai"
-              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={displayHandle}
+                onChange={event =>
+                  setProfile({ ...profile, username: normalizeHandleInput(event.target.value) })
+                }
+                disabled={!editing}
+                placeholder="username@pai"
+                className="w-full rounded-2xl border border-gray-300 px-3 py-2 pr-10 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
+              />
+              <span
+                className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${
+                  handleStatus === "available"
+                    ? "text-emerald-600"
+                    : handleStatus === "taken" || handleStatus === "invalid"
+                    ? "text-red-500"
+                    : "text-gray-400"
+                }`}
+                aria-hidden="true"
+              >
+                {handleStatus === "checking"
+                  ? "⏳"
+                  : handleStatus === "available"
+                  ? "✓"
+                  : handleStatus === "taken"
+                  ? "✕"
+                  : handleStatus === "invalid"
+                  ? "!"
+                  : ""}
+              </span>
+            </div>
             <p className="text-xs text-gray-500">Public handle used for transfers.</p>
           </label>
           <label className="space-y-1 sm:col-span-2">

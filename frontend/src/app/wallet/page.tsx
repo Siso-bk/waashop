@@ -31,7 +31,8 @@ export default async function WalletPage() {
   if (!user) {
     return (
       <div className="rounded-2xl border border-dashed border-black/20 bg-white p-6 text-sm text-gray-600">
-        Sign in to view your wallet history.
+        <p>Sign in to view your wallet history.</p>
+        <p className="mt-2 text-xs text-gray-500">Use your email or username@pai.</p>
       </div>
     );
   }

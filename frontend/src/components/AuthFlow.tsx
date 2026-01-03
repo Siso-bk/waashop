@@ -17,7 +17,7 @@ const phaseCopy: Record<
 > = {
   email: {
     heading: "Find your account",
-    description: "Enter your email to continue.",
+    description: "Enter your email or username@pai to continue.",
   },
   login: {
     heading: "Welcome back",
@@ -67,6 +67,7 @@ const callWaashopAuth = async <T,>(path: string, payload: Record<string, unknown
 
 export function AuthFlow() {
   const [phase, setPhase] = useState<Phase>("email");
+  const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [preToken, setPreToken] = useState<string | null>(null);
@@ -79,6 +80,7 @@ export function AuthFlow() {
 
   const reset = () => {
     setPhase("email");
+    setIdentifier("");
     setEmail("");
     setCode("");
     setPreToken(null);
@@ -90,6 +92,7 @@ export function AuthFlow() {
 
   const requestPreSignup = async (normalizedEmail: string) => {
     const data = await callWaashopAuth<PreSignupResponse>("/api/pai/auth/pre-signup", { email: normalizedEmail });
+    setIdentifier(normalizedEmail);
     setPhase("verify");
     setStatus(data.message || "We emailed you a six-digit code.");
     setDevCode(data.devVerificationCode || null);
@@ -101,23 +104,42 @@ export function AuthFlow() {
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const value = formData.get("email");
+    const value = formData.get("identifier");
     if (!value || typeof value !== "string") {
-      setError("Email is required");
+      setError("Email or username@pai is required");
       return;
     }
     const normalized = value.trim().toLowerCase();
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
     try {
       setLoading(true);
       setError(null);
       setStatus(null);
-      const data = await callWaashopAuth<CheckEmailResponse>("/api/pai/auth/check-email", { email: normalized });
-      setEmail(normalized);
-      if (data.exists && data.emailVerified) {
+      if (isEmail) {
+        const data = await callWaashopAuth<CheckEmailResponse>("/api/pai/auth/check-email", { email: normalized });
+        setEmail(normalized);
+        setIdentifier(normalized);
+        if (data.exists && data.emailVerified) {
+          setPhase("login");
+          setStatus("Welcome back! Enter your password to continue.");
+        } else {
+          await requestPreSignup(normalized);
+        }
+      } else {
+        const response = await fetch(`/api/profile?check=1&handle=${encodeURIComponent(normalized)}`, {
+          cache: "no-store",
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body?.valid) {
+          throw new Error("That username@pai is invalid. Use your email to create an account.");
+        }
+        if (body.available) {
+          throw new Error("No account found for that username. Use your email to create an account.");
+        }
+        setEmail("");
+        setIdentifier(normalized);
         setPhase("login");
         setStatus("Welcome back! Enter your password to continue.");
-      } else {
-        await requestPreSignup(normalized);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unable to check email";
@@ -177,6 +199,7 @@ export function AuthFlow() {
 
   const sequence: Phase[] = ["email", "login", "verify", "details"];
   const currentStep = sequence.indexOf(phase) + 1;
+  const activeIdentity = identifier || email;
 
   return (
     <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
@@ -196,17 +219,18 @@ export function AuthFlow() {
       {phase === "email" ? (
         <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="auth-email" className="text-sm font-semibold text-gray-700">
-              Email address
+            <label htmlFor="auth-identifier" className="text-sm font-semibold text-gray-700">
+              Email or username@pai
             </label>
             <input
-              id="auth-email"
-              name="email"
-              type="email"
+              id="auth-identifier"
+              name="identifier"
+              type="text"
               required
               className="mt-2 w-full rounded-2xl border border-gray-300 bg-white px-3 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-black focus:outline-none"
-              placeholder="you@example.com"
+              placeholder="you@example.com or username@pai"
             />
+            <p className="mt-2 text-xs text-gray-500">New accounts require email verification. Use your email to sign up.</p>
           </div>
           {error && (
             <p className="text-sm text-red-500" role="alert">
@@ -224,8 +248,8 @@ export function AuthFlow() {
       ) : (
         <div className="mt-6 space-y-4">
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-700">
-            <p className="font-semibold text-gray-900">{email}</p>
-            <p className="mt-1">{phase === "login" ? "Account verified." : "Final step before shopping."}</p>
+            <p className="font-semibold text-gray-900">{activeIdentity}</p>
+            <p className="mt-1">{phase === "login" ? "Account found." : "Final step before shopping."}</p>
           </div>
           {status && (
             <p className="text-xs text-gray-500" role="status">
@@ -233,7 +257,7 @@ export function AuthFlow() {
             </p>
           )}
           {phase === "login" ? (
-            <LoginForm email={email} />
+            <LoginForm identifier={activeIdentity} />
           ) : phase === "verify" ? (
             <form onSubmit={handleVerifySubmit} className="space-y-4" noValidate>
               <div>

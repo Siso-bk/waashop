@@ -33,16 +33,16 @@ const syncSession = async (): Promise<AuthActionState> => {
 };
 
 export const loginAction = async (_prev: AuthActionState, formData: FormData): Promise<AuthActionState> => {
-  const email = formData.get("email");
+  const identifier = formData.get("identifier");
   const password = formData.get("password");
-  if (!email || typeof email !== "string" || !password || typeof password !== "string") {
-    return { error: "Email and password are required" };
+  if (!identifier || typeof identifier !== "string" || !password || typeof password !== "string") {
+    return { error: "Email/username and password are required" };
   }
 
   try {
     const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }),
     });
     await persistToken(token);
     return await syncSession();

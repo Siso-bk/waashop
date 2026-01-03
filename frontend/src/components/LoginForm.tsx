@@ -7,7 +7,7 @@ import { loginAction, type AuthActionState } from "@/components/login-actions";
 
 const initialState: AuthActionState = {};
 
-export function LoginForm({ email }: { email: string }) {
+export function LoginForm({ identifier }: { identifier: string }) {
   const [state, action] = useActionState(loginAction, initialState);
   const { pending } = useFormStatus();
   const [showPassword, setShowPassword] = useState(false);
@@ -22,8 +22,8 @@ export function LoginForm({ email }: { email: string }) {
 
   return (
     <form action={action} className="space-y-4">
-      <input type="hidden" name="email" value={email} />
-      <div className="text-sm text-gray-500">Signing in as {email}</div>
+      <input type="hidden" name="identifier" value={identifier} />
+      <div className="text-sm text-gray-500">Signing in as {identifier}</div>
       <div>
         <label htmlFor="password" className="text-sm font-medium text-gray-700">
           Password

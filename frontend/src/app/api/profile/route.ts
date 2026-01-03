@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { backendFetch } from "@/lib/backendClient";
+import { env } from "@/lib/env";
 import { SESSION_COOKIE } from "@/lib/constants";
 
 const handleError = (error: unknown, status = 400) => {
@@ -7,7 +8,21 @@ const handleError = (error: unknown, status = 400) => {
   return NextResponse.json({ error: message }, { status });
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const handle = request.nextUrl.searchParams.get("handle");
+  const check = request.nextUrl.searchParams.get("check");
+  if (check && handle) {
+    try {
+      const response = await fetch(
+        `${env.PAI_BASE_URL}/api/profile/handle/check?handle=${encodeURIComponent(handle)}`,
+        { cache: "no-store" }
+      );
+      const data = await response.json().catch(() => ({}));
+      return NextResponse.json(data, { status: response.status });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
   try {
     const data = await backendFetch("/api/profile");
     return NextResponse.json(data);

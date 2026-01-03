@@ -44,7 +44,11 @@ export default function RootLayout({
                   <Link href="/wallet" className="hover:text-black">
                     Wallet
                   </Link>
-                  <Link href="/login" className="rounded-full border border-black px-3 py-1 text-black transition hover:bg-black hover:text-white">
+                  <Link
+                    href="/login"
+                    title="Use your email or username@pai"
+                    className="rounded-full border border-black px-3 py-1 text-black transition hover:bg-black hover:text-white"
+                  >
                     Sign in
                   </Link>
                 </nav>
