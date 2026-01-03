@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormState } from "react-dom";
 import { formatMinis } from "@/lib/minis";
+import QRCode from "qrcode";
 
 type TransferDto = {
   id: string;
@@ -24,6 +25,9 @@ type WalletActionModalProps = {
   userHandle: string;
   outgoingTransfers: TransferDto[];
   incomingTransfers: TransferDto[];
+  initialRecipient?: string;
+  initialAmount?: string;
+  initialAction?: ActionType;
   createDeposit: (prevState: FormState, formData: FormData) => Promise<FormState>;
   createWithdrawal: (prevState: FormState, formData: FormData) => Promise<FormState>;
   createTransfer: (prevState: FormState, formData: FormData) => Promise<FormState>;
@@ -60,6 +64,9 @@ export function WalletActionModal({
   userHandle,
   outgoingTransfers,
   incomingTransfers,
+  initialRecipient,
+  initialAmount,
+  initialAction,
   createDeposit,
   createWithdrawal,
   createTransfer,
@@ -70,6 +77,30 @@ export function WalletActionModal({
   const [depositState, depositAction] = useFormState(createDeposit, initialFormState);
   const [withdrawState, withdrawAction] = useFormState(createWithdrawal, initialFormState);
   const [transferState, transferAction] = useFormState(createTransfer, initialFormState);
+  const [recipientValue, setRecipientValue] = useState("");
+  const [amountValue, setAmountValue] = useState("");
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrStatus, setQrStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanStatus, setScanStatus] = useState<"idle" | "starting" | "scanning" | "unsupported" | "error">("idle");
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
+  const [transferLink, setTransferLink] = useState<string | null>(null);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<any>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const qrPayload = useMemo(() => {
+    if (!userHandle) return "";
+    return transferLink || `waashop://transfer?to=${encodeURIComponent(userHandle)}`;
+  }, [userHandle, transferLink]);
+
+  const qrFilename = useMemo(() => {
+    const base = userHandle ? userHandle.replace(/[^a-z0-9._-]+/gi, "_") : "waashop-handle";
+    return `${base}-qr.png`;
+  }, [userHandle]);
   const actionList = useMemo(
     () => [
       { key: "send", label: "Send" },
@@ -79,6 +110,64 @@ export function WalletActionModal({
     ],
     []
   );
+
+  useEffect(() => {
+    if (!userHandle) return;
+    const base =
+      (appUrl && appUrl.replace(/\/+$/, "")) ||
+      (typeof window !== "undefined" ? window.location.origin : "");
+    if (!base) return;
+    setTransferLink(`${base}/transfer?to=${encodeURIComponent(userHandle)}`);
+  }, [appUrl, userHandle]);
+
+  useEffect(() => {
+    if (!initialAction) return;
+    setActive(initialAction);
+  }, [initialAction]);
+
+  useEffect(() => {
+    if (initialRecipient) setRecipientValue(initialRecipient);
+    if (initialAmount) setAmountValue(initialAmount);
+  }, [initialRecipient, initialAmount]);
+
+  useEffect(() => {
+    if (active !== "send") {
+      setRecipientValue("");
+      setAmountValue("");
+      setScannerOpen(false);
+      setScanStatus("idle");
+      setScanMessage(null);
+    }
+  }, [active]);
+
+  useEffect(() => {
+    if (active !== "receive") {
+      setQrDataUrl(null);
+      setQrStatus("idle");
+      setCopyStatus(null);
+      return;
+    }
+    if (!qrPayload) return;
+    let cancelled = false;
+    setQrStatus("loading");
+    QRCode.toDataURL(qrPayload, {
+      margin: 1,
+      scale: 6,
+      color: { dark: "#0b0b0b", light: "#ffffff" },
+    })
+      .then((url) => {
+        if (cancelled) return;
+        setQrDataUrl(url);
+        setQrStatus("ready");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setQrStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [active, qrPayload]);
 
   useEffect(() => {
     if (active) {
@@ -114,6 +203,123 @@ export function WalletActionModal({
     }
     return undefined;
   }, [active, transferState.status]);
+
+  useEffect(() => {
+    if (!scannerOpen || active !== "send") {
+      stopScanner();
+      return undefined;
+    }
+    if (typeof window === "undefined" || !(window as any).BarcodeDetector) {
+      setScanStatus("unsupported");
+      setScannerOpen(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setScanStatus("starting");
+    setScanMessage(null);
+    const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+    detectorRef.current = detector;
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "environment" } })
+      .then(async (stream) => {
+        if (cancelled) return;
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        setScanStatus("scanning");
+        const scanFrame = async () => {
+          if (!videoRef.current || !detectorRef.current) return;
+          try {
+            const codes = await detectorRef.current.detect(videoRef.current);
+            if (codes.length > 0) {
+              handleScanResult(codes[0].rawValue || "");
+              setScannerOpen(false);
+              return;
+            }
+          } catch {
+            setScanStatus("error");
+            setScanMessage("Camera scan failed. Try again or enter manually.");
+            setScannerOpen(false);
+            return;
+          }
+          rafRef.current = requestAnimationFrame(scanFrame);
+        };
+        rafRef.current = requestAnimationFrame(scanFrame);
+      })
+      .catch(() => {
+        setScanStatus("error");
+        setScanMessage("Camera permission denied. Enter the handle manually.");
+        setScannerOpen(false);
+      });
+    return () => {
+      cancelled = true;
+      stopScanner();
+    };
+  }, [scannerOpen, active]);
+
+  function stopScanner() {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }
+
+  function parseTransferPayload(raw: string) {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const normalized =
+      trimmed.startsWith("waashop:") && !trimmed.startsWith("waashop://")
+        ? trimmed.replace("waashop:", "waashop://")
+        : trimmed;
+    if (normalized.startsWith("waashop://") || normalized.startsWith("http://") || normalized.startsWith("https://")) {
+      try {
+        const url = new URL(normalized);
+        const recipient = url.searchParams.get("to") || url.searchParams.get("handle") || "";
+        const amountRaw = url.searchParams.get("amount") || url.searchParams.get("amountMinis") || "";
+        const amountMinis = amountRaw ? Number(amountRaw) : undefined;
+        return { recipient, amountMinis };
+      } catch {
+        return null;
+      }
+    }
+    return { recipient: trimmed };
+  }
+
+  function handleScanResult(value: string) {
+    const parsed = parseTransferPayload(value);
+    if (!parsed || !parsed.recipient) {
+      setScanMessage("QR found but no recipient detected. Paste manually.");
+      return;
+    }
+    setRecipientValue(parsed.recipient);
+    if (parsed.amountMinis && Number.isFinite(parsed.amountMinis)) {
+      setAmountValue(String(parsed.amountMinis));
+    }
+    setScanMessage("Recipient filled from QR.");
+  }
+
+  async function handleCopy(text: string, label: string) {
+    if (!navigator?.clipboard) {
+      setCopyStatus("Copy not supported in this browser.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStatus(`${label} copied.`);
+      setTimeout(() => setCopyStatus(null), 1600);
+    } catch {
+      setCopyStatus("Unable to copy.");
+    }
+  }
 
   return (
     <>
@@ -269,6 +475,8 @@ export function WalletActionModal({
                     name="recipient"
                     required
                     placeholder="Recipient email or username@pai"
+                    value={recipientValue}
+                    onChange={(event) => setRecipientValue(event.target.value)}
                     className="w-full rounded-xl border border-black/10 px-3 py-2"
                   />
                   <input
@@ -278,6 +486,8 @@ export function WalletActionModal({
                     step={1}
                     required
                     placeholder="Amount (MINIS)"
+                    value={amountValue}
+                    onChange={(event) => setAmountValue(event.target.value)}
                     className="w-full rounded-xl border border-black/10 px-3 py-2"
                   />
                   <textarea
@@ -302,6 +512,35 @@ export function WalletActionModal({
                     </p>
                   )}
                 </form>
+                <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Scan QR</p>
+                      <p className="mt-1 text-xs text-gray-500">Point your camera at a Waashop handle QR.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setScannerOpen((prev) => !prev)}
+                      className="rounded-full border border-black/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+                    >
+                      {scannerOpen ? "Stop" : "Scan"}
+                    </button>
+                  </div>
+                  <div className="mt-4">
+                    {scanStatus === "unsupported" && (
+                      <p className="text-xs text-gray-500">Camera scanning isn’t supported in this browser.</p>
+                    )}
+                    {scannerOpen && (
+                      <div className="overflow-hidden rounded-2xl border border-black/10 bg-black">
+                        <video ref={videoRef} playsInline muted className="h-48 w-full object-cover" />
+                      </div>
+                    )}
+                    {!scannerOpen && scanStatus === "scanning" && (
+                      <p className="text-xs text-gray-500">Scanning paused.</p>
+                    )}
+                    {scanMessage && <p className="mt-2 text-xs text-gray-500">{scanMessage}</p>}
+                  </div>
+                </div>
                 <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
                   <div className="flex items-center justify-between border-b border-black/5 px-3 py-2">
                     <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Recent sends</p>
@@ -343,6 +582,58 @@ export function WalletActionModal({
                 <div className="rounded-2xl border border-dashed border-black/15 bg-gray-50 px-4 py-4 text-sm">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Your handle</p>
                   <p className="mt-2 font-semibold text-black">{userHandle}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(userHandle, "Handle")}
+                      className="rounded-full border border-black/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+                    >
+                      Copy handle
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(qrPayload, "Transfer link")}
+                      className="rounded-full border border-black/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+                    >
+                      Copy link
+                    </button>
+                    {qrDataUrl && (
+                      <a
+                        href={qrDataUrl}
+                        download={qrFilename}
+                        className="rounded-full border border-black/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+                      >
+                        Download QR
+                      </a>
+                    )}
+                  </div>
+                  {copyStatus && <p className="mt-2 text-xs text-gray-500">{copyStatus}</p>}
+                </div>
+                <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Receive via QR</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Let senders scan this code to auto-fill your handle.
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-black/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                      Secure
+                    </span>
+                  </div>
+                  <div className="mt-4 flex items-center justify-center">
+                    {qrStatus === "loading" && <p className="text-xs text-gray-500">Generating QR…</p>}
+                    {qrStatus === "error" && (
+                      <p className="text-xs text-gray-500">Unable to generate QR. Try again.</p>
+                    )}
+                    {qrDataUrl && (
+                      <img
+                        src={qrDataUrl}
+                        alt="Transfer QR"
+                        className="h-48 w-48 rounded-2xl border border-black/10 bg-white p-3 shadow-sm"
+                      />
+                    )}
+                  </div>
                 </div>
                 <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
                   <div className="flex items-center justify-between border-b border-black/5 px-3 py-2">

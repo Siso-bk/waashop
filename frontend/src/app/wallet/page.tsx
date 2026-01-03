@@ -26,7 +26,11 @@ type ActionResult = {
   message?: string;
 };
 
-export default async function WalletPage() {
+export default async function WalletPage({
+  searchParams,
+}: {
+  searchParams?: { to?: string; amount?: string };
+}) {
   const user = await getSessionUser();
   if (!user) {
     return (
@@ -45,6 +49,10 @@ export default async function WalletPage() {
 
   const minis = (user as { minisBalance?: number }).minisBalance ?? 0;
 
+  const prefillRecipient = typeof searchParams?.to === "string" ? searchParams.to : undefined;
+  const prefillAmount = typeof searchParams?.amount === "string" ? searchParams.amount : undefined;
+  const initialAction = prefillRecipient || prefillAmount ? "send" : null;
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -58,6 +66,9 @@ export default async function WalletPage() {
         userHandle={user.username ? `${user.username}@pai` : user.email || user.telegramId || "No handle yet"}
         outgoingTransfers={transfers.outgoing}
         incomingTransfers={transfers.incoming}
+        initialRecipient={prefillRecipient}
+        initialAmount={prefillAmount}
+        initialAction={initialAction}
         createDeposit={createDeposit}
         createWithdrawal={createWithdrawal}
         createTransfer={createTransfer}
