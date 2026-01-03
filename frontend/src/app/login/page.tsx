@@ -43,7 +43,7 @@ export default async function LoginPage({
 
   try {
     await requireToken();
-    redirect("/");
+    redirect("/account");
   } catch {
     // Continue to render login/register
   }

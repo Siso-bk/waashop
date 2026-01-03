@@ -61,30 +61,32 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        {highlightCards.map((card) => (
-          <article
-            key={card.key}
-            className={`rounded-3xl border p-5 shadow-sm ${card.backgroundClass} ${card.borderClass} ${card.textClass}`}
-          >
-            {card.eyebrow && (
-              <p className={`text-xs uppercase tracking-[0.3em] ${card.eyebrowTone}`}>{card.eyebrow}</p>
-            )}
-            <h2 className="mt-2 text-lg font-semibold">{card.title}</h2>
-            {card.description && <p className={`mt-1 text-sm ${card.descriptionTone}`}>{card.description}</p>}
-            {card.ctaLabel && card.ctaHref && (
-              <Link
-                href={card.ctaHref}
-                className={`mt-4 inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  card.ctaVariant
-                }`}
-              >
-                {card.ctaLabel}
-              </Link>
-            )}
-          </article>
-        ))}
-      </section>
+      {!isAuthenticated && (
+        <section className="grid gap-4 sm:grid-cols-2">
+          {highlightCards.map((card) => (
+            <article
+              key={card.key}
+              className={`rounded-3xl border p-5 shadow-sm ${card.backgroundClass} ${card.borderClass} ${card.textClass}`}
+            >
+              {card.eyebrow && (
+                <p className={`text-xs uppercase tracking-[0.3em] ${card.eyebrowTone}`}>{card.eyebrow}</p>
+              )}
+              <h2 className="mt-2 text-lg font-semibold">{card.title}</h2>
+              {card.description && <p className={`mt-1 text-sm ${card.descriptionTone}`}>{card.description}</p>}
+              {card.ctaLabel && card.ctaHref && (
+                <Link
+                  href={card.ctaHref}
+                  className={`mt-4 inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    card.ctaVariant
+                  }`}
+                >
+                  {card.ctaLabel}
+                </Link>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
 
       {promoCards.length > 0 && (
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">

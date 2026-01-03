@@ -19,7 +19,7 @@ export default async function SignupPage({
 
   try {
     await requireToken();
-    redirect("/");
+    redirect("/account");
   } catch {
     // Continue to render signup flow
   }
