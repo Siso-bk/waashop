@@ -532,7 +532,8 @@ router.patch("/profile", authMiddleware, async (req, res) => {
     res.json({ profile: serializeUser(user) });
   } catch (error) {
     console.error("Profile update error", error);
-    res.status(400).json({ error: "Unable to update profile" });
+    const message = error instanceof Error ? error.message : "Unable to update profile";
+    res.status(400).json({ error: message });
   }
 });
 
