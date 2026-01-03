@@ -396,13 +396,13 @@ export function WalletActionModal({
   return (
     <>
       <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-2">
           {actionList.map((action) => (
             <button
               key={action.key}
               type="button"
               onClick={() => setActive(action.key as ActionType)}
-              className={`flex min-w-[98px] items-center justify-center rounded-full px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] transition ${
+              className={`flex min-w-[84px] items-center justify-center rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.26em] transition ${
                 active === action.key
                   ? "bg-black text-white hover:bg-gray-900"
                   : "border border-black/15 text-black hover:bg-black hover:text-white"
