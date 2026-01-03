@@ -53,6 +53,9 @@ type PaiProfile = {
   id: string;
   email?: string;
   name?: string;
+  profile?: {
+    handle?: string;
+  };
 };
 
 const authenticatePaiToken = async (token: string): Promise<IUser | null> => {
@@ -70,6 +73,7 @@ const authenticatePaiToken = async (token: string): Promise<IUser | null> => {
   if (!email) {
     throw new Error("PAI user missing email");
   }
+  const handle = profile.profile?.handle;
   await connectDB();
   let user = await User.findOne({ email }).exec();
   if (!user) {
@@ -77,9 +81,13 @@ const authenticatePaiToken = async (token: string): Promise<IUser | null> => {
       email,
       telegramId: `pai:${profile.id}`,
       firstName: profile.name,
+      username: handle,
       minisBalance: 0,
       roles: ["customer"],
     });
+    await user.save();
+  } else if (handle && user.username !== handle) {
+    user.username = handle;
     await user.save();
   }
   return user;

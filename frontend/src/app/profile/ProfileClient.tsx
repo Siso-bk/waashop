@@ -8,6 +8,7 @@ export type ProfilePayload = {
   firstName: string;
   lastName?: string;
   email: string;
+  username?: string;
 };
 
 type ProfileClientProps = {
@@ -42,6 +43,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
         body: JSON.stringify({
           firstName: profile.firstName,
           lastName: profile.lastName,
+          username: profile.username,
         }),
         credentials: "include",
       });
@@ -106,6 +108,9 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Profile</p>
           <h1 className="text-2xl font-semibold text-black">{profile.firstName || "Waashop shopper"}</h1>
+          <p className="text-xs text-gray-500">
+            {profile.username ? `${profile.username}@pai` : "Set your username@pai to enable transfers."}
+          </p>
         </div>
         <Link href="/wallet" className="text-xs font-semibold text-black underline underline-offset-4">
           Back to wallet
@@ -133,6 +138,20 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               disabled={!editing}
               className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
             />
+          </label>
+          <label className="space-y-1 sm:col-span-2">
+            <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Username@pai</span>
+            <input
+              type="text"
+              value={displayHandle}
+              onChange={event =>
+                setProfile({ ...profile, username: normalizeHandleInput(event.target.value) })
+              }
+              disabled={!editing}
+              placeholder="username@pai"
+              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
+            />
+            <p className="text-xs text-gray-500">Public handle used for transfers.</p>
           </label>
           <label className="space-y-1 sm:col-span-2">
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Email</span>
@@ -179,3 +198,13 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
     </div>
   );
 }
+  const normalizeHandleInput = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("@")) return trimmed.slice(1);
+    if (trimmed.endsWith("@pai")) return trimmed.slice(0, -4);
+    if (trimmed.endsWith(".pai")) return trimmed.slice(0, -4);
+    return trimmed;
+  };
+
+  const displayHandle = profile.username ? `${profile.username}@pai` : "";

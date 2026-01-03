@@ -54,7 +54,7 @@ export default async function WalletPage() {
       <BalancePanel minis={minis} />
       <WalletActionModal
         balanceMinis={minis}
-        userHandle={user.email || user.username || user.telegramId || "No handle yet"}
+        userHandle={user.username ? `${user.username}@pai` : user.email || user.telegramId || "No handle yet"}
         outgoingTransfers={transfers.outgoing}
         incomingTransfers={transfers.incoming}
         createDeposit={createDeposit}

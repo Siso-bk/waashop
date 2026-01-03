@@ -350,6 +350,14 @@ const formatMinis = (value: number) => {
   return `${amount.toLocaleString()} ${unit}`;
 };
 
+const normalizeHandle = (raw: string) => {
+  const trimmed = raw.trim().toLowerCase();
+  if (trimmed.startsWith("@")) return trimmed.slice(1);
+  if (trimmed.endsWith("@pai")) return trimmed.slice(0, -4);
+  if (trimmed.endsWith(".pai")) return trimmed.slice(0, -4);
+  return trimmed;
+};
+
 const ensureMinisBalance = (user: IUser) => {
   if (!Number.isFinite(user.minisBalance)) {
     user.minisBalance = 0;
@@ -496,7 +504,30 @@ router.patch("/profile", authMiddleware, async (req, res) => {
   try {
     const payload = schema.parse(req.body);
     const user = req.userDoc!;
-    Object.assign(user, payload);
+    if (payload.username !== undefined) {
+      const trimmed = payload.username.trim();
+      if (!trimmed) {
+        return res.status(400).json({ error: "Username cannot be empty" });
+      }
+      const normalized = normalizeHandle(trimmed);
+      if (env.PAI_BASE_URL && req.headers.authorization) {
+        const response = await fetch(`${env.PAI_BASE_URL}/api/profile`, {
+          method: "PATCH",
+          headers: {
+            Authorization: req.headers.authorization,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ handle: normalized }),
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data?.error || "Unable to update PAI handle");
+        }
+      }
+      user.username = normalized;
+    }
+    if (payload.firstName !== undefined) user.firstName = payload.firstName;
+    if (payload.lastName !== undefined) user.lastName = payload.lastName;
     await user.save();
     res.json({ profile: serializeUser(user) });
   } catch (error) {
@@ -1267,9 +1298,11 @@ router.post("/transfers", authMiddleware, async (req, res) => {
     }
     ensureMinisBalance(sender);
 
+    const rawRecipient = payload.recipient.trim();
+    const normalizedHandle = normalizeHandle(rawRecipient);
     const recipient =
-      (await User.findOne({ email: payload.recipient }).exec()) ||
-      (await User.findOne({ username: payload.recipient }).exec());
+      (await User.findOne({ email: rawRecipient.toLowerCase() }).exec()) ||
+      (await User.findOne({ username: normalizedHandle }).exec());
     if (!recipient) {
       return res.status(404).json({ error: "Recipient not found" });
     }
@@ -1291,10 +1324,13 @@ router.post("/transfers", authMiddleware, async (req, res) => {
     sender.minisBalance -= total;
     await sender.save();
 
+    const displayHandle = rawRecipient.includes("@") || rawRecipient.includes(".")
+      ? rawRecipient
+      : `${normalizedHandle}@pai`;
     const transfer = await TransferRequest.create({
       senderId: sender._id,
       recipientId: recipient._id,
-      recipientHandle: payload.recipient,
+      recipientHandle: displayHandle,
       amountMinis: payload.amountMinis,
       feeMinis,
       status: needsApproval ? "PENDING" : "COMPLETED",
