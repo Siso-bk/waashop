@@ -504,6 +504,7 @@ router.patch("/profile", authMiddleware, async (req, res) => {
   try {
     const payload = schema.parse(req.body);
     const user = req.userDoc!;
+    let paiSyncWarning: string | null = null;
     if (payload.username !== undefined) {
       const trimmed = payload.username.trim();
       if (!trimmed) {
@@ -511,17 +512,21 @@ router.patch("/profile", authMiddleware, async (req, res) => {
       }
       const normalized = normalizeHandle(trimmed);
       if (env.PAI_BASE_URL && req.headers.authorization) {
-        const response = await fetch(`${env.PAI_BASE_URL}/api/profile`, {
-          method: "PATCH",
-          headers: {
-            Authorization: req.headers.authorization,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ handle: normalized }),
-        });
-        if (!response.ok) {
-          const data = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data?.error || "Unable to update PAI handle");
+        try {
+          const response = await fetch(`${env.PAI_BASE_URL}/api/profile`, {
+            method: "PATCH",
+            headers: {
+              Authorization: req.headers.authorization,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ handle: normalized }),
+          });
+          if (!response.ok) {
+            const data = (await response.json().catch(() => ({}))) as { error?: string };
+            paiSyncWarning = data?.error || `PAI sync failed (${response.status})`;
+          }
+        } catch (err) {
+          paiSyncWarning = err instanceof Error ? err.message : "PAI sync failed";
         }
       }
       user.username = normalized;
@@ -529,7 +534,10 @@ router.patch("/profile", authMiddleware, async (req, res) => {
     if (payload.firstName !== undefined) user.firstName = payload.firstName;
     if (payload.lastName !== undefined) user.lastName = payload.lastName;
     await user.save();
-    res.json({ profile: serializeUser(user) });
+    res.json({
+      profile: serializeUser(user),
+      warning: paiSyncWarning || undefined,
+    });
   } catch (error) {
     console.error("Profile update error", error);
     const message = error instanceof Error ? error.message : "Unable to update profile";

@@ -32,10 +32,17 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
   const normalizeHandleInput = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return "";
-    if (trimmed.startsWith("@")) return trimmed.slice(1);
-    if (trimmed.endsWith("@pai")) return trimmed.slice(0, -4);
-    if (trimmed.endsWith(".pai")) return trimmed.slice(0, -4);
-    return trimmed;
+    let normalized = trimmed;
+    if (normalized.startsWith("@")) {
+      normalized = normalized.slice(1);
+    }
+    if (/@pai$/i.test(normalized)) {
+      normalized = normalized.slice(0, -4);
+    }
+    if (/\.pai$/i.test(normalized)) {
+      normalized = normalized.slice(0, -4);
+    }
+    return normalized;
   };
 
   const displayHandle = profile.username || "";
