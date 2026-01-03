@@ -272,13 +272,3 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
     </div>
   );
 }
-  const normalizeHandleInput = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return "";
-    if (trimmed.startsWith("@")) return trimmed.slice(1);
-    if (trimmed.endsWith("@pai")) return trimmed.slice(0, -4);
-    if (trimmed.endsWith(".pai")) return trimmed.slice(0, -4);
-    return trimmed;
-  };
-
-  const displayHandle = profile.username ? `${profile.username}@pai` : "";
