@@ -444,7 +444,7 @@ export function WalletActionModal({
                 <button
                   type="submit"
                   disabled={isDepositSubmitting || depositState.status === "success"}
-                  className={`w-full rounded-full px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                  className={`w-full rounded-full px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                     isDepositSubmitting
                       ? "bg-black/80"
                       : depositState.status === "success"
@@ -515,7 +515,7 @@ export function WalletActionModal({
                 <button
                   type="submit"
                   disabled={isWithdrawSubmitting || withdrawState.status === "success"}
-                  className={`w-full rounded-full px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                  className={`w-full rounded-full px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                     isWithdrawSubmitting
                       ? "bg-black/80"
                       : withdrawState.status === "success"
@@ -581,7 +581,7 @@ export function WalletActionModal({
                   <button
                     type="submit"
                     disabled={isTransferSubmitting || transferState.status === "success"}
-                    className={`w-full rounded-full px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                    className={`w-full rounded-full px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                       isTransferSubmitting
                         ? "bg-black/80"
                         : transferState.status === "success"

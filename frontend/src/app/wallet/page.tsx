@@ -58,7 +58,7 @@ export default async function WalletPage({
       <header className="space-y-1">
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Wallet</p>
         <h1 className="text-2xl font-semibold text-black">Balance</h1>
-        <p className="text-sm text-gray-600">BUY, SELL, DEPOSIT, WITHDRAW MINIS.</p>
+        <p className="text-sm text-gray-600">Buy, Sell, Deposit, Withdraw Minis.</p>
       </header>
       <BalancePanel minis={minis} />
       <WalletActionModal
