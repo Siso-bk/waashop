@@ -115,8 +115,8 @@ async function createDeposit(_prevState: ActionResult, formData: FormData): Prom
   if (!amountMinisRaw || !paymentMethod) {
     return { status: "error", message: "Amount and payment method are required." };
   }
-  const amountMinis = Number(amountMinisRaw);
-  if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
+  const amountMinis = roundToTwo(Number(amountMinisRaw));
+  if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
     return { status: "error", message: "Enter a valid amount." };
   }
   const payload = {
@@ -147,8 +147,8 @@ async function createWithdrawal(_prevState: ActionResult, formData: FormData): P
   if (!amountMinisRaw || !payoutMethod) {
     return { status: "error", message: "Amount and payout method are required." };
   }
-  const amountMinis = Number(amountMinisRaw);
-  if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
+  const amountMinis = roundToTwo(Number(amountMinisRaw));
+  if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
     return { status: "error", message: "Enter a valid amount." };
   }
   const payload = {
@@ -178,8 +178,8 @@ async function createTransfer(_prevState: ActionResult, formData: FormData): Pro
   if (!recipient || typeof recipient !== "string" || !amountMinisRaw) {
     return { status: "error", message: "Recipient and amount are required." };
   }
-  const amountMinis = Number(amountMinisRaw);
-  if (!Number.isFinite(amountMinis) || amountMinis <= 0) {
+  const amountMinis = roundToTwo(Number(amountMinisRaw));
+  if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
     return { status: "error", message: "Enter a valid amount." };
   }
   const payload = {
@@ -205,3 +205,5 @@ const valueOrUndefined = (value: FormDataEntryValue | null) => {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
 };
+
+const roundToTwo = (value: number) => Math.round(value * 100) / 100;

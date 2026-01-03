@@ -347,8 +347,14 @@ const serializeNotification = (notification: any) => ({
 const formatMinis = (value: number) => {
   const amount = Number.isFinite(value) ? value : 0;
   const unit = Math.abs(amount) === 1 ? "MINI" : "MINIS";
-  return `${amount.toLocaleString()} ${unit}`;
+  const formatted = amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${formatted} ${unit}`;
 };
+
+const roundToTwo = (value: number) => Math.round(value * 100) / 100;
 
 const normalizeHandle = (raw: string) => {
   const trimmed = raw.trim().toLowerCase();
@@ -889,7 +895,7 @@ router.get("/deposits", authMiddleware, async (req, res) => {
 
 router.post("/deposits", authMiddleware, async (req, res) => {
   const schema = z.object({
-    amountMinis: z.number().finite().min(1),
+    amountMinis: z.number().finite().min(0.01),
     currency: z.string().max(20).optional(),
     paymentMethod: z.string().min(1).max(100),
     paymentReference: z.string().max(120).optional(),
@@ -899,10 +905,14 @@ router.post("/deposits", authMiddleware, async (req, res) => {
 
   try {
     const payload = schema.parse(req.body);
+    const amountMinis = roundToTwo(payload.amountMinis);
+    if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
     await connectDB();
     const deposit = await DepositRequest.create({
       userId: req.userId,
-      amountMinis: payload.amountMinis,
+      amountMinis,
       currency: payload.currency,
       paymentMethod: payload.paymentMethod,
       paymentReference: payload.paymentReference,
@@ -912,9 +922,9 @@ router.post("/deposits", authMiddleware, async (req, res) => {
     });
     await createNotification(req.userId, {
       type: "DEPOSIT_SUBMITTED",
-      title: `Deposit submitted: ${formatMinis(payload.amountMinis)}`,
+      title: `Deposit submitted: ${formatMinis(amountMinis)}`,
       body: "We received your receipt and will review it shortly.",
-      meta: { depositId: deposit._id, amountMinis: payload.amountMinis },
+      meta: { depositId: deposit._id, amountMinis },
     });
     res.status(201).json({ deposit: serializeDeposit(deposit) });
   } catch (error) {
@@ -1104,7 +1114,7 @@ router.get("/withdrawals", authMiddleware, async (req, res) => {
 
 router.post("/withdrawals", authMiddleware, async (req, res) => {
   const schema = z.object({
-    amountMinis: z.number().finite().min(1),
+    amountMinis: z.number().finite().min(0.01),
     payoutMethod: z.string().min(1).max(100),
     payoutAddress: z.string().max(200).optional(),
     accountName: z.string().max(120).optional(),
@@ -1113,20 +1123,24 @@ router.post("/withdrawals", authMiddleware, async (req, res) => {
 
   try {
     const payload = schema.parse(req.body);
+    const amountMinis = roundToTwo(payload.amountMinis);
+    if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
     await connectDB();
     const user = await User.findById(req.userId).exec();
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
     ensureMinisBalance(user);
-    if (user.minisBalance < payload.amountMinis) {
+    if (user.minisBalance < amountMinis) {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
-    user.minisBalance -= payload.amountMinis;
+    user.minisBalance -= amountMinis;
     const withdrawal = await WithdrawalRequest.create({
       userId: req.userId,
-      amountMinis: payload.amountMinis,
+      amountMinis,
       payoutMethod: payload.payoutMethod,
       payoutAddress: payload.payoutAddress,
       accountName: payload.accountName,
@@ -1136,16 +1150,16 @@ router.post("/withdrawals", authMiddleware, async (req, res) => {
     await user.save();
     await Ledger.create({
       userId: user._id,
-      deltaMinis: -payload.amountMinis,
+      deltaMinis: -amountMinis,
       reason: "WITHDRAW_REQUEST",
       meta: { withdrawalId: withdrawal._id, payoutMethod: payload.payoutMethod },
     });
 
     await createNotification(req.userId, {
       type: "WITHDRAW_SUBMITTED",
-      title: `Withdrawal requested: ${formatMinis(payload.amountMinis)}`,
+      title: `Withdrawal requested: ${formatMinis(amountMinis)}`,
       body: "We received your payout request and will review it shortly.",
-      meta: { withdrawalId: withdrawal._id, amountMinis: payload.amountMinis },
+      meta: { withdrawalId: withdrawal._id, amountMinis },
     });
 
     res.status(201).json({ withdrawal: serializeWithdrawal(withdrawal) });
@@ -1294,12 +1308,16 @@ router.get("/transfers", authMiddleware, async (req, res) => {
 router.post("/transfers", authMiddleware, async (req, res) => {
   const schema = z.object({
     recipient: z.string().min(2).max(120),
-    amountMinis: z.number().finite().min(1),
+    amountMinis: z.number().finite().min(0.01),
     note: z.string().max(500).optional(),
   });
 
   try {
     const payload = schema.parse(req.body);
+    const amountMinis = roundToTwo(payload.amountMinis);
+    if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
     await connectDB();
     const sender = await User.findById(req.userId).exec();
     if (!sender) {
@@ -1321,14 +1339,14 @@ router.post("/transfers", authMiddleware, async (req, res) => {
 
     const settings = await getPlatformSettings();
     const feePercent = settings.transferFeePercent || 0;
-    const feeMinis = Math.max(0, Math.round((payload.amountMinis * feePercent) / 100));
-    const total = payload.amountMinis + feeMinis;
+    const feeMinis = Math.max(0, roundToTwo((amountMinis * feePercent) / 100));
+    const total = roundToTwo(amountMinis + feeMinis);
     if (sender.minisBalance < total) {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
     const autoApproveLimit = settings.transferLimitMinis || 0;
-    const needsApproval = payload.amountMinis > autoApproveLimit;
+    const needsApproval = amountMinis > autoApproveLimit;
 
     sender.minisBalance -= total;
     await sender.save();
@@ -1340,7 +1358,7 @@ router.post("/transfers", authMiddleware, async (req, res) => {
       senderId: sender._id,
       recipientId: recipient._id,
       recipientHandle: displayHandle,
-      amountMinis: payload.amountMinis,
+      amountMinis,
       feeMinis,
       status: needsApproval ? "PENDING" : "COMPLETED",
       note: payload.note,
@@ -1349,7 +1367,7 @@ router.post("/transfers", authMiddleware, async (req, res) => {
     await Ledger.create([
       {
         userId: sender._id,
-        deltaMinis: -payload.amountMinis,
+        deltaMinis: -amountMinis,
         reason: "TRANSFER_SEND",
         meta: { transferId: transfer._id, recipientId: recipient._id },
       },
@@ -1363,11 +1381,11 @@ router.post("/transfers", authMiddleware, async (req, res) => {
 
     if (!needsApproval) {
       ensureMinisBalance(recipient);
-      recipient.minisBalance += payload.amountMinis;
+      recipient.minisBalance += amountMinis;
       await recipient.save();
       await Ledger.create({
         userId: recipient._id,
-        deltaMinis: payload.amountMinis,
+        deltaMinis: amountMinis,
         reason: "TRANSFER_RECEIVE",
         meta: { transferId: transfer._id, senderId: sender._id },
       });
@@ -1376,19 +1394,19 @@ router.post("/transfers", authMiddleware, async (req, res) => {
     await createNotification(sender._id, {
       type: needsApproval ? "TRANSFER_PENDING" : "TRANSFER_COMPLETED",
       title: needsApproval
-        ? `Transfer pending: ${formatMinis(payload.amountMinis)}`
-        : `Transfer sent: ${formatMinis(payload.amountMinis)}`,
+        ? `Transfer pending: ${formatMinis(amountMinis)}`
+        : `Transfer sent: ${formatMinis(amountMinis)}`,
       body: needsApproval
         ? "Transfer awaits admin approval."
         : `Sent to ${recipient.email || recipient.username || "recipient"}.`,
-      meta: { transferId: transfer._id, amountMinis: payload.amountMinis },
+      meta: { transferId: transfer._id, amountMinis },
     });
     if (!needsApproval) {
       await createNotification(recipient._id, {
         type: "TRANSFER_RECEIVED",
-        title: `Transfer received: ${formatMinis(payload.amountMinis)}`,
+        title: `Transfer received: ${formatMinis(amountMinis)}`,
         body: `From ${sender.email || sender.username || "Waashop user"}.`,
-        meta: { transferId: transfer._id, amountMinis: payload.amountMinis },
+        meta: { transferId: transfer._id, amountMinis },
       });
     }
 

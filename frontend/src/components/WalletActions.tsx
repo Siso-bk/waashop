@@ -96,8 +96,8 @@ export function WalletActions({ balanceMinis }: { balanceMinis: number }) {
           <input
             name="amountMinis"
             type="number"
-            min={1}
-            step={1}
+            min={0.01}
+            step={0.01}
             required
             placeholder="Amount (MINIS)"
             className="w-full rounded-xl border border-black/10 px-3 py-2"
@@ -161,8 +161,8 @@ export function WalletActions({ balanceMinis }: { balanceMinis: number }) {
           <input
             name="amountMinis"
             type="number"
-            min={1}
-            step={1}
+            min={0.01}
+            step={0.01}
             required
             placeholder="Amount (MINIS)"
             className="w-full rounded-xl border border-black/10 px-3 py-2"

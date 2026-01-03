@@ -1,6 +1,7 @@
  "use client";
 
 import { useEffect, useRef } from "react";
+import { formatMinis } from "@/lib/minis";
 
 interface Props {
   minis?: number;
@@ -31,13 +32,28 @@ export function BalancePanel({ minis, tone = "light" }: Props) {
   } as React.CSSProperties;
 
   useEffect(() => {
+    if (typeof window === "undefined" || prevMinis.current !== null) return;
+    const stored = window.sessionStorage.getItem("waashop-minis-balance");
+    const parsed = stored ? Number(stored) : NaN;
+    if (Number.isFinite(parsed)) {
+      prevMinis.current = parsed;
+    }
+  }, []);
+
+  useEffect(() => {
     if (prevMinis.current === null) {
       prevMinis.current = current;
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("waashop-minis-balance", String(current));
+      }
       return;
     }
     if (current === prevMinis.current) return;
     const nextDirection: "up" | "down" = current > prevMinis.current ? "up" : "down";
     prevMinis.current = current;
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("waashop-minis-balance", String(current));
+    }
     const containerEl = containerRef.current;
     const valueEl = valueRef.current;
     if (!containerEl || !valueEl) return;
@@ -56,7 +72,7 @@ export function BalancePanel({ minis, tone = "light" }: Props) {
       <div ref={containerRef} className={container} style={styleVars}>
         <p className={`text-xs uppercase tracking-[0.3em] ${label}`}>MINIS</p>
         <p ref={valueRef} className="mt-2 text-3xl font-semibold transition-colors duration-700">
-          {current.toLocaleString()}
+          {formatMinis(current)}
         </p>
         <p className={`text-xs ${description}`}>TOTAL BALANCE</p>
       </div>

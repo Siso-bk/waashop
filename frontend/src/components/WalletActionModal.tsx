@@ -410,15 +410,15 @@ export function WalletActionModal({
                 className="space-y-4 text-sm text-gray-700"
                 onSubmit={() => setIsDepositSubmitting(true)}
               >
-                <input
-                  name="amountMinis"
-                  type="number"
-                  min={1}
-                  step={1}
-                  required
-                  placeholder="Amount (MINIS)"
-                  className="w-full rounded-xl border border-black/10 px-3 py-2"
-                />
+                  <input
+                    name="amountMinis"
+                    type="number"
+                    min={0.01}
+                    step={0.01}
+                    required
+                    placeholder="Amount (MINIS)"
+                    className="w-full rounded-xl border border-black/10 px-3 py-2"
+                  />
                 <input
                   name="currency"
                   placeholder="Currency (USD, ETB, USDT...)"
@@ -486,15 +486,15 @@ export function WalletActionModal({
                 className="space-y-4 text-sm text-gray-700"
                 onSubmit={() => setIsWithdrawSubmitting(true)}
               >
-                <input
-                  name="amountMinis"
-                  type="number"
-                  min={1}
-                  step={1}
-                  required
-                  placeholder="Amount (MINIS)"
-                  className="w-full rounded-xl border border-black/10 px-3 py-2"
-                />
+                  <input
+                    name="amountMinis"
+                    type="number"
+                    min={0.01}
+                    step={0.01}
+                    required
+                    placeholder="Amount (MINIS)"
+                    className="w-full rounded-xl border border-black/10 px-3 py-2"
+                  />
                 <input
                   name="payoutMethod"
                   required
@@ -569,8 +569,8 @@ export function WalletActionModal({
                   <input
                     name="amountMinis"
                     type="number"
-                    min={1}
-                    step={1}
+                    min={0.01}
+                    step={0.01}
                     required
                     placeholder="Amount (MINIS)"
                     value={amountValue}
@@ -701,8 +701,8 @@ export function WalletActionModal({
                     <label className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Optional amount</label>
                     <input
                       type="number"
-                      min={1}
-                      step={1}
+                      min={0.01}
+                      step={0.01}
                       value={receiveAmount}
                       onChange={(event) => setReceiveAmount(event.target.value)}
                       placeholder="Amount (MINIS)"
