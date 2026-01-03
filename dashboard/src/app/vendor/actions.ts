@@ -97,6 +97,35 @@ export const deleteVendorProductAction = async (
   }
 };
 
+export const updateVendorOrderAction = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  const orderId = formData.get("orderId");
+  const status = formData.get("status");
+  const trackingCode = formData.get("trackingCode");
+  if (!orderId || typeof orderId !== "string") {
+    return { error: "Missing order id" };
+  }
+  if (!status || typeof status !== "string") {
+    return { error: "Missing status" };
+  }
+  try {
+    await backendFetch(`/api/vendors/orders/${orderId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        status,
+        trackingCode: typeof trackingCode === "string" && trackingCode.trim() ? trackingCode.trim() : undefined,
+      }),
+    });
+    revalidatePath("/vendor");
+    return {};
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update order";
+    return { error: message };
+  }
+};
+
 const extractProductPayload = (formData: FormData): { data?: unknown; error?: string } => {
   const name = formData.get("productName");
   const description = formData.get("productDescription");
@@ -104,6 +133,21 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
 
   if (!name || typeof name !== "string") {
     return { error: "Product name is required" };
+  }
+
+  if (type === "STANDARD") {
+    const priceMinis = Number(formData.get("priceMinis"));
+    if (!Number.isFinite(priceMinis) || priceMinis <= 0) {
+      return { error: "Price must be a positive number" };
+    }
+    return {
+      data: {
+        type: "STANDARD",
+        name,
+        description: typeof description === "string" ? description : undefined,
+        priceMinis,
+      },
+    };
   }
 
   if (type === "CHALLENGE") {

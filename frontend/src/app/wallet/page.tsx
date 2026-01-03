@@ -34,9 +34,17 @@ export default async function WalletPage({
   const user = await getSessionUser();
   if (!user) {
     return (
-      <div className="rounded-2xl border border-dashed border-black/20 bg-white p-6 text-sm text-gray-600">
-        <p>Sign in to view your wallet history.</p>
-        <p className="mt-2 text-xs text-gray-500">Use your email or username@pai.</p>
+      <div className="space-y-4 rounded-2xl border border-dashed border-black/20 bg-white p-6 text-sm text-gray-600">
+        <div>
+          <p>Sign in to view your wallet history.</p>
+          <p className="mt-2 text-xs text-gray-500">Use your email or username@pai.</p>
+        </div>
+        <Link
+          href="/login?redirect=/wallet"
+          className="inline-flex items-center justify-center rounded-full bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900"
+        >
+          Sign in
+        </Link>
       </div>
     );
   }

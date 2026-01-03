@@ -46,6 +46,14 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes balanceFlashUp {
   0% {
     background-color: var(--balance-flash-up);

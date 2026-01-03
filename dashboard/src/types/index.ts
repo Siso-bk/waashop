@@ -43,6 +43,34 @@ export interface ProductDto {
   updatedAt: string;
 }
 
+export interface OrderDto {
+  id: string;
+  buyerId: string;
+  vendorId: string;
+  vendorOwnerId: string;
+  productId: string;
+  productType: "STANDARD";
+  status: "PLACED" | "SHIPPED" | "DELIVERED" | "COMPLETED" | "DISPUTED" | "REFUNDED" | "CANCELLED";
+  amountMinis: number;
+  quantity: number;
+  shippingName?: string;
+  shippingPhone?: string;
+  shippingAddress?: string;
+  notes?: string;
+  trackingCode?: string;
+  placedAt?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
+  completedAt?: string;
+  disputedAt?: string;
+  refundedAt?: string;
+  cancelledAt?: string;
+  escrowReleased?: boolean;
+  disputeId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProfileResponse {
   user: UserProfile;
   vendor: VendorProfile | null;
@@ -119,6 +147,13 @@ export interface PlatformSettingsDto {
   feeTopWinnerPercent: number;
   transferLimitMinis: number;
   transferFeePercent: number;
+}
+
+export interface ShopTabDto {
+  key: string;
+  label: string;
+  order?: number;
+  enabled?: boolean;
 }
 
 export interface DepositRequestDto {

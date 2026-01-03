@@ -12,6 +12,8 @@ import {
   WithdrawalRequestDto,
   TransferRequestDto,
   NotificationDto,
+  ShopTabDto,
+  OrderDto,
 } from "@/types";
 
 export const getProfile = async (): Promise<ProfileResponse> => {
@@ -51,12 +53,20 @@ export const getVendorPromoCards = async () => {
   return backendFetch<{ promoCards: PromoCardDto[] }>("/api/vendors/promo-cards");
 };
 
+export const getVendorOrders = async () => {
+  return backendFetch<{ orders: OrderDto[] }>("/api/vendors/orders");
+};
+
 export const getAdminUsers = async () => {
   return backendFetch<{ users: AdminUser[] }>("/api/admin/users");
 };
 
 export const getAdminSettings = async () => {
   return backendFetch<{ settings: PlatformSettingsDto }>("/api/admin/settings");
+};
+
+export const getAdminShopTabs = async () => {
+  return backendFetch<{ tabs: ShopTabDto[] }>("/api/admin/shop-tabs");
 };
 
 export const getUserDeposits = async () => {
@@ -88,4 +98,9 @@ export const getNotifications = async () => {
 
 export const getNotificationsSummary = async () => {
   return backendFetch<{ unread: number }>("/api/notifications/unread-count");
+};
+
+export const getAdminOrders = async (status?: string) => {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return backendFetch<{ orders: OrderDto[] }>(`/api/admin/orders${query}`);
 };

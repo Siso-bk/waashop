@@ -101,6 +101,41 @@ export interface ChallengeProduct {
   winnerUserId?: string;
 }
 
+export interface ShopTab {
+  key: string;
+  label: string;
+  order?: number;
+  enabled?: boolean;
+}
+
+export interface StandardProduct {
+  id: string;
+  name: string;
+  description?: string;
+  priceMinis: number;
+  vendorName?: string;
+}
+
+export interface CustomerOrder {
+  id: string;
+  productId: string;
+  status: "PLACED" | "SHIPPED" | "DELIVERED" | "COMPLETED" | "DISPUTED" | "REFUNDED" | "CANCELLED";
+  amountMinis: number;
+  quantity: number;
+  shippingName?: string;
+  shippingPhone?: string;
+  shippingAddress?: string;
+  notes?: string;
+  trackingCode?: string;
+  placedAt?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
+  completedAt?: string;
+  disputedAt?: string;
+  refundedAt?: string;
+  cancelledAt?: string;
+}
+
 export interface WinnerSpotlightDto {
   id: string;
   winnerType: "CHALLENGE" | "MYSTERY_BOX";

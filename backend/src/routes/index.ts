@@ -23,6 +23,8 @@ import DepositRequest, { IDepositRequest } from "../models/DepositRequest";
 import WithdrawalRequest, { IWithdrawalRequest } from "../models/WithdrawalRequest";
 import TransferRequest, { ITransferRequest } from "../models/TransferRequest";
 import Notification from "../models/Notification";
+import Order, { IOrder } from "../models/Order";
+import OrderDispute, { IOrderDispute } from "../models/OrderDispute";
 import { getPlatformSettings, updatePlatformSettings } from "../services/settings";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
@@ -138,6 +140,50 @@ const normalizeProduct = (product: any) => ({
   challengeWinnerUserId: product.challengeWinnerUserId,
   createdAt: product.createdAt,
   updatedAt: product.updatedAt,
+});
+
+const normalizeOrder = (order: IOrder) => ({
+  id: order._id.toString(),
+  buyerId: order.buyerId.toString(),
+  vendorId: order.vendorId.toString(),
+  vendorOwnerId: order.vendorOwnerId.toString(),
+  productId: order.productId.toString(),
+  productType: order.productType,
+  status: order.status,
+  amountMinis: order.amountMinis,
+  quantity: order.quantity,
+  shippingName: order.shippingName,
+  shippingPhone: order.shippingPhone,
+  shippingAddress: order.shippingAddress,
+  notes: order.notes,
+  trackingCode: order.trackingCode,
+  placedAt: order.placedAt,
+  shippedAt: order.shippedAt,
+  deliveredAt: order.deliveredAt,
+  completedAt: order.completedAt,
+  disputedAt: order.disputedAt,
+  refundedAt: order.refundedAt,
+  cancelledAt: order.cancelledAt,
+  escrowReleased: order.escrowReleased,
+  disputeId: order.disputeId ? order.disputeId.toString() : undefined,
+  createdAt: order.createdAt,
+  updatedAt: order.updatedAt,
+});
+
+const normalizeDispute = (dispute: IOrderDispute) => ({
+  id: dispute._id.toString(),
+  orderId: dispute.orderId.toString(),
+  buyerId: dispute.buyerId.toString(),
+  vendorId: dispute.vendorId.toString(),
+  status: dispute.status,
+  reason: dispute.reason,
+  description: dispute.description,
+  resolution: dispute.resolution,
+  adminNote: dispute.adminNote,
+  resolvedBy: dispute.resolvedBy ? dispute.resolvedBy.toString() : undefined,
+  resolvedAt: dispute.resolvedAt,
+  createdAt: dispute.createdAt,
+  updatedAt: dispute.updatedAt,
 });
 
 const DEFAULT_HOME_HIGHLIGHTS = [
@@ -354,6 +400,13 @@ const formatMinis = (value: number) => {
 };
 
 const roundToTwo = (value: number) => Math.round(value * 100) / 100;
+
+const DEFAULT_SHOP_TABS = [
+  { key: "mystery-boxes", label: "Mystery boxes", order: 0, enabled: true },
+  { key: "products", label: "Products", order: 1, enabled: true },
+  { key: "challenges", label: "Challenges", order: 2, enabled: true },
+  { key: "coming-soon", label: "Coming soon", order: 3, enabled: true },
+];
 
 const normalizeHandle = (raw: string) => {
   const trimmed = raw.trim().toLowerCase();
@@ -651,6 +704,54 @@ router.put("/admin/home-highlights", authMiddleware, requireRole("admin"), async
   } catch (error) {
     console.error("Home highlights update error", error);
     res.status(400).json({ error: "Unable to update home highlights" });
+  }
+});
+
+router.get("/shop-tabs", async (_req, res) => {
+  await connectDB();
+  const settings = await getPlatformSettings();
+  const tabs = (settings.shopTabs && settings.shopTabs.length ? settings.shopTabs : DEFAULT_SHOP_TABS)
+    .filter((tab) => tab.enabled !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  res.json({ tabs });
+});
+
+router.get("/admin/shop-tabs", authMiddleware, requireRole("admin"), async (_req, res) => {
+  await connectDB();
+  const settings = await getPlatformSettings();
+  const tabs = (settings.shopTabs && settings.shopTabs.length ? settings.shopTabs : DEFAULT_SHOP_TABS).sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+  );
+  res.json({ tabs });
+});
+
+router.put("/admin/shop-tabs", authMiddleware, requireRole("admin"), async (req, res) => {
+  const schema = z.object({
+    tabs: z
+      .array(
+        z.object({
+          key: z.string().min(1).max(40).regex(/^[a-z0-9-]+$/i),
+          label: z.string().min(1).max(60),
+          order: z.number().int().min(0).max(1000).optional().default(0),
+          enabled: z.boolean().optional().default(true),
+        })
+      )
+      .max(12),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const deduped = payload.tabs.reduce((acc, tab) => {
+      if (!acc.some((item) => item.key.toLowerCase() === tab.key.toLowerCase())) {
+        acc.push(tab);
+      }
+      return acc;
+    }, [] as typeof payload.tabs);
+    const updated = await updatePlatformSettings({ shopTabs: deduped });
+    res.json({ tabs: updated.shopTabs || deduped });
+  } catch (error) {
+    console.error("Update shop tabs error", error);
+    res.status(400).json({ error: "Unable to update shop tabs" });
   }
 });
 
@@ -1915,6 +2016,12 @@ const mysteryBoxSchema = z.object({
   rewardTiers: z.array(rewardTierSchema).min(1),
 });
 
+const standardProductSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().max(500).optional(),
+  priceMinis: z.number().positive(),
+});
+
 const challengeSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
@@ -1933,6 +2040,22 @@ router.post(
       const type = typeof req.body?.type === "string" ? req.body.type : "MYSTERY_BOX";
       const settings = await getPlatformSettings();
       const submitter = req.userDoc!;
+      if (type === "STANDARD") {
+        const payload = standardProductSchema.parse(req.body);
+        await chargeSubmissionFee(submitter, settings.feeMysteryBox || 0, "PRODUCT_SUBMISSION_FEE", {
+          name: payload.name,
+        });
+        const product = new Product({
+          vendorId: req.vendorDoc!._id,
+          name: payload.name,
+          description: payload.description,
+          type: "STANDARD",
+          status: "PENDING",
+          priceMinis: payload.priceMinis,
+        });
+        await product.save();
+        return res.json({ product: normalizeProduct(product) });
+      }
       if (type === "CHALLENGE") {
         const payload = challengeSchema.parse(req.body);
         await chargeSubmissionFee(submitter, settings.feeChallenge || 0, "CHALLENGE_SUBMISSION_FEE", {
@@ -1986,7 +2109,6 @@ router.patch(
   requireApprovedVendor,
   async (req, res) => {
     try {
-      const payload = mysteryBoxSchema.parse(req.body);
       await connectDB();
       const product = await Product.findOne({ _id: req.params.id, vendorId: req.vendorDoc!._id }).exec();
       if (!product) {
@@ -1995,13 +2117,44 @@ router.patch(
       if (product.status !== "PENDING") {
         return res.status(400).json({ error: "Only pending products can be edited" });
       }
-      Object.assign(product, {
-        name: payload.name,
-        description: payload.description,
-        priceMinis: payload.priceMinis,
-        guaranteedMinMinis: payload.guaranteedMinMinis,
-        rewardTiers: payload.rewardTiers,
-      });
+      const type = typeof req.body?.type === "string" ? req.body.type : product.type;
+      if (type === "STANDARD") {
+        const payload = standardProductSchema.parse(req.body);
+        Object.assign(product, {
+          name: payload.name,
+          description: payload.description,
+          priceMinis: payload.priceMinis,
+          type: "STANDARD",
+          guaranteedMinMinis: undefined,
+          rewardTiers: undefined,
+          ticketPriceMinis: undefined,
+          ticketCount: undefined,
+        });
+      } else if (type === "CHALLENGE") {
+        const payload = challengeSchema.parse(req.body);
+        Object.assign(product, {
+          name: payload.name,
+          description: payload.description,
+          type: "CHALLENGE",
+          ticketPriceMinis: payload.ticketPriceMinis,
+          ticketCount: payload.ticketCount,
+          priceMinis: payload.ticketPriceMinis,
+          guaranteedMinMinis: undefined,
+          rewardTiers: undefined,
+        });
+      } else {
+        const payload = mysteryBoxSchema.parse(req.body);
+        Object.assign(product, {
+          name: payload.name,
+          description: payload.description,
+          priceMinis: payload.priceMinis,
+          guaranteedMinMinis: payload.guaranteedMinMinis,
+          rewardTiers: payload.rewardTiers,
+          type: "MYSTERY_BOX",
+          ticketPriceMinis: undefined,
+          ticketCount: undefined,
+        });
+      }
       await product.save();
       res.json({ product: normalizeProduct(product) });
     } catch (error) {
@@ -2171,6 +2324,378 @@ router.get("/winners", async (_req, res) => {
       description: entry.description,
     })),
   });
+});
+
+router.get("/products", async (req, res) => {
+  await connectDB();
+  const type = typeof req.query.type === "string" ? req.query.type.toUpperCase() : undefined;
+  const filter: Record<string, unknown> = { status: "ACTIVE" };
+  if (type) filter.type = type;
+  const products = await Product.find(filter).sort({ createdAt: -1 }).lean();
+  const vendorIds = products.map((product) => product.vendorId).filter(Boolean);
+  const vendors = await Vendor.find({ _id: { $in: vendorIds } }).lean();
+  const vendorMap = new Map(vendors.map((vendor) => [vendor._id.toString(), vendor.name]));
+  res.json({
+    products: products.map((product) => ({
+      id: product._id.toString(),
+      ...normalizeProduct(product),
+      vendorName: vendorMap.get(product.vendorId?.toString?.() || "") || undefined,
+    })),
+  });
+});
+
+router.post("/orders", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    productId: z.string().min(1),
+    quantity: z.number().int().min(1).max(10).optional().default(1),
+    shippingName: z.string().max(120).optional(),
+    shippingPhone: z.string().max(40).optional(),
+    shippingAddress: z.string().max(500).optional(),
+    notes: z.string().max(500).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const result = await withMongoSession(async (session) => {
+      const productQuery = Product.findOne({ _id: payload.productId, type: "STANDARD", status: "ACTIVE" });
+      const userQuery = User.findById(req.userId);
+      if (session) {
+        productQuery.session(session);
+        userQuery.session(session);
+      }
+      const [product, buyer] = await Promise.all([productQuery, userQuery]);
+      if (!product) return { error: "Product not found" } as const;
+      if (!buyer) return { error: "User not found" } as const;
+      ensureMinisBalance(buyer);
+      const quantity = payload.quantity ?? 1;
+      const total = roundToTwo((product.priceMinis ?? 0) * quantity);
+      if (!total || buyer.minisBalance < total) {
+        return { error: "Insufficient balance" } as const;
+      }
+      const vendorQuery = Vendor.findById(product.vendorId);
+      if (session) vendorQuery.session(session);
+      const vendor = await vendorQuery;
+      if (!vendor) return { error: "Vendor not found" } as const;
+
+      buyer.minisBalance -= total;
+      const order = new Order({
+        buyerId: buyer._id,
+        vendorId: vendor._id,
+        vendorOwnerId: vendor.ownerUserId,
+        productId: product._id,
+        productType: "STANDARD",
+        status: "PLACED",
+        amountMinis: total,
+        quantity,
+        shippingName: payload.shippingName,
+        shippingPhone: payload.shippingPhone,
+        shippingAddress: payload.shippingAddress,
+        notes: payload.notes,
+        placedAt: new Date(),
+      });
+      if (session) await order.save({ session });
+      else await order.save();
+
+      const ledgerEntry = {
+        userId: buyer._id,
+        deltaMinis: -total,
+        reason: "ORDER_PLACED_DEBIT",
+        meta: { orderId: order._id, productId: product._id },
+      };
+      if (session) {
+        await buyer.save({ session });
+        await Ledger.create([ledgerEntry], { session });
+      } else {
+        await buyer.save();
+        await Ledger.create(ledgerEntry);
+      }
+      return { order, vendor, buyer, product } as const;
+    });
+
+    if ("error" in result) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    await createNotification(result.buyer._id, {
+      type: "ORDER_PLACED",
+      title: `Order placed: ${formatMinis(result.order.amountMinis)}`,
+      body: result.product.name,
+      meta: { orderId: result.order._id, productId: result.product._id },
+    });
+    await createNotification(result.vendor.ownerUserId, {
+      type: "ORDER_NEW",
+      title: "New order received",
+      body: result.product.name,
+      meta: { orderId: result.order._id, productId: result.product._id },
+    });
+
+    res.status(201).json({ order: normalizeOrder(result.order) });
+  } catch (error) {
+    console.error("Create order error", error);
+    res.status(400).json({ error: "Unable to place order" });
+  }
+});
+
+router.get("/orders", authMiddleware, async (req, res) => {
+  await connectDB();
+  const orders = await Order.find({ buyerId: req.userId }).sort({ createdAt: -1 }).lean();
+  res.json({ orders: orders.map((order) => normalizeOrder(order as IOrder)) });
+});
+
+router.post("/orders/:id/cancel", authMiddleware, async (req, res) => {
+  try {
+    await connectDB();
+    const order = await Order.findOne({ _id: req.params.id, buyerId: req.userId }).exec();
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (order.status !== "PLACED") {
+      return res.status(400).json({ error: "Order cannot be cancelled" });
+    }
+    order.status = "CANCELLED";
+    order.cancelledAt = new Date();
+    order.escrowReleased = true;
+    await order.save();
+
+    const buyer = await User.findById(order.buyerId).exec();
+    if (buyer) {
+      ensureMinisBalance(buyer);
+      buyer.minisBalance += order.amountMinis;
+      await buyer.save();
+      await Ledger.create({
+        userId: buyer._id,
+        deltaMinis: order.amountMinis,
+        reason: "ORDER_CANCEL_REFUND",
+        meta: { orderId: order._id },
+      });
+    }
+
+    res.json({ order: normalizeOrder(order) });
+  } catch (error) {
+    console.error("Cancel order error", error);
+    res.status(400).json({ error: "Unable to cancel order" });
+  }
+});
+
+router.post("/orders/:id/confirm", authMiddleware, async (req, res) => {
+  try {
+    await connectDB();
+    const order = await Order.findOne({ _id: req.params.id, buyerId: req.userId }).exec();
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!["SHIPPED", "DELIVERED"].includes(order.status)) {
+      return res.status(400).json({ error: "Order not ready for confirmation" });
+    }
+    if (order.escrowReleased) {
+      return res.status(400).json({ error: "Order already completed" });
+    }
+    const vendorOwner = await User.findById(order.vendorOwnerId).exec();
+    if (!vendorOwner) return res.status(404).json({ error: "Vendor owner not found" });
+    ensureMinisBalance(vendorOwner);
+    vendorOwner.minisBalance += order.amountMinis;
+    await vendorOwner.save();
+
+    await Ledger.create({
+      userId: vendorOwner._id,
+      deltaMinis: order.amountMinis,
+      reason: "ORDER_PAYOUT",
+      meta: { orderId: order._id },
+    });
+
+    order.status = "COMPLETED";
+    order.completedAt = new Date();
+    order.escrowReleased = true;
+    await order.save();
+
+    await createNotification(order.vendorOwnerId, {
+      type: "ORDER_PAID",
+      title: `Order paid: ${formatMinis(order.amountMinis)}`,
+      body: "Customer confirmed delivery.",
+      meta: { orderId: order._id },
+    });
+
+    res.json({ order: normalizeOrder(order) });
+  } catch (error) {
+    console.error("Confirm order error", error);
+    res.status(400).json({ error: "Unable to confirm order" });
+  }
+});
+
+router.post("/orders/:id/dispute", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    reason: z.string().min(3).max(120),
+    description: z.string().max(1000).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const order = await Order.findOne({ _id: req.params.id, buyerId: req.userId }).exec();
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (order.status === "COMPLETED" || order.status === "REFUNDED" || order.status === "CANCELLED") {
+      return res.status(400).json({ error: "Order cannot be disputed" });
+    }
+    if (order.status === "DISPUTED") {
+      return res.status(400).json({ error: "Order already disputed" });
+    }
+    const dispute = await OrderDispute.create({
+      orderId: order._id,
+      buyerId: order.buyerId,
+      vendorId: order.vendorId,
+      reason: payload.reason,
+      description: payload.description,
+    });
+    order.status = "DISPUTED";
+    order.disputedAt = new Date();
+    order.disputeId = dispute._id;
+    await order.save();
+
+    await createNotification(order.vendorOwnerId, {
+      type: "ORDER_DISPUTE",
+      title: "Order disputed",
+      body: payload.reason,
+      meta: { orderId: order._id, disputeId: dispute._id },
+    });
+
+    res.json({ order: normalizeOrder(order), dispute: normalizeDispute(dispute) });
+  } catch (error) {
+    console.error("Dispute order error", error);
+    res.status(400).json({ error: "Unable to dispute order" });
+  }
+});
+
+router.get("/vendors/orders", authMiddleware, loadVendor, requireApprovedVendor, async (req, res) => {
+  await connectDB();
+  const orders = await Order.find({ vendorId: req.vendorDoc!._id }).sort({ createdAt: -1 }).lean();
+  res.json({ orders: orders.map((order) => normalizeOrder(order as IOrder)) });
+});
+
+router.patch("/vendors/orders/:id", authMiddleware, loadVendor, requireApprovedVendor, async (req, res) => {
+  const schema = z.object({
+    status: z.enum(["SHIPPED", "DELIVERED"]),
+    trackingCode: z.string().max(120).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const order = await Order.findOne({ _id: req.params.id, vendorId: req.vendorDoc!._id }).exec();
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (["COMPLETED", "REFUNDED", "CANCELLED"].includes(order.status)) {
+      return res.status(400).json({ error: "Order cannot be updated" });
+    }
+    if (payload.status === "SHIPPED" && order.status === "PLACED") {
+      order.status = "SHIPPED";
+      order.shippedAt = new Date();
+    }
+    if (payload.status === "DELIVERED") {
+      order.status = "DELIVERED";
+      order.deliveredAt = new Date();
+    }
+    if (payload.trackingCode) {
+      order.trackingCode = payload.trackingCode;
+    }
+    await order.save();
+
+    await createNotification(order.buyerId, {
+      type: "ORDER_UPDATE",
+      title: `Order ${order.status.toLowerCase()}`,
+      body: payload.trackingCode ? `Tracking: ${payload.trackingCode}` : undefined,
+      meta: { orderId: order._id },
+    });
+
+    res.json({ order: normalizeOrder(order) });
+  } catch (error) {
+    console.error("Update vendor order error", error);
+    res.status(400).json({ error: "Unable to update order" });
+  }
+});
+
+router.get("/admin/orders", authMiddleware, requireRole("admin"), async (req, res) => {
+  await connectDB();
+  const status = typeof req.query.status === "string" ? req.query.status : undefined;
+  const filter: Record<string, unknown> = status ? { status } : {};
+  const orders = await Order.find(filter).sort({ createdAt: -1 }).lean();
+  res.json({ orders: orders.map((order) => normalizeOrder(order as IOrder)) });
+});
+
+router.post("/admin/orders/:id/resolve", authMiddleware, requireRole("admin"), async (req, res) => {
+  const schema = z.object({
+    resolution: z.enum(["REFUND", "RELEASE", "REJECTED"]),
+    adminNote: z.string().max(500).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const order = await Order.findById(req.params.id).exec();
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (order.status !== "DISPUTED") {
+      return res.status(400).json({ error: "Order is not disputed" });
+    }
+    const dispute = order.disputeId ? await OrderDispute.findById(order.disputeId).exec() : null;
+
+    if (payload.resolution === "REFUND") {
+      const buyer = await User.findById(order.buyerId).exec();
+      if (buyer) {
+        ensureMinisBalance(buyer);
+        buyer.minisBalance += order.amountMinis;
+        await buyer.save();
+        await Ledger.create({
+          userId: buyer._id,
+          deltaMinis: order.amountMinis,
+          reason: "ORDER_DISPUTE_REFUND",
+          meta: { orderId: order._id },
+        });
+      }
+      order.status = "REFUNDED";
+      order.refundedAt = new Date();
+      order.escrowReleased = true;
+    } else if (payload.resolution === "RELEASE") {
+      const vendorOwner = await User.findById(order.vendorOwnerId).exec();
+      if (vendorOwner) {
+        ensureMinisBalance(vendorOwner);
+        vendorOwner.minisBalance += order.amountMinis;
+        await vendorOwner.save();
+        await Ledger.create({
+          userId: vendorOwner._id,
+          deltaMinis: order.amountMinis,
+          reason: "ORDER_DISPUTE_PAYOUT",
+          meta: { orderId: order._id },
+        });
+      }
+      order.status = "COMPLETED";
+      order.completedAt = new Date();
+      order.escrowReleased = true;
+    } else {
+      order.status = "COMPLETED";
+      order.completedAt = new Date();
+      order.escrowReleased = true;
+    }
+    await order.save();
+
+    if (dispute) {
+      dispute.status = "RESOLVED";
+      dispute.resolution = payload.resolution;
+      dispute.adminNote = payload.adminNote;
+      dispute.resolvedBy = req.userId ? new Types.ObjectId(req.userId) : undefined;
+      dispute.resolvedAt = new Date();
+      await dispute.save();
+    }
+
+    await createNotification(order.buyerId, {
+      type: "ORDER_DISPUTE_RESOLVED",
+      title: `Dispute resolved: ${payload.resolution.toLowerCase()}`,
+      body: payload.adminNote,
+      meta: { orderId: order._id },
+    });
+
+    await createNotification(order.vendorOwnerId, {
+      type: "ORDER_DISPUTE_RESOLVED",
+      title: `Dispute resolved: ${payload.resolution.toLowerCase()}`,
+      body: payload.adminNote,
+      meta: { orderId: order._id },
+    });
+
+    res.json({ order: normalizeOrder(order) });
+  } catch (error) {
+    console.error("Resolve order dispute error", error);
+    res.status(400).json({ error: "Unable to resolve dispute" });
+  }
 });
 
 router.post("/boxes/buy", authMiddleware, async (req, res) => {

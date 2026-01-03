@@ -1,18 +1,19 @@
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
-import { getProfile, getVendorProducts, getVendorPromoCards } from "@/lib/queries";
+import { getProfile, getVendorOrders, getVendorProducts, getVendorPromoCards } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
 import { VendorProfileForm } from "@/components/VendorProfileForm";
 import { VendorProductForm } from "@/components/VendorProductForm";
 import { VendorPromoForm } from "@/components/VendorPromoForm";
 import { PendingButton } from "@/components/PendingButton";
-import type { ProductDto, PromoCardDto } from "@/types";
+import type { OrderDto, ProductDto, PromoCardDto } from "@/types";
 import {
   updateVendorProductAction,
   deleteVendorProductAction,
   updatePromoCardAction,
   deletePromoCardAction,
+  updateVendorOrderAction,
 } from "@/app/vendor/actions";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export default async function VendorDashboardPage() {
   await requireToken();
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Vendor" title="Vendor Workspace" description="Submit your profile and mystery boxes." />
+      <PageHeader eyebrow="Vendor" title="Vendor Workspace" description="Submit your profile, products, mystery boxes, and challenges." />
       <Suspense fallback={<ProfileSkeleton />}>
         <ProfileSection />
       </Suspense>
@@ -30,6 +31,9 @@ export default async function VendorDashboardPage() {
       </Suspense>
       <Suspense fallback={<ProductSubmitSkeleton />}>
         <SubmissionSection />
+      </Suspense>
+      <Suspense fallback={<OrdersSkeleton />}>
+        <OrdersSection />
       </Suspense>
       <Suspense fallback={<ProductListSkeleton />}>
         <ProductsSection />
@@ -151,11 +155,13 @@ async function SubmissionSection() {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">Mystery Box Submissions</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Product Submissions</h2>
         <span className="text-xs text-slate-500">Status: {vendor?.status || "N/A"}</span>
       </div>
       {!approved ? (
-        <p className="mt-2 text-sm text-slate-500">Products can be submitted once your vendor profile is approved.</p>
+        <p className="mt-2 text-sm text-slate-500">
+          Products, mystery boxes, and challenges can be submitted once your vendor profile is approved.
+        </p>
       ) : (
         <div className="mt-4">
           <VendorProductForm />
@@ -193,6 +199,37 @@ async function ProductsSection() {
   );
 }
 
+async function OrdersSection() {
+  const { vendor } = await getProfile();
+  if (!vendor || vendor.status !== "APPROVED") {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Orders</h2>
+        <p className="text-sm text-slate-500">Orders will appear after approval.</p>
+      </section>
+    );
+  }
+  let orders: OrderDto[] = [];
+  try {
+    const result = await getVendorOrders();
+    orders = result.orders;
+  } catch (error) {
+    console.error("Failed to load vendor orders", error);
+  }
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-900">Orders</h2>
+      <p className="text-sm text-slate-500">Manage fulfillment and tracking.</p>
+      <div className="mt-4 space-y-3">
+        {orders.map((order) => (
+          <OrderCard key={order.id} order={order} />
+        ))}
+        {orders.length === 0 && <p className="text-sm text-slate-500">No orders yet.</p>}
+      </div>
+    </section>
+  );
+}
+
 function ProductCard({ product }: { product: ProductDto }) {
   return (
     <div className="rounded-xl border border-slate-100 p-4">
@@ -208,6 +245,8 @@ function ProductCard({ product }: { product: ProductDto }) {
         <p className="mt-2 text-xs text-slate-500">
           Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets sold · {product.ticketPriceMinis?.toLocaleString() || ""} MINIS
         </p>
+      ) : product.type === "STANDARD" ? (
+        <p className="mt-2 text-xs text-slate-500">Standard product · {product.priceMinis.toLocaleString()} MINIS</p>
       ) : null}
       {product.status === "PENDING" && product.type === "MYSTERY_BOX" && (
         <div className="mt-3 space-y-3">
@@ -261,6 +300,87 @@ function ProductCard({ product }: { product: ProductDto }) {
           </form>
         </div>
       )}
+      {product.status === "PENDING" && product.type === "STANDARD" && (
+        <div className="mt-3 space-y-3">
+          <details className="rounded-xl border border-slate-200 p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit product</summary>
+            <form action={vendorUpdateProduct} className="mt-3 space-y-3">
+              <input type="hidden" name="productId" value={product._id} />
+              <input type="hidden" name="type" value={product.type} />
+              <input
+                type="text"
+                name="productName"
+                defaultValue={product.name}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+              <textarea
+                name="productDescription"
+                defaultValue={product.description || ""}
+                rows={2}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                name="priceMinis"
+                defaultValue={product.priceMinis}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+              <PendingButton pendingLabel="Saving..." className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
+                Save changes
+              </PendingButton>
+            </form>
+          </details>
+          <form action={vendorDeleteProduct}>
+            <input type="hidden" name="productId" value={product._id} />
+            <PendingButton pendingLabel="Deleting..." className="text-sm font-semibold text-red-500">
+              Delete product
+            </PendingButton>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrderCard({ order }: { order: OrderDto }) {
+  return (
+    <div className="rounded-xl border border-slate-100 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="font-semibold text-slate-900">Order {order.id.slice(-6)}</p>
+          <p className="text-xs text-slate-500">Amount: {order.amountMinis.toLocaleString()} MINIS</p>
+        </div>
+        <StatusBadge status={order.status} />
+      </div>
+      <div className="mt-2 text-xs text-slate-500">
+        <p>Shipping: {order.shippingName || "—"}</p>
+        <p>Phone: {order.shippingPhone || "—"}</p>
+        <p>Address: {order.shippingAddress || "—"}</p>
+      </div>
+      {order.status !== "COMPLETED" &&
+        order.status !== "REFUNDED" &&
+        order.status !== "CANCELLED" && (
+          <form action={vendorUpdateOrder} className="mt-3 grid gap-2 text-xs sm:grid-cols-[1fr,1fr,auto]">
+            <input type="hidden" name="orderId" value={order.id} />
+            <select
+              name="status"
+              defaultValue={order.status === "PLACED" ? "SHIPPED" : "DELIVERED"}
+              className="rounded-lg border border-slate-200 px-2 py-1"
+            >
+              <option value="SHIPPED">Mark shipped</option>
+              <option value="DELIVERED">Mark delivered</option>
+            </select>
+            <input
+              name="trackingCode"
+              defaultValue={order.trackingCode || ""}
+              placeholder="Tracking code"
+              className="rounded-lg border border-slate-200 px-2 py-1"
+            />
+            <PendingButton pendingLabel="Updating..." className="rounded-lg bg-indigo-600 px-3 py-1 text-white">
+              Update
+            </PendingButton>
+          </form>
+        )}
     </div>
   );
 }
@@ -300,6 +420,10 @@ function ProductListSkeleton() {
   );
 }
 
+function OrdersSkeleton() {
+  return <CardSkeleton height="h-24" />;
+}
+
 const emptyState = {};
 
 async function vendorUpdateProduct(formData: FormData) {
@@ -320,4 +444,9 @@ async function vendorUpdatePromo(formData: FormData) {
 async function vendorDeletePromo(formData: FormData) {
   "use server";
   await deletePromoCardAction(emptyState, formData);
+}
+
+async function vendorUpdateOrder(formData: FormData) {
+  "use server";
+  await updateVendorOrderAction(emptyState, formData);
 }

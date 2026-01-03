@@ -128,7 +128,8 @@ export function AuthFlow() {
           await requestPreSignup(normalized);
         }
       } else {
-        const response = await fetch(`/api/profile?check=1&handle=${encodeURIComponent(normalized)}`, {
+        const handle = normalized.replace(/^@/, "").replace(/@pai$/, "").replace(/\.pai$/, "");
+        const response = await fetch(`/api/profile?check=1&handle=${encodeURIComponent(handle)}`, {
           cache: "no-store",
         });
         const body = await response.json().catch(() => ({}));

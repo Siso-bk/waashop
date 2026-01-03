@@ -8,6 +8,9 @@ import {
   PromoCard,
   ChallengeProduct,
   WinnerSpotlightDto,
+  ShopTab,
+  StandardProduct,
+  CustomerOrder,
 } from "@/types";
 
 type RawBox = Partial<MysteryBoxDto> & {
@@ -177,4 +180,33 @@ export const getWinners = async (): Promise<WinnerSpotlightDto[]> => {
   } catch {
     return [];
   }
+};
+
+export const getShopTabs = async (): Promise<ShopTab[]> => {
+  try {
+    const data = await backendFetch<{ tabs: ShopTab[] }>("/api/shop-tabs", { auth: false });
+    return data.tabs;
+  } catch {
+    return [];
+  }
+};
+
+export const getStandardProducts = async (): Promise<StandardProduct[]> => {
+  try {
+    const data = await backendFetch<{ products: any[] }>("/api/products?type=STANDARD", { auth: false });
+    return data.products.map((product) => ({
+      id: product.id || product._id || "",
+      name: product.name,
+      description: product.description,
+      priceMinis: product.priceMinis ?? 0,
+      vendorName: product.vendorName,
+    }));
+  } catch {
+    return [];
+  }
+};
+
+export const getCustomerOrders = async (): Promise<CustomerOrder[]> => {
+  const data = await backendFetch<{ orders: CustomerOrder[] }>("/api/orders");
+  return data.orders;
 };

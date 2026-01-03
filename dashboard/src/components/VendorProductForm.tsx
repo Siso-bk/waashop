@@ -10,7 +10,7 @@ const initialState = { error: "" };
 export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [state, action] = useActionState(createVendorProductAction, initialState);
   const { pending } = useFormStatus();
-  const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE">("MYSTERY_BOX");
+  const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE" | "STANDARD">("MYSTERY_BOX");
   const [tiers, setTiers] = useState([
     { minis: "600", probability: "0.55", isTop: false },
     { minis: "800", probability: "0.25", isTop: false },
@@ -59,10 +59,11 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           name="type"
           value={productType}
           disabled={isLocked}
-          onChange={(event) => setProductType(event.target.value as "MYSTERY_BOX" | "CHALLENGE")}
+          onChange={(event) => setProductType(event.target.value as "MYSTERY_BOX" | "CHALLENGE" | "STANDARD")}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         >
           <option value="MYSTERY_BOX">Mystery box</option>
+          <option value="STANDARD">Standard product</option>
           <option value="CHALLENGE">Challenge</option>
         </select>
       </div>
@@ -186,6 +187,21 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
             </div>
           </div>
         </>
+      ) : productType === "STANDARD" ? (
+        <div>
+          <label className="text-sm font-medium text-slate-600" htmlFor="priceMinisStandard">
+            Price (MINI)
+          </label>
+          <input
+            id="priceMinisStandard"
+            name="priceMinis"
+            type="number"
+            min={1}
+            required
+            disabled={isLocked}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+          />
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

@@ -176,6 +176,8 @@ async function AdminActions() {
     { href: "/admin/products", title: "Moderate mystery boxes", body: "Activate/deactivate vendor products." },
     { href: "/admin/home-hero", title: "Edit homepage hero", body: "Update copy and CTAs without redeploying." },
     { href: "/admin/home-highlights", title: "Edit homepage callouts", body: "Control the cards under the hero." },
+    { href: "/admin/shop-tabs", title: "Manage shop tabs", body: "Curate the tabs shown on the shop page." },
+    { href: "/admin/orders", title: "Resolve order disputes", body: "Review STANDARD product order claims." },
     { href: "/admin/promo-cards", title: "Review promo cards", body: "Approve sponsored placements." },
     { href: "/admin/deposits", title: "Process deposits", body: "Approve receipts and credit MINIS." },
     { href: "/admin/users", title: "Manage roles", body: "Promote admins and vendors." },
