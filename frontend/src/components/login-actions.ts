@@ -3,7 +3,6 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { backendFetch } from "@/lib/backendClient";
-import { paiFetch } from "@/lib/paiClient";
 
 export interface AuthActionState {
   error?: string;
@@ -41,12 +40,10 @@ export const loginAction = async (_prev: AuthActionState, formData: FormData): P
 
   try {
     const normalized = identifier.trim().toLowerCase();
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
-    const handle = normalized.replace(/^@/, "").replace(/@pai$/, "").replace(/\.pai$/, "");
-    const loginIdentifier = isEmail ? normalized : handle;
-    const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/login", {
+    const { token } = await backendFetch<{ token: string; user: unknown }>("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ identifier: loginIdentifier, password }),
+      auth: false,
+      body: JSON.stringify({ identifier: normalized, password }),
     });
     await persistToken(token);
     return await syncSession();

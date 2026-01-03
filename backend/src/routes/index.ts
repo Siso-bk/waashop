@@ -518,6 +518,40 @@ router.post("/auth/forgot", async (req, res) => {
   }
 });
 
+router.post("/auth/login", async (req, res) => {
+  const schema = z.object({
+    identifier: z.string().min(1),
+    password: z.string().min(6),
+  });
+  if (!env.PAI_BASE_URL) {
+    return res.status(400).json({ error: "PAI integration not configured" });
+  }
+  try {
+    const payload = schema.parse(req.body);
+    const normalized = payload.identifier.trim().toLowerCase();
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
+    let email = normalized;
+    if (!isEmail) {
+      const handle = normalizeHandle(normalized);
+      await connectDB();
+      const user = await User.findOne({ username: handle }).lean();
+      if (!user?.email) {
+        return res.status(404).json({ error: "Username not found. Use your email to sign in." });
+      }
+      email = user.email;
+    }
+    const result = await forwardPaiRequest("/api/auth/login", { identifier: email, password: payload.password });
+    if (!result.ok) {
+      return res.status(result.status).json(result.data);
+    }
+    res.json(result.data);
+  } catch (error) {
+    console.error("Login error", error);
+    const message = error instanceof Error ? error.message : "Unable to sign in";
+    res.status(400).json({ error: message });
+  }
+});
+
 router.post("/auth/reset", async (req, res) => {
   const schema = z.object({ token: z.string().min(1), password: z.string().min(6) });
   if (!env.PAI_BASE_URL) {
