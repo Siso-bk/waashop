@@ -402,7 +402,7 @@ export function WalletActionModal({
               key={action.key}
               type="button"
               onClick={() => setActive(action.key as ActionType)}
-              className={`flex min-w-[84px] items-center justify-center rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.26em] transition ${
+              className={`flex min-w-[90px] items-center justify-center rounded-full px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.26em] transition ${
                 active === action.key
                   ? "bg-black text-white hover:bg-gray-900"
                   : "border border-black/15 text-black hover:bg-black hover:text-white"
