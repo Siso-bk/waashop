@@ -38,7 +38,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
     return trimmed;
   };
 
-  const displayHandle = profile.username ? `${profile.username}@pai` : "";
+  const displayHandle = profile.username || "";
 
   const handleSave = async () => {
     if (!editing) {
@@ -201,9 +201,12 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
                   setProfile({ ...profile, username: normalizeHandleInput(event.target.value) })
                 }
                 disabled={!editing}
-                placeholder="username@pai"
-                className="w-full rounded-2xl border border-gray-300 px-3 py-2 pr-10 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
+                placeholder="username"
+                className="w-full rounded-2xl border border-gray-300 px-3 py-2 pr-16 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
               />
+              <span className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                @pai
+              </span>
               <span
                 className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${
                   handleStatus === "available"
