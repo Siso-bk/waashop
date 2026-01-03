@@ -123,6 +123,11 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
   }, [editing, profile.username, initialProfile.username]);
 
   const handleLogout = async () => {
+    const confirmed =
+      typeof window !== "undefined"
+        ? window.confirm("Are you sure you want to log out of your Waashop account?")
+        : true;
+    if (!confirmed) return;
     try {
       await fetch("/api/auth/session", { method: "DELETE", credentials: "include" });
     } catch {

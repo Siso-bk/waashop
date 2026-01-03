@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormState } from "react-dom";
 import { formatMinis } from "@/lib/minis";
 import QRCode from "qrcode";
+import { useRouter } from "next/navigation";
 
 type TransferDto = {
   id: string;
@@ -71,6 +72,7 @@ export function WalletActionModal({
   createWithdrawal,
   createTransfer,
 }: WalletActionModalProps) {
+  const router = useRouter();
   const [active, setActive] = useState<ActionType>(null);
   const [showOutgoing, setShowOutgoing] = useState(false);
   const [showIncoming, setShowIncoming] = useState(false);
@@ -200,6 +202,7 @@ export function WalletActionModal({
 
   useEffect(() => {
     if (active === "deposit" && depositState.status === "success") {
+      router.refresh();
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
     }
@@ -211,6 +214,7 @@ export function WalletActionModal({
 
   useEffect(() => {
     if (active === "withdraw" && withdrawState.status === "success") {
+      router.refresh();
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
     }
@@ -222,6 +226,7 @@ export function WalletActionModal({
 
   useEffect(() => {
     if (active === "send" && transferState.status === "success") {
+      router.refresh();
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
     }

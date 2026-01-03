@@ -49,51 +49,67 @@ textarea:focus-visible {
 @keyframes balanceFlashUp {
   0% {
     background-color: var(--balance-flash-up);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35);
+  }
+  40% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.18);
   }
   100% {
     background-color: var(--balance-base);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
 }
 
 @keyframes balanceFlashDown {
   0% {
     background-color: var(--balance-flash-down);
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.35);
+  }
+  40% {
+    box-shadow: 0 0 0 6px rgba(248, 113, 113, 0.18);
   }
   100% {
     background-color: var(--balance-base);
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
   }
 }
 
 @keyframes balanceFlashUpText {
   0% {
     color: var(--balance-text-up);
+    transform: scale(1.03);
   }
   100% {
     color: var(--balance-text-base);
+    transform: scale(1);
   }
 }
 
 @keyframes balanceFlashDownText {
   0% {
     color: var(--balance-text-down);
+    transform: scale(1.03);
   }
   100% {
     color: var(--balance-text-base);
+    transform: scale(1);
   }
 }
 
 .balance-flash-up {
-  animation: balanceFlashUp 900ms ease-out 1;
+  animation: balanceFlashUp 1200ms ease-out 1;
 }
 
 .balance-flash-down {
-  animation: balanceFlashDown 900ms ease-out 1;
+  animation: balanceFlashDown 1200ms ease-out 1;
 }
 
 .balance-flash-up-text {
-  animation: balanceFlashUpText 900ms ease-out 1;
+  animation: balanceFlashUpText 1200ms ease-out 1;
+  display: inline-block;
 }
 
 .balance-flash-down-text {
-  animation: balanceFlashDownText 900ms ease-out 1;
+  animation: balanceFlashDownText 1200ms ease-out 1;
+  display: inline-block;
 }
