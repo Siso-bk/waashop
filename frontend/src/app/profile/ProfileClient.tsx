@@ -177,6 +177,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               id="profile-first-name"
               name="firstName"
               type="text"
+              autoComplete="given-name"
               value={profile.firstName}
               onChange={event => setProfile({ ...profile, firstName: event.target.value })}
               disabled={!editing}
@@ -189,6 +190,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               id="profile-last-name"
               name="lastName"
               type="text"
+              autoComplete="family-name"
               value={profile.lastName || ""}
               onChange={event => setProfile({ ...profile, lastName: event.target.value })}
               disabled={!editing}
@@ -202,6 +204,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
                 id="profile-username"
                 name="username"
                 type="text"
+                autoComplete="username"
                 value={displayHandle}
                 onChange={event =>
                   setProfile({ ...profile, username: normalizeHandleInput(event.target.value) })
@@ -263,6 +266,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               id="profile-email"
               name="email"
               type="email"
+              autoComplete="email"
               value={profile.email}
               disabled
               className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm text-gray-500 disabled:border-gray-200 disabled:bg-gray-100"
