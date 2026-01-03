@@ -45,3 +45,55 @@ textarea:focus-visible {
   outline: 2px solid #111111;
   outline-offset: 2px;
 }
+
+@keyframes balanceFlashUp {
+  0% {
+    background-color: var(--balance-flash-up);
+  }
+  100% {
+    background-color: var(--balance-base);
+  }
+}
+
+@keyframes balanceFlashDown {
+  0% {
+    background-color: var(--balance-flash-down);
+  }
+  100% {
+    background-color: var(--balance-base);
+  }
+}
+
+@keyframes balanceFlashUpText {
+  0% {
+    color: var(--balance-text-up);
+  }
+  100% {
+    color: var(--balance-text-base);
+  }
+}
+
+@keyframes balanceFlashDownText {
+  0% {
+    color: var(--balance-text-down);
+  }
+  100% {
+    color: var(--balance-text-base);
+  }
+}
+
+.balance-flash-up {
+  animation: balanceFlashUp 900ms ease-out 1;
+}
+
+.balance-flash-down {
+  animation: balanceFlashDown 900ms ease-out 1;
+}
+
+.balance-flash-up-text {
+  animation: balanceFlashUpText 900ms ease-out 1;
+}
+
+.balance-flash-down-text {
+  animation: balanceFlashDownText 900ms ease-out 1;
+}
