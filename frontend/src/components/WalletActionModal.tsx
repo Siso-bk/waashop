@@ -77,6 +77,9 @@ export function WalletActionModal({
   const [depositState, depositAction] = useFormState(createDeposit, initialFormState);
   const [withdrawState, withdrawAction] = useFormState(createWithdrawal, initialFormState);
   const [transferState, transferAction] = useFormState(createTransfer, initialFormState);
+  const [isDepositSubmitting, setIsDepositSubmitting] = useState(false);
+  const [isWithdrawSubmitting, setIsWithdrawSubmitting] = useState(false);
+  const [isTransferSubmitting, setIsTransferSubmitting] = useState(false);
   const [recipientValue, setRecipientValue] = useState("");
   const [amountValue, setAmountValue] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -149,7 +152,10 @@ export function WalletActionModal({
       setScannerOpen(false);
       setScanStatus("idle");
       setScanMessage(null);
+      setIsTransferSubmitting(false);
     }
+    if (active !== "deposit") setIsDepositSubmitting(false);
+    if (active !== "withdraw") setIsWithdrawSubmitting(false);
   }, [active]);
 
   useEffect(() => {
@@ -197,6 +203,9 @@ export function WalletActionModal({
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
     }
+    if (depositState.status !== "idle") {
+      setIsDepositSubmitting(false);
+    }
     return undefined;
   }, [active, depositState.status]);
 
@@ -205,6 +214,9 @@ export function WalletActionModal({
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
     }
+    if (withdrawState.status !== "idle") {
+      setIsWithdrawSubmitting(false);
+    }
     return undefined;
   }, [active, withdrawState.status]);
 
@@ -212,6 +224,9 @@ export function WalletActionModal({
     if (active === "send" && transferState.status === "success") {
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
+    }
+    if (transferState.status !== "idle") {
+      setIsTransferSubmitting(false);
     }
     return undefined;
   }, [active, transferState.status]);
@@ -353,7 +368,7 @@ export function WalletActionModal({
               key={action.key}
               type="button"
               onClick={() => setActive(action.key as ActionType)}
-              className={`flex min-w-[140px] items-center justify-center rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] transition ${
+              className={`flex min-w-[118px] items-center justify-center rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] transition ${
                 action.key === "deposit"
                   ? "bg-black text-white hover:bg-gray-900"
                   : "border border-black/15 text-black hover:bg-black hover:text-white"
@@ -385,7 +400,11 @@ export function WalletActionModal({
             </div>
             <div className="max-h-[70vh] overflow-y-auto px-6 pb-8 pt-6">
             {active === "deposit" && (
-              <form action={depositAction} className="space-y-4 text-sm text-gray-700">
+              <form
+                action={depositAction}
+                className="space-y-4 text-sm text-gray-700"
+                onSubmit={() => setIsDepositSubmitting(true)}
+              >
                 <input
                   name="amountMinis"
                   type="number"
@@ -424,9 +443,16 @@ export function WalletActionModal({
                 />
                 <button
                   type="submit"
-                  className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-900"
+                  disabled={isDepositSubmitting || depositState.status === "success"}
+                  className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Submit deposit
+                  {isDepositSubmitting
+                    ? "Submitting…"
+                    : depositState.status === "success"
+                    ? "Success ✓"
+                    : depositState.status === "error"
+                    ? "Failed ✕"
+                    : "Submit deposit"}
                 </button>
                 {depositState.status !== "idle" && (
                   <p
@@ -434,6 +460,7 @@ export function WalletActionModal({
                       depositState.status === "success" ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
+                    {depositState.status === "success" ? "✓ " : "✕ "}
                     {depositState.message}
                   </p>
                 )}
@@ -441,7 +468,11 @@ export function WalletActionModal({
             )}
 
             {active === "withdraw" && (
-              <form action={withdrawAction} className="space-y-4 text-sm text-gray-700">
+              <form
+                action={withdrawAction}
+                className="space-y-4 text-sm text-gray-700"
+                onSubmit={() => setIsWithdrawSubmitting(true)}
+              >
                 <input
                   name="amountMinis"
                   type="number"
@@ -475,9 +506,16 @@ export function WalletActionModal({
                 />
                 <button
                   type="submit"
-                  className="w-full rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-100"
+                  disabled={isWithdrawSubmitting || withdrawState.status === "success"}
+                  className="w-full rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Submit withdrawal
+                  {isWithdrawSubmitting
+                    ? "Submitting…"
+                    : withdrawState.status === "success"
+                    ? "Success ✓"
+                    : withdrawState.status === "error"
+                    ? "Failed ✕"
+                    : "Submit withdrawal"}
                 </button>
                 {withdrawState.status !== "idle" && (
                   <p
@@ -485,6 +523,7 @@ export function WalletActionModal({
                       withdrawState.status === "success" ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
+                    {withdrawState.status === "success" ? "✓ " : "✕ "}
                     {withdrawState.message}
                   </p>
                 )}
@@ -493,7 +532,11 @@ export function WalletActionModal({
 
             {active === "send" && (
               <div className="space-y-6">
-                <form action={transferAction} className="space-y-4 text-sm text-gray-700">
+                <form
+                  action={transferAction}
+                  className="space-y-4 text-sm text-gray-700"
+                  onSubmit={() => setIsTransferSubmitting(true)}
+                >
                   <input
                     name="recipient"
                     required
@@ -521,9 +564,16 @@ export function WalletActionModal({
                   />
                   <button
                     type="submit"
-                    className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-900"
+                    disabled={isTransferSubmitting || transferState.status === "success"}
+                    className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Send transfer
+                    {isTransferSubmitting
+                      ? "Sending…"
+                      : transferState.status === "success"
+                      ? "Success ✓"
+                      : transferState.status === "error"
+                      ? "Failed ✕"
+                      : "Send transfer"}
                   </button>
                   {transferState.status !== "idle" && (
                     <p
@@ -531,6 +581,7 @@ export function WalletActionModal({
                         transferState.status === "success" ? "text-emerald-600" : "text-red-500"
                       }`}
                     >
+                      {transferState.status === "success" ? "✓ " : "✕ "}
                       {transferState.message}
                     </p>
                   )}
