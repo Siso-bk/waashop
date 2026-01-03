@@ -7,11 +7,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 type ResetPasswordClientProps = {
   initialEmail?: string;
+  initialCode?: string;
 };
 
-export function ResetPasswordClient({ initialEmail = "" }: ResetPasswordClientProps) {
+export function ResetPasswordClient({ initialEmail = "", initialCode = "" }: ResetPasswordClientProps) {
   const [email, setEmail] = useState(initialEmail);
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");

@@ -11,6 +11,7 @@ type PasswordResetInlineProps = {
 export function PasswordResetInline({ initialEmail = "" }: PasswordResetInlineProps) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState(initialEmail);
+  const [code, setCode] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
 
@@ -33,7 +34,7 @@ export function PasswordResetInline({ initialEmail = "" }: PasswordResetInlinePr
         throw new Error((data as { error?: string }).error || "Unable to send reset code.");
       }
       setStatus("success");
-      setMessage("Reset code sent. Check your inbox.");
+      setMessage("Reset code sent. Check your inbox for the code.");
     } catch (err) {
       const text = err instanceof Error ? err.message : "Unable to send reset code.";
       setStatus("error");
@@ -93,13 +94,24 @@ export function PasswordResetInline({ initialEmail = "" }: PasswordResetInlinePr
         </p>
       )}
       {status === "success" && (
-        <a
-          href={`/reset?email=${encodeURIComponent(email.trim())}`}
-          className="text-xs font-semibold uppercase tracking-[0.3em] underline underline-offset-2 opacity-70"
-          style={{ color: "var(--app-text)" }}
-        >
-          Enter reset code
-        </a>
+        <div className="space-y-2">
+          <label className="space-y-1 text-xs opacity-70" style={{ color: "var(--app-text)" }}>
+            Reset code
+            <input
+              type="text"
+              value={code}
+              onChange={event => setCode(event.target.value)}
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-black focus:border-black focus:outline-none"
+              placeholder="6-digit code"
+            />
+          </label>
+          <a
+            href={`/reset?email=${encodeURIComponent(email.trim())}&code=${encodeURIComponent(code.trim())}`}
+            className="inline-flex w-full items-center justify-center rounded-full border border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+          >
+            Continue
+          </a>
+        </div>
       )}
     </div>
   );
