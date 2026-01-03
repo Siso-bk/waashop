@@ -11,6 +11,7 @@ import {
   ShopTab,
   StandardProduct,
   CustomerOrder,
+  NotificationItem,
 } from "@/types";
 
 type RawBox = Partial<MysteryBoxDto> & {
@@ -209,4 +210,9 @@ export const getStandardProducts = async (): Promise<StandardProduct[]> => {
 export const getCustomerOrders = async (): Promise<CustomerOrder[]> => {
   const data = await backendFetch<{ orders: CustomerOrder[] }>("/api/orders");
   return data.orders;
+};
+
+export const getNotifications = async (): Promise<NotificationItem[]> => {
+  const data = await backendFetch<{ notifications: NotificationItem[] }>("/api/notifications");
+  return data.notifications ?? [];
 };

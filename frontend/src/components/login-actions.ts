@@ -40,9 +40,13 @@ export const loginAction = async (_prev: AuthActionState, formData: FormData): P
   }
 
   try {
+    const normalized = identifier.trim().toLowerCase();
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
+    const handle = normalized.replace(/^@/, "").replace(/@pai$/, "").replace(/\.pai$/, "");
+    const loginIdentifier = isEmail ? normalized : `${handle}@pai`;
     const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ identifier, password }),
+      body: JSON.stringify({ identifier: loginIdentifier, password }),
     });
     await persistToken(token);
     return await syncSession();

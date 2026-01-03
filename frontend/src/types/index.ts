@@ -136,6 +136,17 @@ export interface CustomerOrder {
   cancelledAt?: string;
 }
 
+export interface NotificationItem {
+  id: string;
+  type?: string;
+  title: string;
+  body: string;
+  meta?: Record<string, unknown>;
+  status: "UNREAD" | "READ";
+  createdAt: string;
+  readAt?: string;
+}
+
 export interface WinnerSpotlightDto {
   id: string;
   winnerType: "CHALLENGE" | "MYSTERY_BOX";

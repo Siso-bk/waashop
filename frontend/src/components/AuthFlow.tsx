@@ -145,7 +145,7 @@ export function AuthFlow() {
           statusMessage = "We couldn't verify your handle. Try your password.";
         }
         setEmail("");
-        setIdentifier(handle);
+        setIdentifier(`${handle}@pai`);
         setPhase("login");
         setStatus(statusMessage);
       }
