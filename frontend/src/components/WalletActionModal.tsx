@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormState } from "react-dom";
 import { formatMinis } from "@/lib/minis";
 import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 type TransferDto = {
   id: string;
@@ -37,6 +38,31 @@ type WalletActionModalProps = {
 type FormState = {
   status: "idle" | "success" | "error";
   message?: string;
+};
+
+type Html5QrCamera = {
+  id: string;
+  label: string;
+};
+
+type Html5QrcodeInstance = {
+  isScanning?: boolean;
+  start: (
+    camera: { deviceId: { exact: string } } | { facingMode: "environment" },
+    config: { fps: number; qrbox: number },
+    onSuccess: (decodedText: string) => void,
+    onFailure: (error: string) => void
+  ) => Promise<void>;
+  stop: () => Promise<void>;
+  clear: () => Promise<void>;
+  scanFile: (file: File, showImage: boolean) => Promise<string>;
+};
+
+type Html5QrcodeModule = {
+  Html5Qrcode: {
+    new (elementId: string, configOrVerbosityFlag?: boolean | Record<string, unknown>): Html5QrcodeInstance;
+    getCameras: () => Promise<Html5QrCamera[]>;
+  };
 };
 
 const initialFormState: FormState = { status: "idle" };
@@ -93,8 +119,8 @@ export function WalletActionModal({
   const [transferLink, setTransferLink] = useState<string | null>(null);
   const [receiveAmount, setReceiveAmount] = useState<string>("");
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const scannerRef = useRef<any>(null);
-  const fileScannerRef = useRef<any>(null);
+  const scannerRef = useRef<Html5QrcodeInstance | null>(null);
+  const fileScannerRef = useRef<Html5QrcodeInstance | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraReaderId = "waashop-qr-camera-reader";
   const fileReaderId = "waashop-qr-file-reader";
@@ -210,7 +236,7 @@ export function WalletActionModal({
       setIsDepositSubmitting(false);
     }
     return undefined;
-  }, [active, depositState.status]);
+  }, [active, depositState.status, router]);
 
   useEffect(() => {
     if (active === "withdraw" && withdrawState.status === "success") {
@@ -222,7 +248,7 @@ export function WalletActionModal({
       setIsWithdrawSubmitting(false);
     }
     return undefined;
-  }, [active, withdrawState.status]);
+  }, [active, withdrawState.status, router]);
 
   useEffect(() => {
     if (active === "send" && transferState.status === "success") {
@@ -234,65 +260,9 @@ export function WalletActionModal({
       setIsTransferSubmitting(false);
     }
     return undefined;
-  }, [active, transferState.status]);
+  }, [active, transferState.status, router]);
 
-  useEffect(() => {
-    if (!scannerOpen || active !== "send") {
-      stopScanner();
-      return undefined;
-    }
-    let cancelled = false;
-    setScanStatus("starting");
-    setScanMessage(null);
-    (async () => {
-      try {
-        const mod = await import("html5-qrcode");
-        if (cancelled) return;
-        const Html5Qrcode = (mod as any).Html5Qrcode;
-        const cameras = await (Html5Qrcode as any).getCameras();
-        const preferred = cameras?.find((cam: any) => /back|rear|environment/i.test(cam.label)) || cameras?.[0];
-        if (!scannerRef.current) {
-          scannerRef.current = new Html5Qrcode(cameraReaderId);
-        }
-        await scannerRef.current.start(
-          preferred?.id ? { deviceId: { exact: preferred.id } } : { facingMode: "environment" },
-          { fps: 10, qrbox: 240 },
-          (decodedText: string) => {
-            handleScanResult(decodedText);
-            setScannerOpen(false);
-          },
-          () => undefined
-        );
-        if (!cancelled) {
-          setScanStatus("scanning");
-        }
-      } catch (error) {
-        if (cancelled) return;
-        setScanStatus("error");
-        setScanMessage("Camera scan failed or permission denied. Try upload or enter manually.");
-        setScannerOpen(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-      stopScanner();
-    };
-  }, [scannerOpen, active]);
-
-  async function stopScanner() {
-    try {
-      if (scannerRef.current?.isScanning) {
-        await scannerRef.current.stop();
-      }
-      if (scannerRef.current) {
-        await scannerRef.current.clear();
-      }
-    } catch {
-      // Best-effort cleanup.
-    }
-  }
-
-  function parseTransferPayload(raw: string) {
+  const parseTransferPayload = useCallback((raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed) return null;
     const normalized =
@@ -311,19 +281,78 @@ export function WalletActionModal({
       }
     }
     return { recipient: trimmed };
-  }
+  }, []);
 
-  function handleScanResult(value: string) {
-    const parsed = parseTransferPayload(value);
-    if (!parsed || !parsed.recipient) {
-      setScanMessage("QR found but no recipient detected. Paste manually.");
-      return;
+  const handleScanResult = useCallback(
+    (value: string) => {
+      const parsed = parseTransferPayload(value);
+      if (!parsed || !parsed.recipient) {
+        setScanMessage("QR found but no recipient detected. Paste manually.");
+        return;
+      }
+      setRecipientValue(parsed.recipient);
+      if (parsed.amountMinis && Number.isFinite(parsed.amountMinis)) {
+        setAmountValue(String(parsed.amountMinis));
+      }
+      setScanMessage("Recipient filled from QR.");
+    },
+    [parseTransferPayload]
+  );
+
+  useEffect(() => {
+    if (!scannerOpen || active !== "send") {
+      stopScanner();
+      return undefined;
     }
-    setRecipientValue(parsed.recipient);
-    if (parsed.amountMinis && Number.isFinite(parsed.amountMinis)) {
-      setAmountValue(String(parsed.amountMinis));
+    let cancelled = false;
+    setScanStatus("starting");
+    setScanMessage(null);
+    (async () => {
+      try {
+        const mod = (await import("html5-qrcode")) as unknown as Html5QrcodeModule;
+        if (cancelled) return;
+        const Html5Qrcode = mod.Html5Qrcode;
+        const cameras = await Html5Qrcode.getCameras();
+        const preferred = cameras?.find((cam) => /back|rear|environment/i.test(cam.label)) || cameras?.[0];
+        if (!scannerRef.current) {
+          scannerRef.current = new Html5Qrcode(cameraReaderId);
+        }
+        await scannerRef.current.start(
+          preferred?.id ? { deviceId: { exact: preferred.id } } : { facingMode: "environment" },
+          { fps: 10, qrbox: 240 },
+          (decodedText: string) => {
+            handleScanResult(decodedText);
+            setScannerOpen(false);
+          },
+          () => undefined
+        );
+        if (!cancelled) {
+          setScanStatus("scanning");
+        }
+      } catch {
+        if (cancelled) return;
+        setScanStatus("error");
+        setScanMessage("Camera scan failed or permission denied. Try upload or enter manually.");
+        setScannerOpen(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      stopScanner();
+    };
+  }, [scannerOpen, active, handleScanResult]);
+
+  async function stopScanner() {
+    try {
+      if (scannerRef.current?.isScanning) {
+        await scannerRef.current.stop();
+      }
+      if (scannerRef.current) {
+        await scannerRef.current.clear();
+      }
+    } catch {
+      // Best-effort cleanup.
     }
-    setScanMessage("Recipient filled from QR.");
   }
 
   async function handleFileScan(event: React.ChangeEvent<HTMLInputElement>) {
@@ -332,8 +361,8 @@ export function WalletActionModal({
     setScanStatus("starting");
     setScanMessage("Scanning image…");
     try {
-      const mod = await import("html5-qrcode");
-      const Html5Qrcode = (mod as any).Html5Qrcode;
+      const mod = (await import("html5-qrcode")) as unknown as Html5QrcodeModule;
+      const Html5Qrcode = mod.Html5Qrcode;
       if (!fileScannerRef.current) {
         fileScannerRef.current = new Html5Qrcode(fileReaderId);
       }
@@ -754,9 +783,11 @@ export function WalletActionModal({
                       <p className="text-xs text-gray-500">Unable to generate QR. Try again.</p>
                     )}
                     {qrDataUrl && (
-                      <img
+                      <Image
                         src={qrDataUrl}
                         alt="Transfer QR"
+                        width={192}
+                        height={192}
                         className="h-48 w-48 rounded-2xl border border-black/10 bg-white p-3 shadow-sm"
                       />
                     )}
