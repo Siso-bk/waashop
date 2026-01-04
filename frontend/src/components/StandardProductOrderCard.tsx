@@ -16,18 +16,23 @@ export function StandardProductOrderCard({
   onOrderNow: (product: StandardProduct) => void;
 }) {
   return (
-    <article className="flex flex-col rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
-      <Link href={`/products/${product.id}`} className="mb-3 block">
+    <article className="group relative flex flex-col rounded-3xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg">
+      <Link
+        href={`/products/${product.id}`}
+        aria-label={`View ${product.name}`}
+        className="absolute inset-0 z-0"
+      />
+      <div className="relative z-10 mb-2 block">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="h-32 w-full rounded-2xl border border-black/10 object-cover"
+            className="h-28 w-full rounded-2xl border border-black/10 object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-black/15 bg-gray-50">
+          <div className="flex h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-black/15 bg-gray-50">
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-gray-400">
               <path
                 fill="currentColor"
@@ -39,13 +44,11 @@ export function StandardProductOrderCard({
             </span>
           </div>
         )}
-      </Link>
-      <div className="space-y-1 text-xs text-gray-500">
+      </div>
+      <div className="relative z-10 space-y-0.5 text-xs text-gray-500">
         <p>
           <span className="uppercase tracking-[0.3em] text-gray-400">Name:</span>{" "}
-          <Link href={`/products/${product.id}`} className="text-sm font-semibold text-black">
-            {product.name}
-          </Link>
+          <span className="text-sm font-semibold text-black">{product.name}</span>
         </p>
         <p>
           <span className="uppercase tracking-[0.3em] text-gray-400">Price:</span>{" "}
@@ -54,11 +57,11 @@ export function StandardProductOrderCard({
       </div>
 
       {!signedIn ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-black/15 bg-gray-50 p-4 text-xs text-gray-600">
+        <div className="relative z-10 mt-5 rounded-2xl border border-dashed border-black/15 bg-gray-50 p-4 text-xs text-gray-600">
           Sign in to add to cart or place an order.
         </div>
       ) : (
-        <div className="mt-6 space-y-3 text-sm text-gray-700">
+        <div className="relative z-10 mt-5 space-y-2 text-sm text-gray-700">
           <button
             type="button"
             onClick={() => onAddToCart(product)}
