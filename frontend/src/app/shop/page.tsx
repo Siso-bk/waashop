@@ -4,6 +4,7 @@ import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
 import { formatMinis } from "@/lib/minis";
 import { ShopProductsClient } from "@/components/ShopProductsClient";
+import { ShopHeader } from "@/components/ShopHeader";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -36,19 +37,7 @@ export default async function ShopPage({
   return (
     <div className="space-y-1 pb-5">
       <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Shop</p>
-          <form action="/shop" method="get" className="flex items-center">
-            {activeTab ? <input type="hidden" name="tab" value={activeTab} /> : null}
-            <input
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder="Search products"
-              className="h-7 w-40 rounded-full border border-black/15 bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/20"
-            />
-          </form>
-        </div>
+        <ShopHeader activeTab={activeTab} initialQuery={query} />
         {!user && (
           <div className="space-y-1">
             <Link

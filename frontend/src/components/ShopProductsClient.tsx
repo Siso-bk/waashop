@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StandardProduct } from "@/types";
 import { StandardProductOrderCard } from "@/components/StandardProductOrderCard";
@@ -25,6 +25,7 @@ export function ShopProductsClient({ products, signedIn, query }: ShopProductsCl
       return haystack.includes(normalizedQuery);
     });
   }, [normalizedQuery, products]);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const cartTotal = useMemo(
     () =>
@@ -35,6 +36,19 @@ export function ShopProductsClient({ products, signedIn, query }: ShopProductsCl
     () => cart.reduce((sum, item) => sum + item.quantity, 0),
     [cart]
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const handleResize = () => {
+      const delta = window.innerHeight - viewport.height;
+      setKeyboardOpen(delta > 140);
+    };
+    handleResize();
+    viewport.addEventListener("resize", handleResize);
+    return () => viewport.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleAddToCart = (product: StandardProduct) => {
     addToCart(product);
@@ -76,7 +90,8 @@ export function ShopProductsClient({ products, signedIn, query }: ShopProductsCl
         )}
       </div>
 
-      <section className="fixed bottom-24 left-1/2 z-30 w-[min(640px,92%)] -translate-x-1/2 rounded-3xl border border-black/10 bg-white/95 p-5 shadow-xl backdrop-blur">
+      {cart.length > 0 && !keyboardOpen && (
+        <section className="fixed bottom-24 left-1/2 z-30 w-[min(640px,92%)] -translate-x-1/2 rounded-3xl border border-black/10 bg-white/95 p-5 shadow-xl backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Cart</p>
@@ -109,7 +124,8 @@ export function ShopProductsClient({ products, signedIn, query }: ShopProductsCl
           </Link>
         </div>
         {message && <p className="mt-3 text-xs text-emerald-600">{message}</p>}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
