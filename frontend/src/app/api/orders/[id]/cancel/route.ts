@@ -8,10 +8,11 @@ const handleError = (error: unknown, status = 400) => {
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const data = await backendFetch(`/api/orders/${params.id}/cancel`, {
+    const { id } = await params;
+    const data = await backendFetch(`/api/orders/${id}/cancel`, {
       method: "POST",
     });
     return NextResponse.json(data);

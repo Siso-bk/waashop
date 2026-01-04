@@ -62,13 +62,13 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
                   const isLast = index === list.length - 1;
                   return (
                     <div key={`${order.id}-${event.status}-${index}`} className="flex items-start gap-3">
-                      <div className="flex flex-col items-center">
+                      <div className="relative flex flex-col items-center">
                         <span
                           className={`mt-0.5 flex h-3 w-3 items-center justify-center rounded-full ${
                             isDelivered ? "bg-emerald-500" : "bg-black/60"
                           }`}
                         />
-                        {!isLast && <span className="mt-1 h-6 w-px bg-black/10" />}
+                        {!isLast && <span className="mt-1 h-7 w-px bg-black/15" />}
                       </div>
                       <div>
                         <p className={`text-xs font-semibold ${isDelivered ? "text-black" : "text-black"}`}>
@@ -79,7 +79,8 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
                           {new Date(event.createdAt).toLocaleString()} · {event.actor}
                         </p>
                         {isSuccess && (
-                          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
+                          <p className="mt-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
+                            <span aria-hidden>✓</span>
                             Success delivery
                           </p>
                         )}

@@ -8,11 +8,12 @@ const handleError = (error: unknown, status = 400) => {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const payload = await request.json().catch(() => ({}));
-    const data = await backendFetch(`/api/orders/${params.id}/dispute`, {
+    const data = await backendFetch(`/api/orders/${id}/dispute`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
