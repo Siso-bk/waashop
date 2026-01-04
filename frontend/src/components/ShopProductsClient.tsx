@@ -11,11 +11,20 @@ import { addToCart, setCartItems, useCart } from "@/lib/cart";
 type ShopProductsClientProps = {
   products: StandardProduct[];
   signedIn: boolean;
+  query?: string;
 };
-export function ShopProductsClient({ products, signedIn }: ShopProductsClientProps) {
+export function ShopProductsClient({ products, signedIn, query }: ShopProductsClientProps) {
   const router = useRouter();
   const cart = useCart();
   const [message, setMessage] = useState<string | null>(null);
+  const normalizedQuery = query?.trim().toLowerCase() ?? "";
+  const filteredProducts = useMemo(() => {
+    if (!normalizedQuery) return products;
+    return products.filter((product) => {
+      const haystack = `${product.name} ${product.description ?? ""}`.toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+  }, [normalizedQuery, products]);
 
   const cartTotal = useMemo(
     () =>
@@ -49,7 +58,7 @@ export function ShopProductsClient({ products, signedIn }: ShopProductsClientPro
   return (
     <div className="space-y-4 pb-24">
       <div className="grid gap-4 grid-cols-2">
-        {products.map((product) => (
+        {filteredProducts.map((product) => (
           <StandardProductOrderCard
             key={product.id}
             product={product}
@@ -58,9 +67,11 @@ export function ShopProductsClient({ products, signedIn }: ShopProductsClientPro
             onOrderNow={orderNow}
           />
         ))}
-        {products.length === 0 && (
+        {filteredProducts.length === 0 && (
           <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
-            No products available right now. Check back soon.
+            {products.length === 0
+              ? "No products available right now. Check back soon."
+              : "No products match your search."}
           </div>
         )}
       </div>

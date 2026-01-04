@@ -94,9 +94,58 @@ export function CartClient({
   return (
     <div className="space-y-4 pb-20">
       <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Cart</p>
+        {cart.length > 0 && (
+          <div className="mt-4 space-y-3 text-xs text-gray-600">
+            {cart.map((item, index) => (
+              <div key={item.product.id} className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  {cart.length > 1 && (
+                    <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-black/10 text-[10px] font-semibold text-black">
+                      {index + 1}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-black">{item.product.name}</p>
+                    <p className="text-gray-500">{formatMinis(item.product.priceMinis)} each</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
+                    className="h-7 w-7 rounded-full border border-black/10 text-xs font-semibold text-black"
+                  >
+                    -
+                  </button>
+                  <span className="min-w-[24px] text-center text-xs font-semibold text-black">{item.quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
+                    className="h-7 w-7 rounded-full border border-black/10 text-xs font-semibold text-black"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeFromCart(item.product.id)}
+                    aria-label={`Remove ${item.product.name}`}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-red-200 text-red-600 transition hover:bg-red-50"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+                      <path
+                        fill="currentColor"
+                        d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 1-1Zm1 2v1h4V5h-4Zm-3 3v10h10V8H7Zm3 2a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 1-1Zm5 1v5a1 1 0 1 1-2 0v-5a1 1 0 0 1 2 0Z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-black/10 pt-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Cart</p>
             <p className="text-sm text-gray-600">
               {cart.length ? `${cart.length} item(s) · ${formatMinis(cartTotal)}` : "Your cart is empty."}
             </p>
@@ -121,42 +170,6 @@ export function CartClient({
             )}
           </div>
         </div>
-        {cart.length > 0 && (
-          <div className="mt-4 space-y-3 text-xs text-gray-600">
-            {cart.map((item) => (
-              <div key={item.product.id} className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-black">{item.product.name}</p>
-                  <p className="text-gray-500">{formatMinis(item.product.priceMinis)} each</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
-                    className="h-7 w-7 rounded-full border border-black/10 text-xs font-semibold text-black"
-                  >
-                    -
-                  </button>
-                  <span className="min-w-[24px] text-center text-xs font-semibold text-black">{item.quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
-                    className="h-7 w-7 rounded-full border border-black/10 text-xs font-semibold text-black"
-                  >
-                    +
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeFromCart(item.product.id)}
-                    className="rounded-full border border-red-200 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-red-600"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       {checkoutOpen && (

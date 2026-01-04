@@ -20,6 +20,7 @@ export default async function ShopPage({
   searchParams?: Promise<SearchParams>;
 }) {
   const resolvedParams = searchParams ? await searchParams : undefined;
+  const query = typeof resolvedParams?.q === "string" ? resolvedParams.q.trim() : "";
   const [boxes, user, tabs, standardProducts] = await Promise.all([
     getActiveBoxes(),
     getSessionUser(),
@@ -34,8 +35,20 @@ export default async function ShopPage({
 
   return (
     <div className="space-y-1 pb-5">
-      <header className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Shop</p>
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Shop</p>
+          <form action="/shop" method="get" className="flex items-center">
+            {activeTab ? <input type="hidden" name="tab" value={activeTab} /> : null}
+            <input
+              type="search"
+              name="q"
+              defaultValue={query}
+              placeholder="Search products"
+              className="h-7 w-40 rounded-full border border-black/15 bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/20"
+            />
+          </form>
+        </div>
         {!user && (
           <div className="space-y-1">
             <Link
@@ -96,7 +109,11 @@ export default async function ShopPage({
       )}
 
       {activeTab === "products" && (
-        <ShopProductsClient products={standardProducts} signedIn={Boolean(user)} />
+        <ShopProductsClient
+          products={standardProducts}
+          signedIn={Boolean(user)}
+          query={query}
+        />
       )}
 
       {activeTab !== "mystery-boxes" && activeTab !== "products" && (

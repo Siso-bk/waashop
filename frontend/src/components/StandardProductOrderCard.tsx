@@ -48,7 +48,7 @@ export function StandardProductOrderCard({
       <div className="relative z-10 space-y-0.5 text-xs text-gray-500">
         <p>
           <span className="uppercase tracking-[0.3em] text-gray-400">Name:</span>{" "}
-          <span className="text-sm font-semibold text-black">{product.name}</span>
+          <span className="block truncate text-sm font-semibold text-black">{product.name}</span>
         </p>
         <p>
           <span className="uppercase tracking-[0.3em] text-gray-400">Price:</span>{" "}
