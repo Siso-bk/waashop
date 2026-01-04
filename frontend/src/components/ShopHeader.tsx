@@ -35,13 +35,6 @@ export function ShopHeader({
     }
   }, [router, searchParams, startTransition, tabParam]);
 
-  useEffect(() => {
-    const handleTabClick = () => {
-      if (inputRef.current) inputRef.current.value = "";
-    };
-    window.addEventListener("waashop:shop-tab", handleTabClick as EventListener);
-    return () => window.removeEventListener("waashop:shop-tab", handleTabClick as EventListener);
-  }, []);
 
   const updateQuery = (nextValue: string) => {
     const params = new URLSearchParams(searchParams);

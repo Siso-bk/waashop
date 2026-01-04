@@ -77,11 +77,6 @@ export default async function ShopPage({
             <Link
               key={tab.key}
               href={`/shop?tab=${tab.key}`}
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(new Event("waashop:shop-tab"));
-                }
-              }}
               className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.26em] text-black transition hover:opacity-80 ${
                 isActive ? "underline underline-offset-8 decoration-2" : ""
               }`}
