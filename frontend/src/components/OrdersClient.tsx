@@ -55,7 +55,12 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
           <div className="mt-4 rounded-2xl border border-black/10 bg-white p-4 text-xs text-gray-600">
             <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Order progress</p>
             <div className="mt-4 space-y-3">
-              {(order.events && order.events.length > 0 ? order.events : buildFallbackEvents(order)).map(
+              {(order.status === "COMPLETED"
+                ? buildConfirmedEvents(order)
+                : order.events && order.events.length > 0
+                  ? order.events
+                  : buildFallbackEvents(order)
+              ).map(
                 (event, index, list) => {
                   const isDelivered = event.status === "DELIVERED" || event.status === "COMPLETED";
                   const isSuccess = event.status === "DELIVERED";
@@ -176,4 +181,21 @@ const buildFallbackEvents = (order: CustomerOrder) => {
     events.push({ status: order.status, actor: "system", createdAt: order.updatedAt ?? placedAt });
   }
   return events;
+};
+
+const buildConfirmedEvents = (order: CustomerOrder) => {
+  const confirmedAt =
+    order.events?.find((event) => event.status === "COMPLETED")?.createdAt ??
+    order.completedAt ??
+    order.updatedAt ??
+    order.placedAt ??
+    new Date().toISOString();
+  return [
+    {
+      status: "COMPLETED" as const,
+      note: "Delivery confirmed",
+      actor: "buyer" as const,
+      createdAt: confirmedAt,
+    },
+  ];
 };
