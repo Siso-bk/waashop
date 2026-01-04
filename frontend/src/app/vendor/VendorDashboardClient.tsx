@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { formatMinis } from "@/lib/minis";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const VENDOR_PRODUCTS_ENDPOINT = "/api/vendors/products";
 
 type VendorProfile = {
   name: string;
@@ -113,7 +113,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
         }
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/vendors/products`, {
+      const response = await fetch(VENDOR_PRODUCTS_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
