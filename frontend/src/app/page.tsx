@@ -180,7 +180,15 @@ export default async function HomePage() {
           </div>
           <div className="mt-6 flex gap-4 overflow-x-auto pb-3">
             {products.slice(0, 8).map((product) => (
-              <article key={product.id} className="flex min-w-[220px] flex-col gap-3 rounded-2xl border border-black/10 p-4">
+              <article
+                key={product.id}
+                className="group relative flex min-w-[220px] flex-col gap-3 rounded-2xl border border-black/10 p-4 transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg"
+              >
+                <Link
+                  href={`/products/${product.id}`}
+                  aria-label={`View ${product.name}`}
+                  className="absolute inset-0"
+                />
                 {product.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -189,16 +197,14 @@ export default async function HomePage() {
                     className="h-32 w-full rounded-xl object-cover"
                   />
                 )}
-                <div>
+                <div className="relative z-10">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Standard product</p>
-                  <Link href={`/products/${product.id}`} className="mt-2 block text-lg font-semibold text-black">
-                    {product.name}
-                  </Link>
+                  <p className="mt-2 text-lg font-semibold text-black">{product.name}</p>
                   {product.description && (
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">{product.description}</p>
                   )}
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="relative z-10 flex items-center justify-between text-xs text-gray-500">
                   <span>Price</span>
                   <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
                     {formatMinis(product.priceMinis)}
