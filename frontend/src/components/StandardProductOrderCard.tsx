@@ -15,7 +15,7 @@ export function StandardProductOrderCard({
   onOrderNow: (product: StandardProduct) => void;
 }) {
   return (
-    <article className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+    <article className="flex flex-col rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
       {product.imageUrl ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
