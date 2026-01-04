@@ -11,6 +11,6 @@ export async function GET() {
     const data = await backendFetch<{ unread: number }>("/api/notifications/unread-count");
     return NextResponse.json(data);
   } catch (error) {
-    return handleError(error);
+    return NextResponse.json({ unread: 0 });
   }
 }
