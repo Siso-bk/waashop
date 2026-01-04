@@ -36,6 +36,11 @@ export default async function ShopPage({
     getStandardProducts(),
     getChallenges(),
   ]);
+  const tabList = (tabs.length ? tabs : FALLBACK_TABS)
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const tabKey = typeof resolvedParams?.tab === "string" ? resolvedParams.tab : "";
+  const activeTab = tabList.find((tab) => tab.key === tabKey) ? tabKey : tabList[0]?.key;
   const normalizedQuery = query.toLowerCase();
   const activeQuery = normalizedQuery && activeTab ? normalizedQuery : "";
   const filteredBoxes =
@@ -48,11 +53,6 @@ export default async function ShopPage({
           `${challenge.name} ${challenge.description ?? ""}`.toLowerCase().includes(activeQuery)
         )
       : challenges;
-  const tabList = (tabs.length ? tabs : FALLBACK_TABS)
-    .slice()
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  const tabKey = typeof resolvedParams?.tab === "string" ? resolvedParams.tab : "";
-  const activeTab = tabList.find((tab) => tab.key === tabKey) ? tabKey : tabList[0]?.key;
 
   return (
     <div className="space-y-1 pb-5">
