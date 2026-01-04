@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { CustomerOrder, NotificationItem, UserProfile } from "@/types";
 import { OrdersClient } from "@/components/OrdersClient";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 type InfoTabsProps = {
   user: UserProfile | null;
@@ -25,7 +24,7 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
     const hasUnread = items.some((item) => item.status === "UNREAD");
     if (!hasUnread) return;
     const markRead = async () => {
-      const response = await fetch(`${API_BASE_URL}/api/notifications/read`, {
+      const response = await fetch("/api/notifications/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

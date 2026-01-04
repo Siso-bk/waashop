@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
 const navLinks = [
   { href: "/", label: "Home", icon: "🏠" },
   { href: "/shop", label: "Shop", icon: "🛍" },
@@ -38,7 +36,7 @@ export function MobileNav() {
     let active = true;
     const loadUnread = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/notifications/unread-count`, {
+        const response = await fetch("/api/notifications/unread-count", {
           credentials: "include",
         });
         if (!response.ok) return;
