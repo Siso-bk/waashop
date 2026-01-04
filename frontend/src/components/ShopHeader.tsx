@@ -6,11 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 export function ShopHeader({
   activeTab,
   initialQuery,
-  onTabNavigate,
 }: {
   activeTab?: string;
   initialQuery?: string;
-  onTabNavigate?: () => void;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,7 +33,6 @@ export function ShopHeader({
     if (inputRef.current) {
       inputRef.current.value = "";
     }
-    onTabNavigate?.();
   }, [router, searchParams, startTransition, tabParam]);
 
   useEffect(() => {
