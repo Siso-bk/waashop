@@ -5,10 +5,7 @@ export default async function AccountPage() {
   const user = await getSessionUser();
   const roles = user?.roles ?? [];
   const isVendor = roles.includes("vendor");
-  const dashboardBase = process.env.NEXT_PUBLIC_DASHBOARD_URL || "";
-  const vendorPortalHref = dashboardBase
-    ? `${dashboardBase.replace(/\/+$/, "")}/vendor`
-    : "/vendor";
+  const vendorPortalHref = "/vendor";
 
   if (!user) {
     return (

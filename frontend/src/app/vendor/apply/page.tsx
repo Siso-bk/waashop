@@ -80,6 +80,14 @@ export default async function VendorApplicationPage({ searchParams }: PageProps)
               Status
               <span className="rounded-full border border-black/10 px-3 py-1 text-black">{vendor.status}</span>
             </div>
+            {vendor.status === "APPROVED" && (
+              <Link
+                href="/vendor"
+                className="inline-flex w-fit items-center justify-center rounded-full border border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+              >
+                Open vendor dashboard
+              </Link>
+            )}
           </div>
         </section>
       ) : (
