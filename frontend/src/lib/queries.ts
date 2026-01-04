@@ -196,7 +196,11 @@ export const getStandardProducts = async (): Promise<StandardProduct[]> => {
   try {
     const data = await backendFetch<{ products: any[] }>("/api/products?type=STANDARD", { auth: false });
     return data.products.map((product) => ({
-      id: product.id || product._id || "",
+      id:
+        (typeof product.id === "string" && product.id) ||
+        (typeof product._id === "string" && product._id) ||
+        product._id?.toString?.() ||
+        "",
       name: product.name,
       description: product.description,
       priceMinis: product.priceMinis ?? 0,
@@ -213,7 +217,11 @@ export const getStandardProductById = async (id: string): Promise<StandardProduc
     const data = await backendFetch<{ product: any }>(`/api/products/${id}`, { auth: false });
     if (!data.product || data.product.type !== "STANDARD") return null;
     return {
-      id: data.product.id || data.product._id || "",
+      id:
+        (typeof data.product.id === "string" && data.product.id) ||
+        (typeof data.product._id === "string" && data.product._id) ||
+        data.product._id?.toString?.() ||
+        "",
       name: data.product.name,
       description: data.product.description,
       priceMinis: data.product.priceMinis ?? 0,
