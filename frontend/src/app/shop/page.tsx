@@ -3,7 +3,7 @@ import { getActiveBoxes, getSessionUser, getShopTabs, getStandardProducts } from
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { RewardTable } from "@/components/RewardTable";
 import { formatMinis } from "@/lib/minis";
-import { StandardProductOrderCard } from "@/components/StandardProductOrderCard";
+import { ShopProductsClient } from "@/components/ShopProductsClient";
 import { backendFetch } from "@/lib/backendClient";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -97,21 +97,11 @@ export default async function ShopPage({
       )}
 
       {activeTab === "products" && (
-        <div className="flex gap-6 overflow-x-auto pb-3">
-          {standardProducts.map((product) => (
-            <StandardProductOrderCard
-              key={product.id}
-              product={product}
-              signedIn={Boolean(user)}
-              createOrder={createOrder}
-            />
-          ))}
-          {standardProducts.length === 0 && (
-            <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
-              No products available right now. Check back soon.
-            </div>
-          )}
-        </div>
+        <ShopProductsClient
+          products={standardProducts}
+          signedIn={Boolean(user)}
+          createCartOrders={createCartOrders}
+        />
       )}
 
       {activeTab !== "mystery-boxes" && activeTab !== "products" && (
@@ -129,27 +119,48 @@ export default async function ShopPage({
 
 type OrderState = { status: "idle" | "success" | "error"; message?: string };
 
-async function createOrder(_prev: OrderState, formData: FormData): Promise<OrderState> {
+async function createCartOrders(_prev: OrderState, formData: FormData): Promise<OrderState> {
   "use server";
-  const productId = formData.get("productId");
-  if (!productId || typeof productId !== "string") {
-    return { status: "error", message: "Missing product." };
+  const itemsRaw = formData.get("items");
+  if (!itemsRaw || typeof itemsRaw !== "string") {
+    return { status: "error", message: "Your cart is empty." };
   }
-  const payload = {
-    productId,
-    shippingName: valueOrUndefined(formData.get("shippingName")),
-    shippingPhone: valueOrUndefined(formData.get("shippingPhone")),
-    shippingAddress: valueOrUndefined(formData.get("shippingAddress")),
-    notes: valueOrUndefined(formData.get("notes")),
-  };
-  if (!payload.shippingName || !payload.shippingPhone || !payload.shippingAddress) {
+  let items: Array<{ productId: string; quantity: number }> = [];
+  try {
+    const parsed = JSON.parse(itemsRaw) as Array<{ productId?: string; quantity?: number }>;
+    items = parsed
+      .filter((item) => item.productId)
+      .map((item) => ({
+        productId: String(item.productId),
+        quantity: Number(item.quantity || 1),
+      }));
+  } catch {
+    return { status: "error", message: "Unable to read cart items." };
+  }
+  if (items.length === 0) {
+    return { status: "error", message: "Your cart is empty." };
+  }
+  const shippingName = valueOrUndefined(formData.get("shippingName"));
+  const shippingPhone = valueOrUndefined(formData.get("shippingPhone"));
+  const shippingAddress = valueOrUndefined(formData.get("shippingAddress"));
+  const notes = valueOrUndefined(formData.get("notes"));
+  if (!shippingName || !shippingPhone || !shippingAddress) {
     return { status: "error", message: "Shipping name, phone, and address are required." };
   }
   try {
-    await backendFetch("/api/orders", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    for (const item of items) {
+      await backendFetch("/api/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          productId: item.productId,
+          quantity: item.quantity,
+          shippingName,
+          shippingPhone,
+          shippingAddress,
+          notes,
+        }),
+      });
+    }
     return { status: "success", message: "Order placed. Track it in your orders page." };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to place order.";
