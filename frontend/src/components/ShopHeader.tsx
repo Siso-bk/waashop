@@ -1,23 +1,50 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
+import { useEffect, useMemo, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export function ShopHeader({
   activeTab,
   initialQuery,
+  onTabNavigate,
 }: {
   activeTab?: string;
   initialQuery?: string;
+  onTabNavigate?: () => void;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const lastTabRef = useRef<string>("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const tabParam = useMemo(() => {
     if (activeTab) return activeTab;
     return searchParams.get("tab") ?? "";
   }, [activeTab, searchParams]);
+
+  useEffect(() => {
+    if (lastTabRef.current === tabParam) return;
+    lastTabRef.current = tabParam;
+    if (!searchParams.get("q")) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete("q");
+    startTransition(() => {
+      router.replace(`/shop?${params.toString()}`, { scroll: false });
+    });
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+    onTabNavigate?.();
+  }, [router, searchParams, startTransition, tabParam]);
+
+  useEffect(() => {
+    const handleTabClick = () => {
+      if (inputRef.current) inputRef.current.value = "";
+    };
+    window.addEventListener("waashop:shop-tab", handleTabClick as EventListener);
+    return () => window.removeEventListener("waashop:shop-tab", handleTabClick as EventListener);
+  }, []);
 
   const updateQuery = (nextValue: string) => {
     const params = new URLSearchParams(searchParams);
@@ -46,6 +73,7 @@ export function ShopHeader({
         </span>
         <input
           type="search"
+          ref={inputRef}
           defaultValue={initialQuery ?? ""}
           onChange={(event) => updateQuery(event.target.value)}
           placeholder=""
