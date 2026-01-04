@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export function ShopHeader({
@@ -13,20 +13,13 @@ export function ShopHeader({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [value, setValue] = useState(initialQuery ?? "");
 
   const tabParam = useMemo(() => {
     if (activeTab) return activeTab;
     return searchParams.get("tab") ?? "";
   }, [activeTab, searchParams]);
 
-  useEffect(() => {
-    const current = searchParams.get("q") ?? "";
-    setValue(current);
-  }, [searchParams]);
-
   const updateQuery = (nextValue: string) => {
-    setValue(nextValue);
     const params = new URLSearchParams(searchParams);
     if (tabParam) params.set("tab", tabParam);
     if (nextValue.trim()) {
@@ -53,11 +46,11 @@ export function ShopHeader({
         </span>
         <input
           type="search"
-          value={value}
+          defaultValue={initialQuery ?? ""}
           onChange={(event) => updateQuery(event.target.value)}
           placeholder=""
           aria-label="Search products"
-          className="h-7 w-40 rounded-full border border-black/15 bg-white pl-8 pr-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/20"
+          className="h-7 w-50 rounded-full border border-black/15 bg-white pl-8 pr-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/20"
         />
         {isPending && <span className="ml-2 text-[10px] text-gray-400">…</span>}
       </div>
