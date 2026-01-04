@@ -3,6 +3,9 @@ import Link from "next/link";
 import "./globals.css";
 import { getNotificationsSummary, getOptionalProfile } from "@/lib/queries";
 import { PendingButton } from "@/components/PendingButton";
+import { PortalNav } from "@/components/PortalNav";
+import { ThemeInitializer } from "@/components/ThemeInitializer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "Waashop Portal",
@@ -13,17 +16,17 @@ const navItems = [
   { href: "/", label: "Overview" },
   { href: "/deposits", label: "Deposits" },
   { href: "/notifications", label: "Notifications" },
-  { href: "/admin/vendors", label: "Admin · Vendors", roles: ["admin"] },
-  { href: "/admin/products", label: "Admin · Products", roles: ["admin"] },
-  { href: "/admin/home-hero", label: "Admin · Home hero", roles: ["admin"] },
-  { href: "/admin/home-highlights", label: "Admin · Home highlights", roles: ["admin"] },
-  { href: "/admin/shop-tabs", label: "Admin · Shop tabs", roles: ["admin"] },
-  { href: "/admin/orders", label: "Admin · Orders", roles: ["admin"] },
-  { href: "/admin/promo-cards", label: "Admin · Promo cards", roles: ["admin"] },
-  { href: "/admin/deposits", label: "Admin · Deposits", roles: ["admin"] },
-  { href: "/admin/users", label: "Admin · Users", roles: ["admin"] },
-  { href: "/admin/winners", label: "Admin · Winners", roles: ["admin"] },
-  { href: "/admin/settings", label: "Admin · Settings", roles: ["admin"] },
+  { href: "/admin/vendors", label: "Vendors", roles: ["admin"] },
+  { href: "/admin/products", label: "Products", roles: ["admin"] },
+  { href: "/admin/home-hero", label: "Home hero", roles: ["admin"] },
+  { href: "/admin/home-highlights", label: "Home highlights", roles: ["admin"] },
+  { href: "/admin/shop-tabs", label: "Shop tabs", roles: ["admin"] },
+  { href: "/admin/orders", label: "Orders", roles: ["admin"] },
+  { href: "/admin/promo-cards", label: "Promo cards", roles: ["admin"] },
+  { href: "/admin/deposits", label: "Deposits", roles: ["admin"] },
+  { href: "/admin/users", label: "Users", roles: ["admin"] },
+  { href: "/admin/winners", label: "Winners", roles: ["admin"] },
+  { href: "/admin/settings", label: "Settings", roles: ["admin"] },
   { href: "/vendor", label: "Vendor", roles: ["vendor", "admin"] },
 ];
 
@@ -50,21 +53,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en">
-      <body className="bg-slate-50 font-sans text-slate-900">
+      <body className="portal-theme font-sans text-slate-900">
         <div className="min-h-screen">
-          <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
-            <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-              <Link href="/" className="text-lg font-semibold text-indigo-600">
-                Waashop Portal
-              </Link>
-              <div className="flex flex-1 flex-col items-start gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-end sm:gap-6">
-                <nav className="flex flex-wrap gap-4">
-                  {filteredNavItems.map((item) => (
-                    <Link key={item.href} href={item.href} className="hover:text-indigo-600">
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
+          <ThemeInitializer />
+          <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+            <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+              <div className="flex flex-wrap items-center gap-4">
+                <Link href="/" className="text-lg font-semibold text-indigo-600">
+                  Waashop Portal
+                </Link>
+                {roles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+                    {roles.slice(0, 3).map((role) => (
+                      <span key={role} className="rounded-full border border-slate-200 px-2 py-1">
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-1 flex-col items-start gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-end">
+                <PortalNav items={filteredNavItems.map(({ href, label }) => ({ href, label }))} />
+                <ThemeToggle />
                 {isSignedIn ? (
                   <div className="flex items-center gap-3">
                     <Link

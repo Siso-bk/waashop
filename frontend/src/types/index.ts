@@ -30,6 +30,7 @@ export interface UserProfile {
   username?: string;
   minisBalance: number;
   lastTopWinAt?: string;
+  roles?: string[];
 }
 
 export interface AuthResponse {

@@ -3,6 +3,12 @@ import { getSessionUser } from "@/lib/queries";
 
 export default async function AccountPage() {
   const user = await getSessionUser();
+  const roles = user?.roles ?? [];
+  const isVendor = roles.includes("vendor");
+  const dashboardBase = process.env.NEXT_PUBLIC_DASHBOARD_URL || "";
+  const vendorPortalHref = dashboardBase
+    ? `${dashboardBase.replace(/\/+$/, "")}/vendor`
+    : "/vendor";
 
   if (!user) {
     return (
@@ -49,6 +55,19 @@ export default async function AccountPage() {
             Open
           </span>
         </Link>
+        {isVendor && (
+          <Link
+            href={vendorPortalHref}
+            className="group rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-black/30 hover:shadow-md"
+          >
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Vendor</p>
+            <h2 className="mt-2 text-lg font-semibold text-black">Vendor dashboard</h2>
+            <p className="mt-2 text-sm text-gray-600">Post products, mystery boxes, and challenges.</p>
+            <span className="mt-4 inline-flex text-xs font-semibold uppercase tracking-[0.3em] text-black">
+              Open
+            </span>
+          </Link>
+        )}
       </div>
     </div>
   );
