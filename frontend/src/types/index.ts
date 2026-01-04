@@ -115,6 +115,7 @@ export interface StandardProduct {
   description?: string;
   priceMinis: number;
   vendorName?: string;
+  imageUrl?: string;
 }
 
 export interface CustomerOrder {

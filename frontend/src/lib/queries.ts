@@ -201,6 +201,7 @@ export const getStandardProducts = async (): Promise<StandardProduct[]> => {
       description: product.description,
       priceMinis: product.priceMinis ?? 0,
       vendorName: product.vendorName,
+      imageUrl: product.imageUrl,
     }));
   } catch {
     return [];

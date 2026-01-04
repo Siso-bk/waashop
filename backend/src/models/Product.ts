@@ -15,6 +15,7 @@ export interface IProduct extends Document {
   description?: string;
   type: ProductType;
   status: ProductStatus;
+  categories?: string[];
   priceMinis: number;
   guaranteedMinMinis?: number;
   rewardTiers?: IRewardTier[];
@@ -42,6 +43,7 @@ const ProductSchema = new Schema<IProduct>(
     description: { type: String },
     type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE"], default: "MYSTERY_BOX" },
     status: { type: String, enum: ["DRAFT", "PENDING", "ACTIVE", "INACTIVE"], default: "DRAFT" },
+    categories: { type: [String], default: [] },
     priceMinis: { type: Number, required: true },
     guaranteedMinMinis: { type: Number },
     rewardTiers: { type: [RewardTierSchema], default: undefined },

@@ -131,6 +131,7 @@ const normalizeProduct = (product: any) => ({
   description: product.description,
   type: product.type,
   status: product.status,
+  categories: product.categories || [],
   priceMinis: product.priceMinis ?? 0,
   guaranteedMinMinis: product.guaranteedMinMinis ?? 0,
   rewardTiers: normalizeRewardTiers(product.rewardTiers),
@@ -406,6 +407,13 @@ const DEFAULT_SHOP_TABS = [
   { key: "products", label: "Products", order: 1, enabled: true },
   { key: "challenges", label: "Challenges", order: 2, enabled: true },
   { key: "coming-soon", label: "Coming soon", order: 3, enabled: true },
+];
+
+const DEFAULT_PRODUCT_CATEGORIES = [
+  { key: "apparel", label: "Apparel", order: 0, enabled: true },
+  { key: "accessories", label: "Accessories", order: 1, enabled: true },
+  { key: "collectibles", label: "Collectibles", order: 2, enabled: true },
+  { key: "digital", label: "Digital", order: 3, enabled: true },
 ];
 
 const normalizeHandle = (raw: string) => {
@@ -750,6 +758,17 @@ router.get("/shop-tabs", async (_req, res) => {
   res.json({ tabs });
 });
 
+router.get("/product-categories", async (_req, res) => {
+  await connectDB();
+  const settings = await getPlatformSettings();
+  const categories = (settings.productCategories && settings.productCategories.length
+    ? settings.productCategories
+    : DEFAULT_PRODUCT_CATEGORIES)
+    .filter((category) => category.enabled !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  res.json({ categories });
+});
+
 router.get("/admin/shop-tabs", authMiddleware, requireRole("admin"), async (_req, res) => {
   await connectDB();
   const settings = await getPlatformSettings();
@@ -786,6 +805,45 @@ router.put("/admin/shop-tabs", authMiddleware, requireRole("admin"), async (req,
   } catch (error) {
     console.error("Update shop tabs error", error);
     res.status(400).json({ error: "Unable to update shop tabs" });
+  }
+});
+
+router.get("/admin/product-categories", authMiddleware, requireRole("admin"), async (_req, res) => {
+  await connectDB();
+  const settings = await getPlatformSettings();
+  const categories = (settings.productCategories && settings.productCategories.length
+    ? settings.productCategories
+    : DEFAULT_PRODUCT_CATEGORIES).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  res.json({ categories });
+});
+
+router.put("/admin/product-categories", authMiddleware, requireRole("admin"), async (req, res) => {
+  const schema = z.object({
+    categories: z
+      .array(
+        z.object({
+          key: z.string().min(1).max(40).regex(/^[a-z0-9-]+$/i),
+          label: z.string().min(1).max(60),
+          order: z.number().int().min(0).max(1000).optional().default(0),
+          enabled: z.boolean().optional().default(true),
+        })
+      )
+      .max(20),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const deduped = payload.categories.reduce((acc, category) => {
+      if (!acc.some((item) => item.key.toLowerCase() === category.key.toLowerCase())) {
+        acc.push(category);
+      }
+      return acc;
+    }, [] as typeof payload.categories);
+    const updated = await updatePlatformSettings({ productCategories: deduped });
+    res.json({ categories: updated.productCategories || deduped });
+  } catch (error) {
+    console.error("Update product categories error", error);
+    res.status(400).json({ error: "Unable to update product categories" });
   }
 });
 
@@ -2054,6 +2112,7 @@ const standardProductSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
   priceMinis: z.number().positive(),
+  categories: z.array(z.string().min(1).max(40)).max(8).optional(),
 });
 
 const challengeSchema = z.object({
@@ -2076,6 +2135,7 @@ router.post(
       const submitter = req.userDoc!;
       if (type === "STANDARD") {
         const payload = standardProductSchema.parse(req.body);
+        const categories = (payload.categories || []).map((category) => category.trim().toLowerCase());
         await chargeSubmissionFee(submitter, settings.feeMysteryBox || 0, "PRODUCT_SUBMISSION_FEE", {
           name: payload.name,
         });
@@ -2086,6 +2146,7 @@ router.post(
           type: "STANDARD",
           status: "PENDING",
           priceMinis: payload.priceMinis,
+          categories,
         });
         await product.save();
         return res.json({ product: normalizeProduct(product) });
@@ -2159,6 +2220,7 @@ router.patch(
           description: payload.description,
           priceMinis: payload.priceMinis,
           type: "STANDARD",
+          categories: (payload.categories || []).map((category) => category.trim().toLowerCase()),
           guaranteedMinMinis: undefined,
           rewardTiers: undefined,
           ticketPriceMinis: undefined,
