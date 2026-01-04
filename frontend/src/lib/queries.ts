@@ -208,6 +208,23 @@ export const getStandardProducts = async (): Promise<StandardProduct[]> => {
   }
 };
 
+export const getStandardProductById = async (id: string): Promise<StandardProduct | null> => {
+  try {
+    const data = await backendFetch<{ product: any }>(`/api/products/${id}`, { auth: false });
+    if (!data.product || data.product.type !== "STANDARD") return null;
+    return {
+      id: data.product.id || data.product._id || "",
+      name: data.product.name,
+      description: data.product.description,
+      priceMinis: data.product.priceMinis ?? 0,
+      vendorName: data.product.vendorName,
+      imageUrl: data.product.imageUrl,
+    };
+  } catch {
+    return null;
+  }
+};
+
 export const getCustomerOrders = async (): Promise<CustomerOrder[]> => {
   const data = await backendFetch<{ orders: CustomerOrder[] }>("/api/orders");
   return data.orders;

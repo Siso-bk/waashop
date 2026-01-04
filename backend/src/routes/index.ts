@@ -2440,6 +2440,24 @@ router.get("/products", async (req, res) => {
   });
 });
 
+router.get("/products/:id", async (req, res) => {
+  await connectDB();
+  const product = await Product.findOne({ _id: req.params.id, status: "ACTIVE" }).lean();
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+  const vendor = product.vendorId
+    ? await Vendor.findById(product.vendorId).lean()
+    : null;
+  res.json({
+    product: {
+      id: product._id.toString(),
+      ...normalizeProduct(product),
+      vendorName: vendor?.name,
+    },
+  });
+});
+
 router.post("/orders", authMiddleware, async (req, res) => {
   const schema = z.object({
     productId: z.string().min(1),
