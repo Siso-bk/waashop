@@ -37,7 +37,7 @@ export function StandardProductOrderCard({
       <div className="relative z-10 mb-2 block">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <div className="h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-white">
+          <div className="h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-[color:var(--surface-bg)]">
             <img
               src={product.imageUrl}
               alt={product.name}
@@ -46,7 +46,7 @@ export function StandardProductOrderCard({
             />
           </div>
         ) : (
-          <div className="flex h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-black/15 bg-gray-50">
+          <div className="flex h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-black/15 bg-[color:var(--surface-bg)]">
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-gray-400">
               <path
                 fill="currentColor"

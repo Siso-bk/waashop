@@ -180,17 +180,14 @@ export default async function HomePage() {
           </div>
           <div className="mt-6 flex gap-4 overflow-x-auto pb-3">
             {products.slice(0, 8).map((product) => (
-              <article
+              <Link
                 key={product.id}
-                className="group relative flex min-w-[220px] flex-col gap-3 rounded-2xl border border-black/10 p-4 transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg"
+                href={`/products/${product.id}`}
+                aria-label={`View ${product.name}`}
+                className="group flex min-w-[220px] flex-col gap-3 rounded-2xl border border-black/10 p-4 transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg"
               >
-                <Link
-                  href={`/products/${product.id}`}
-                  aria-label={`View ${product.name}`}
-                  className="absolute inset-0"
-                />
                 {product.imageUrl ? (
-                  <div className="h-32 w-full overflow-hidden rounded-xl border border-black/10 bg-white">
+                  <div className="h-32 w-full overflow-hidden rounded-xl border border-black/10 bg-[color:var(--surface-bg)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={product.imageUrl}
@@ -199,7 +196,7 @@ export default async function HomePage() {
                     />
                   </div>
                 ) : (
-                  <div className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-black/15 bg-gray-50">
+                  <div className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-black/15 bg-[color:var(--surface-bg)]">
                     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-gray-400">
                       <path
                         fill="currentColor"
@@ -211,20 +208,20 @@ export default async function HomePage() {
                     </span>
                   </div>
                 )}
-                <div className="relative z-10">
+                <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Standard product</p>
                   <p className="mt-2 text-lg font-semibold text-black">{product.name}</p>
                   {product.description && (
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">{product.description}</p>
                   )}
                 </div>
-                <div className="relative z-10 flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>Price</span>
                   <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
                     {formatMinis(product.priceMinis)}
                   </span>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
           <div className="mt-4 flex justify-end">
