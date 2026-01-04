@@ -52,7 +52,7 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
             <p>Shipping: {order.shippingAddress || "—"}</p>
             <p>Tracking: {order.trackingCode || "—"}</p>
           </div>
-          <div className="mt-4 rounded-2xl border border-black/10 bg-gray-50 p-4 text-xs text-gray-600">
+          <div className="mt-4 rounded-2xl border border-black/10 bg-white p-4 text-xs text-gray-600">
             <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Order progress</p>
             <div className="mt-4 space-y-3">
               {(order.events && order.events.length > 0 ? order.events : buildFallbackEvents(order)).map(
@@ -65,10 +65,10 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
                       <div className="relative flex flex-col items-center">
                         <span
                           className={`mt-0.5 flex h-3 w-3 items-center justify-center rounded-full ${
-                            isDelivered ? "bg-emerald-500" : "bg-black/60"
+                            isDelivered ? "bg-emerald-500" : "bg-[color:var(--app-text)]"
                           }`}
                         />
-                        {!isLast && <span className="mt-1 h-7 w-px bg-black/15" />}
+                        {!isLast && <span className="mt-1 h-7 w-px bg-[color:var(--surface-border)]" />}
                       </div>
                       <div>
                         <p className={`text-xs font-semibold ${isDelivered ? "text-black" : "text-black"}`}>

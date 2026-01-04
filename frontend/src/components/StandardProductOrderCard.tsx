@@ -37,12 +37,14 @@ export function StandardProductOrderCard({
       <div className="relative z-10 mb-2 block">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="h-28 w-full rounded-2xl border border-black/10 object-cover"
-            loading="lazy"
-          />
+          <div className="h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-white">
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
         ) : (
           <div className="flex h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-black/15 bg-gray-50">
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-gray-400">

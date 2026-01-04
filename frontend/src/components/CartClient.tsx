@@ -227,7 +227,7 @@ export function CartClient({
                   className="w-full rounded-xl border border-black/10 px-3 py-2"
                 />
               </label>
-              <div className="rounded-2xl border border-black/10 bg-gray-50 p-4 text-xs text-gray-600">
+              <div className="rounded-2xl border border-black/10 bg-white p-4 text-xs text-gray-600">
                 {checkoutItems.map((item) => (
                   <div key={item.product.id} className="flex items-center justify-between py-1">
                     <span>

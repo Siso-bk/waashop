@@ -190,12 +190,14 @@ export default async function HomePage() {
                   className="absolute inset-0"
                 />
                 {product.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="h-32 w-full rounded-xl object-cover"
-                  />
+                  <div className="h-32 w-full overflow-hidden rounded-xl border border-black/10 bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                 ) : (
                   <div className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-black/15 bg-gray-50">
                     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-gray-400">
