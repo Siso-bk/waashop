@@ -189,13 +189,25 @@ export default async function HomePage() {
                   aria-label={`View ${product.name}`}
                   className="absolute inset-0"
                 />
-                {product.imageUrl && (
+                {product.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={product.imageUrl}
                     alt={product.name}
                     className="h-32 w-full rounded-xl object-cover"
                   />
+                ) : (
+                  <div className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-black/15 bg-gray-50">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-gray-400">
+                      <path
+                        fill="currentColor"
+                        d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v9A2.5 2.5 0 0 1 17.5 17h-11A2.5 2.5 0 0 1 4 14.5v-9Zm2.5-.5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V9l-3.2 3.2a1 1 0 0 1-1.3.1L10 11l-4 4V5.5a.5.5 0 0 0-.5-.5Z"
+                      />
+                    </svg>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-400">
+                      No image
+                    </span>
+                  </div>
                 )}
                 <div className="relative z-10">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Standard product</p>

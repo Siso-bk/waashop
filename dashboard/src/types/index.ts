@@ -50,7 +50,19 @@ export interface OrderDto {
   vendorOwnerId: string;
   productId: string;
   productType: "STANDARD";
-  status: "PLACED" | "SHIPPED" | "DELIVERED" | "COMPLETED" | "DISPUTED" | "REFUNDED" | "CANCELLED";
+  status:
+    | "PLACED"
+    | "PACKED"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
+    | "DISPUTED"
+    | "REFUNDED"
+    | "CANCELLED"
+    | "REJECTED"
+    | "DAMAGED"
+    | "UNSUCCESSFUL";
   amountMinis: number;
   quantity: number;
   shippingName?: string;
@@ -58,6 +70,12 @@ export interface OrderDto {
   shippingAddress?: string;
   notes?: string;
   trackingCode?: string;
+  events?: Array<{
+    status: OrderDto["status"];
+    note?: string;
+    actor: "system" | "vendor" | "buyer" | "admin";
+    createdAt: string;
+  }>;
   placedAt?: string;
   shippedAt?: string;
   deliveredAt?: string;

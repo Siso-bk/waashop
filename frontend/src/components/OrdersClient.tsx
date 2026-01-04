@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { CustomerOrder } from "@/types";
 import { formatMinis } from "@/lib/minis";
 
@@ -53,8 +54,34 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
             <p>Shipping: {order.shippingAddress || "—"}</p>
             <p>Tracking: {order.trackingCode || "—"}</p>
           </div>
+          <div className="mt-4 rounded-2xl border border-black/10 bg-gray-50 p-4 text-xs text-gray-600">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Order progress</p>
+            <div className="mt-3 space-y-2">
+              {(order.events && order.events.length > 0 ? order.events : buildFallbackEvents(order)).map(
+                (event, index) => (
+                  <div key={`${order.id}-${event.status}-${index}`} className="flex items-start gap-3">
+                    <span className="mt-0.5 h-2 w-2 rounded-full bg-black/70" />
+                    <div>
+                      <p className="text-xs font-semibold text-black">{formatStatus(event.status)}</p>
+                      {event.note && <p className="text-xs text-gray-500">{event.note}</p>}
+                      <p className="text-[10px] text-gray-400">
+                        {new Date(event.createdAt).toLocaleString()} · {event.actor}
+                      </p>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            {(order.status === "PLACED" || order.status === "SHIPPED" || order.status === "DELIVERED") && (
+            <Link
+              href={`/chat?order=${order.id}`}
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 px-3 py-1 font-semibold text-gray-600 hover:bg-gray-100"
+            >
+              <span aria-hidden>💬</span>
+              Chat
+            </Link>
+            {(["PLACED", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"] as const).includes(order.status) && (
               <button
                 type="button"
                 onClick={() => postAction(`/api/orders/${order.id}/dispute`, { reason: "Not received" })}
@@ -63,7 +90,7 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
                 Dispute
               </button>
             )}
-            {(order.status === "SHIPPED" || order.status === "DELIVERED") && (
+            {(["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"] as const).includes(order.status) && (
               <button
                 type="button"
                 onClick={() => postAction(`/api/orders/${order.id}/confirm`)}
@@ -88,3 +115,41 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
     </div>
   );
 }
+
+const STATUS_LABELS: Record<CustomerOrder["status"], string> = {
+  PLACED: "Order placed",
+  PACKED: "Packed",
+  SHIPPED: "Shipped",
+  OUT_FOR_DELIVERY: "Out for delivery",
+  DELIVERED: "Delivered",
+  COMPLETED: "Completed",
+  DISPUTED: "Disputed",
+  REFUNDED: "Refunded",
+  CANCELLED: "Cancelled",
+  REJECTED: "Rejected",
+  DAMAGED: "Damaged",
+  UNSUCCESSFUL: "Unsuccessful",
+};
+
+const formatStatus = (status: CustomerOrder["status"]) => STATUS_LABELS[status] ?? status;
+
+const buildFallbackEvents = (order: CustomerOrder) => {
+  const events: Array<{
+    status: CustomerOrder["status"];
+    note?: string;
+    actor: "system";
+    createdAt: string;
+  }> = [];
+  const placedAt = order.placedAt ?? order.createdAt ?? new Date().toISOString();
+  events.push({ status: "PLACED", actor: "system", createdAt: placedAt });
+  if (order.shippedAt) {
+    events.push({ status: "SHIPPED", actor: "system", createdAt: order.shippedAt });
+  }
+  if (order.deliveredAt) {
+    events.push({ status: "DELIVERED", actor: "system", createdAt: order.deliveredAt });
+  }
+  if (!events.some((event) => event.status === order.status)) {
+    events.push({ status: order.status, actor: "system", createdAt: order.updatedAt ?? placedAt });
+  }
+  return events;
+};

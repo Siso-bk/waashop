@@ -360,20 +360,31 @@ function OrderCard({ order }: { order: OrderDto }) {
       {order.status !== "COMPLETED" &&
         order.status !== "REFUNDED" &&
         order.status !== "CANCELLED" && (
-          <form action={vendorUpdateOrder} className="mt-3 grid gap-2 text-xs sm:grid-cols-[1fr,1fr,auto]">
+          <form action={vendorUpdateOrder} className="mt-3 grid gap-2 text-xs sm:grid-cols-[1fr,1fr,1fr,auto]">
             <input type="hidden" name="orderId" value={order.id} />
             <select
               name="status"
-              defaultValue={order.status === "PLACED" ? "SHIPPED" : "DELIVERED"}
+              defaultValue=""
               className="rounded-lg border border-slate-200 px-2 py-1"
             >
-              <option value="SHIPPED">Mark shipped</option>
-              <option value="DELIVERED">Mark delivered</option>
+              <option value="">Add update only</option>
+              <option value="PACKED">Packed</option>
+              <option value="SHIPPED">Shipped</option>
+              <option value="OUT_FOR_DELIVERY">Out for delivery</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="DAMAGED">Damaged</option>
+              <option value="UNSUCCESSFUL">Unsuccessful</option>
             </select>
             <input
               name="trackingCode"
               defaultValue={order.trackingCode || ""}
               placeholder="Tracking code"
+              className="rounded-lg border border-slate-200 px-2 py-1"
+            />
+            <input
+              name="note"
+              placeholder="Vendor note"
               className="rounded-lg border border-slate-200 px-2 py-1"
             />
             <PendingButton pendingLabel="Updating..." className="rounded-lg bg-indigo-600 px-3 py-1 text-white">

@@ -104,18 +104,24 @@ export const updateVendorOrderAction = async (
   const orderId = formData.get("orderId");
   const status = formData.get("status");
   const trackingCode = formData.get("trackingCode");
+  const note = formData.get("note");
   if (!orderId || typeof orderId !== "string") {
     return { error: "Missing order id" };
   }
-  if (!status || typeof status !== "string") {
-    return { error: "Missing status" };
+  const statusValue = typeof status === "string" && status.trim() ? status.trim() : undefined;
+  const trackingValue =
+    typeof trackingCode === "string" && trackingCode.trim() ? trackingCode.trim() : undefined;
+  const noteValue = typeof note === "string" && note.trim() ? note.trim() : undefined;
+  if (!statusValue && !trackingValue && !noteValue) {
+    return { error: "Provide a status, tracking code, or note" };
   }
   try {
     await backendFetch(`/api/vendors/orders/${orderId}`, {
       method: "PATCH",
       body: JSON.stringify({
-        status,
-        trackingCode: typeof trackingCode === "string" && trackingCode.trim() ? trackingCode.trim() : undefined,
+        status: statusValue,
+        trackingCode: trackingValue,
+        note: noteValue,
       }),
     });
     revalidatePath("/vendor");

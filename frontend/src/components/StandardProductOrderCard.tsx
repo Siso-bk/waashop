@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatMinis } from "@/lib/minis";
 import type { StandardProduct } from "@/types";
 
@@ -15,13 +15,25 @@ export function StandardProductOrderCard({
   onAddToCart: (product: StandardProduct) => void;
   onOrderNow: (product: StandardProduct) => void;
 }) {
+  const router = useRouter();
+  const handleNavigate = () => {
+    router.push(`/products/${product.id}`);
+  };
+
   return (
-    <article className="group relative flex flex-col rounded-3xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg">
-      <Link
-        href={`/products/${product.id}`}
-        aria-label={`View ${product.name}`}
-        className="absolute inset-0 z-0"
-      />
+    <article
+      className="group relative flex cursor-pointer flex-col rounded-3xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg"
+      role="link"
+      tabIndex={0}
+      aria-label={`View ${product.name}`}
+      onClick={handleNavigate}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleNavigate();
+        }
+      }}
+    >
       <div className="relative z-10 mb-2 block">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -64,14 +76,20 @@ export function StandardProductOrderCard({
         <div className="relative z-10 mt-5 space-y-2 text-sm text-gray-700">
           <button
             type="button"
-            onClick={() => onAddToCart(product)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAddToCart(product);
+            }}
             className="w-full rounded-full border border-black/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-black transition hover:bg-black hover:text-white"
           >
             Add to cart
           </button>
           <button
             type="button"
-            onClick={() => onOrderNow(product)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOrderNow(product);
+            }}
             className="w-full rounded-full bg-black px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-white transition hover:bg-gray-900"
           >
             Order now

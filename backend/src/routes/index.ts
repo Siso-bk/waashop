@@ -167,6 +167,7 @@ const normalizeOrder = (order: IOrder) => ({
   cancelledAt: order.cancelledAt,
   escrowReleased: order.escrowReleased,
   disputeId: order.disputeId ? order.disputeId.toString() : undefined,
+  events: order.events || [],
   createdAt: order.createdAt,
   updatedAt: order.updatedAt,
 });
@@ -2502,6 +2503,14 @@ router.post("/orders", authMiddleware, async (req, res) => {
         productId: product._id,
         productType: "STANDARD",
         status: "PLACED",
+        events: [
+          {
+            status: "PLACED",
+            note: "Order placed",
+            actor: "system",
+            createdAt: new Date(),
+          },
+        ],
         amountMinis: total,
         quantity,
         shippingName: payload.shippingName,
@@ -2570,6 +2579,10 @@ router.post("/orders/:id/cancel", authMiddleware, async (req, res) => {
     order.status = "CANCELLED";
     order.cancelledAt = new Date();
     order.escrowReleased = true;
+    order.events = [
+      ...(order.events || []),
+      { status: "CANCELLED", note: "Order cancelled", actor: "buyer", createdAt: new Date() },
+    ];
     await order.save();
 
     const buyer = await User.findById(order.buyerId).exec();
@@ -2597,7 +2610,7 @@ router.post("/orders/:id/confirm", authMiddleware, async (req, res) => {
     await connectDB();
     const order = await Order.findOne({ _id: req.params.id, buyerId: req.userId }).exec();
     if (!order) return res.status(404).json({ error: "Order not found" });
-    if (!["SHIPPED", "DELIVERED"].includes(order.status)) {
+    if (!["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status)) {
       return res.status(400).json({ error: "Order not ready for confirmation" });
     }
     if (order.escrowReleased) {
@@ -2619,6 +2632,10 @@ router.post("/orders/:id/confirm", authMiddleware, async (req, res) => {
     order.status = "COMPLETED";
     order.completedAt = new Date();
     order.escrowReleased = true;
+    order.events = [
+      ...(order.events || []),
+      { status: "COMPLETED", note: "Delivery confirmed", actor: "buyer", createdAt: new Date() },
+    ];
     await order.save();
 
     await createNotification(order.vendorOwnerId, {
@@ -2661,6 +2678,10 @@ router.post("/orders/:id/dispute", authMiddleware, async (req, res) => {
     order.status = "DISPUTED";
     order.disputedAt = new Date();
     order.disputeId = dispute._id;
+    order.events = [
+      ...(order.events || []),
+      { status: "DISPUTED", note: payload.reason, actor: "buyer", createdAt: new Date() },
+    ];
     await order.save();
 
     await createNotification(order.vendorOwnerId, {
@@ -2685,34 +2706,61 @@ router.get("/vendors/orders", authMiddleware, loadVendor, requireApprovedVendor,
 
 router.patch("/vendors/orders/:id", authMiddleware, loadVendor, requireApprovedVendor, async (req, res) => {
   const schema = z.object({
-    status: z.enum(["SHIPPED", "DELIVERED"]),
+    status: z
+      .enum([
+        "PACKED",
+        "SHIPPED",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "REJECTED",
+        "DAMAGED",
+        "UNSUCCESSFUL",
+      ])
+      .optional(),
     trackingCode: z.string().max(120).optional(),
+    note: z.string().max(280).optional(),
   });
   try {
     const payload = schema.parse(req.body);
+    if (!payload.status && !payload.note && !payload.trackingCode) {
+      return res.status(400).json({ error: "Provide a status, note, or tracking code" });
+    }
     await connectDB();
     const order = await Order.findOne({ _id: req.params.id, vendorId: req.vendorDoc!._id }).exec();
     if (!order) return res.status(404).json({ error: "Order not found" });
     if (["COMPLETED", "REFUNDED", "CANCELLED"].includes(order.status)) {
       return res.status(400).json({ error: "Order cannot be updated" });
     }
-    if (payload.status === "SHIPPED" && order.status === "PLACED") {
-      order.status = "SHIPPED";
-      order.shippedAt = new Date();
-    }
-    if (payload.status === "DELIVERED") {
-      order.status = "DELIVERED";
-      order.deliveredAt = new Date();
+    const now = new Date();
+    if (payload.status) {
+      order.status = payload.status;
+      if (payload.status === "SHIPPED") {
+        order.shippedAt = now;
+      }
+      if (payload.status === "DELIVERED") {
+        order.deliveredAt = now;
+      }
     }
     if (payload.trackingCode) {
       order.trackingCode = payload.trackingCode;
+    }
+    if (payload.status || payload.note) {
+      order.events = [
+        ...(order.events || []),
+        {
+          status: payload.status ?? order.status,
+          note: payload.note,
+          actor: "vendor",
+          createdAt: now,
+        },
+      ];
     }
     await order.save();
 
     await createNotification(order.buyerId, {
       type: "ORDER_UPDATE",
-      title: `Order ${order.status.toLowerCase()}`,
-      body: payload.trackingCode ? `Tracking: ${payload.trackingCode}` : undefined,
+      title: `Order ${order.status.toLowerCase().replace(/_/g, " ")}`,
+      body: payload.note || (payload.trackingCode ? `Tracking: ${payload.trackingCode}` : undefined),
       meta: { orderId: order._id },
     });
 
@@ -2762,6 +2810,15 @@ router.post("/admin/orders/:id/resolve", authMiddleware, requireRole("admin"), a
       order.status = "REFUNDED";
       order.refundedAt = new Date();
       order.escrowReleased = true;
+      order.events = [
+        ...(order.events || []),
+        {
+          status: "REFUNDED",
+          note: payload.adminNote || "Refund issued",
+          actor: "admin",
+          createdAt: new Date(),
+        },
+      ];
     } else if (payload.resolution === "RELEASE") {
       const vendorOwner = await User.findById(order.vendorOwnerId).exec();
       if (vendorOwner) {
@@ -2778,10 +2835,28 @@ router.post("/admin/orders/:id/resolve", authMiddleware, requireRole("admin"), a
       order.status = "COMPLETED";
       order.completedAt = new Date();
       order.escrowReleased = true;
+      order.events = [
+        ...(order.events || []),
+        {
+          status: "COMPLETED",
+          note: payload.adminNote || "Funds released to vendor",
+          actor: "admin",
+          createdAt: new Date(),
+        },
+      ];
     } else {
       order.status = "COMPLETED";
       order.completedAt = new Date();
       order.escrowReleased = true;
+      order.events = [
+        ...(order.events || []),
+        {
+          status: "COMPLETED",
+          note: payload.adminNote || "Dispute resolved",
+          actor: "admin",
+          createdAt: new Date(),
+        },
+      ];
     }
     await order.save();
 

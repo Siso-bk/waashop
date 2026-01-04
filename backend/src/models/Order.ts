@@ -2,12 +2,26 @@ import { Schema, model, models, Document, Types } from "mongoose";
 
 export type OrderStatus =
   | "PLACED"
+  | "PACKED"
   | "SHIPPED"
+  | "OUT_FOR_DELIVERY"
   | "DELIVERED"
   | "COMPLETED"
   | "DISPUTED"
   | "REFUNDED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "REJECTED"
+  | "DAMAGED"
+  | "UNSUCCESSFUL";
+
+export type OrderEventActor = "system" | "vendor" | "buyer" | "admin";
+
+export interface IOrderEvent {
+  status: OrderStatus;
+  note?: string;
+  actor: OrderEventActor;
+  createdAt: Date;
+}
 
 export interface IOrder extends Document {
   buyerId: Types.ObjectId;
@@ -32,9 +46,20 @@ export interface IOrder extends Document {
   cancelledAt?: Date;
   escrowReleased: boolean;
   disputeId?: Types.ObjectId | null;
+  events?: IOrderEvent[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+const OrderEventSchema = new Schema<IOrderEvent>(
+  {
+    status: { type: String, required: true },
+    note: { type: String },
+    actor: { type: String, enum: ["system", "vendor", "buyer", "admin"], required: true },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
 
 const OrderSchema = new Schema<IOrder>(
   {
@@ -45,7 +70,20 @@ const OrderSchema = new Schema<IOrder>(
     productType: { type: String, enum: ["STANDARD"], default: "STANDARD" },
     status: {
       type: String,
-      enum: ["PLACED", "SHIPPED", "DELIVERED", "COMPLETED", "DISPUTED", "REFUNDED", "CANCELLED"],
+      enum: [
+        "PLACED",
+        "PACKED",
+        "SHIPPED",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "COMPLETED",
+        "DISPUTED",
+        "REFUNDED",
+        "CANCELLED",
+        "REJECTED",
+        "DAMAGED",
+        "UNSUCCESSFUL",
+      ],
       default: "PLACED",
     },
     amountMinis: { type: Number, required: true },
@@ -64,6 +102,7 @@ const OrderSchema = new Schema<IOrder>(
     cancelledAt: { type: Date },
     escrowReleased: { type: Boolean, default: false },
     disputeId: { type: Schema.Types.ObjectId, ref: "OrderDispute" },
+    events: { type: [OrderEventSchema], default: [] },
   },
   { timestamps: true }
 );

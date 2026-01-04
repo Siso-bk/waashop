@@ -121,7 +121,19 @@ export interface StandardProduct {
 export interface CustomerOrder {
   id: string;
   productId: string;
-  status: "PLACED" | "SHIPPED" | "DELIVERED" | "COMPLETED" | "DISPUTED" | "REFUNDED" | "CANCELLED";
+  status:
+    | "PLACED"
+    | "PACKED"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
+    | "DISPUTED"
+    | "REFUNDED"
+    | "CANCELLED"
+    | "REJECTED"
+    | "DAMAGED"
+    | "UNSUCCESSFUL";
   amountMinis: number;
   quantity: number;
   shippingName?: string;
@@ -129,6 +141,12 @@ export interface CustomerOrder {
   shippingAddress?: string;
   notes?: string;
   trackingCode?: string;
+  events?: Array<{
+    status: CustomerOrder["status"];
+    note?: string;
+    actor: "system" | "vendor" | "buyer" | "admin";
+    createdAt: string;
+  }>;
   placedAt?: string;
   shippedAt?: string;
   deliveredAt?: string;
@@ -136,6 +154,8 @@ export interface CustomerOrder {
   disputedAt?: string;
   refundedAt?: string;
   cancelledAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NotificationItem {
