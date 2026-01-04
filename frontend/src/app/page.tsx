@@ -7,6 +7,7 @@ import {
   getPromoCards,
   getChallenges,
   getWinners,
+  getStandardProducts,
 } from "@/lib/queries";
 import type { WinnerSpotlightDto } from "@/types";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
@@ -16,7 +17,7 @@ import { HeroCards } from "@/components/HeroCards";
 import { formatMinis } from "@/lib/minis";
 
 export default async function HomePage() {
-  const [user, boxes, hero, highlights, promoCards, challenges, winners] = await Promise.all([
+  const [user, boxes, hero, highlights, promoCards, challenges, winners, products] = await Promise.all([
     getSessionUser(),
     getActiveBoxes(),
     getHomeHero(),
@@ -24,6 +25,7 @@ export default async function HomePage() {
     getPromoCards(),
     getChallenges(),
     getWinners(),
+    getStandardProducts(),
   ]);
   const heroBackgroundClass = hero.backgroundClass ?? "bg-black";
   const heroTextClass = hero.textClass ?? "text-white";
@@ -133,7 +135,9 @@ export default async function HomePage() {
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Challenges</p>
               <h2 className="text-2xl font-semibold text-black">Play-to-win drops</h2>
             </div>
-            <p className="text-sm text-gray-500">Buy tickets. Winner takes the prize.</p>
+            <Link href="/shop?tab=challenges" className="text-sm text-gray-500 hover:text-gray-700">
+              View more
+            </Link>
           </div>
           <div className="mt-6 flex gap-4 overflow-x-auto pb-3">
             {challenges.map((challenge) => {
@@ -163,12 +167,63 @@ export default async function HomePage() {
         </section>
       )}
 
+      {products.length > 0 && (
+        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Products</p>
+              <h2 className="text-2xl font-semibold text-black">Latest arrivals</h2>
+            </div>
+            <Link href="/shop?tab=products" className="text-sm text-gray-500 hover:text-gray-700">
+              View all products
+            </Link>
+          </div>
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-3">
+            {products.slice(0, 8).map((product) => (
+              <article key={product.id} className="flex min-w-[220px] flex-col gap-3 rounded-2xl border border-black/10 p-4">
+                {product.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="h-32 w-full rounded-xl object-cover"
+                  />
+                )}
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Standard product</p>
+                  <Link href={`/products/${product.id}`} className="mt-2 block text-lg font-semibold text-black">
+                    {product.name}
+                  </Link>
+                  {product.description && (
+                    <p className="mt-1 text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Price</span>
+                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+                    {formatMinis(product.priceMinis)}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Link href="/shop?tab=products" className="text-xs font-semibold uppercase tracking-[0.3em] text-black">
+              View more →
+            </Link>
+          </div>
+        </section>
+      )}
+
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Boxes</p>
             <h2 className="text-2xl font-semibold text-black">Live drops</h2>
           </div>
+          <Link href="/shop?tab=mystery-boxes" className="text-sm text-gray-500 hover:text-gray-700">
+            View more
+          </Link>
         </div>
         <div className="flex gap-6 overflow-x-auto pb-3">
           {boxes.map((box) => (
@@ -205,23 +260,25 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-black bg-black p-6 text-white sm:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-white/50">Vendors</p>
-            <h3 className="text-xl font-semibold">Drop products on Waashop</h3>
-            <p className="text-sm text-white/80">
-              One approval unlocks Product, mystery-box and challenge post opportunities.
-            </p>
+      {!user?.roles?.includes("vendor") && (
+        <section className="rounded-3xl border border-black bg-black p-6 text-white sm:p-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/50">Vendors</p>
+              <h3 className="text-xl font-semibold">Drop products on Waashop</h3>
+              <p className="text-sm text-white/80">
+                One approval unlocks Product, mystery-box and challenge post opportunities.
+              </p>
+            </div>
+            <Link
+              href="/vendor/apply"
+              className="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
+            >
+              Start vendor application
+            </Link>
           </div>
-          <Link
-            href="/vendor/apply"
-            className="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
-          >
-            Start vendor application
-          </Link>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

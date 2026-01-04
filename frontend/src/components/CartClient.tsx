@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { formatMinis } from "@/lib/minis";
@@ -40,9 +40,19 @@ export function CartClient({
   createCartOrders: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
 }) {
   const cart = useCart();
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
-  const [state, action] = useActionState(createCartOrders, initialState);
+  const shouldAutoOpen = initialCheckout && cart.length > 0;
+  const [checkoutOpen, setCheckoutOpen] = useState(shouldAutoOpen);
+  const [checkoutItems, setCheckoutItems] = useState<CartItem[]>(
+    shouldAutoOpen ? cart : []
+  );
+  const [state, action] = useActionState(async (prevState: ActionState, formData: FormData) => {
+    const next = await createCartOrders(prevState, formData);
+    if (next.status === "success") {
+      clearCart();
+      setTimeout(() => setCheckoutOpen(false), 1200);
+    }
+    return next;
+  }, initialState);
 
   const cartTotal = useMemo(
     () => cart.reduce((sum, item) => sum + (item.product.priceMinis || 0) * item.quantity, 0),
@@ -69,22 +79,6 @@ export function CartClient({
     [checkoutItems]
   );
 
-  useEffect(() => {
-    if (initialCheckout && cart.length > 0) {
-      setCheckoutItems(cart);
-      setCheckoutOpen(true);
-    }
-  }, [cart, initialCheckout]);
-
-  useEffect(() => {
-    if (state.status === "success") {
-      clearCart();
-      const timer = setTimeout(() => setCheckoutOpen(false), 1200);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [state.status]);
-
   const openCheckout = () => {
     if (cart.length === 0) return;
     setCheckoutItems(cart);
@@ -106,7 +100,12 @@ export function CartClient({
                     </span>
                   )}
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-black">{item.product.name}</p>
+                    <p
+                      className="max-w-[140px] truncate font-semibold text-black sm:max-w-[240px]"
+                      title={item.product.name}
+                    >
+                      {item.product.name}
+                    </p>
                     <p className="text-gray-500">{formatMinis(item.product.priceMinis)} each</p>
                   </div>
                 </div>
