@@ -81,7 +81,7 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
               <span aria-hidden>💬</span>
               Chat
             </Link>
-            {(["PLACED", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"] as const).includes(order.status) && (
+            {isActiveDisputeEligible(order.status) && (
               <button
                 type="button"
                 onClick={() => postAction(`/api/orders/${order.id}/dispute`, { reason: "Not received" })}
@@ -90,7 +90,7 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
                 Dispute
               </button>
             )}
-            {(["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"] as const).includes(order.status) && (
+            {isConfirmEligible(order.status) && (
               <button
                 type="button"
                 onClick={() => postAction(`/api/orders/${order.id}/confirm`)}
@@ -132,6 +132,12 @@ const STATUS_LABELS: Record<CustomerOrder["status"], string> = {
 };
 
 const formatStatus = (status: CustomerOrder["status"]) => STATUS_LABELS[status] ?? status;
+
+const isActiveDisputeEligible = (status: CustomerOrder["status"]) =>
+  ["PLACED", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(status);
+
+const isConfirmEligible = (status: CustomerOrder["status"]) =>
+  ["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(status);
 
 const buildFallbackEvents = (order: CustomerOrder) => {
   const events: Array<{
