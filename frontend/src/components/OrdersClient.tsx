@@ -5,14 +5,12 @@ import Link from "next/link";
 import type { CustomerOrder } from "@/types";
 import { formatMinis } from "@/lib/minis";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
 export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[] }) {
   const [orders, setOrders] = useState<CustomerOrder[]>(initialOrders);
   const [message, setMessage] = useState<string | null>(null);
 
   const refreshOrders = async () => {
-    const response = await fetch(`${API_BASE_URL}/api/orders`, { credentials: "include" });
+    const response = await fetch("/api/orders", { credentials: "include" });
     if (!response.ok) return;
     const data = await response.json().catch(() => ({}));
     if (data?.orders) {
@@ -22,7 +20,7 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
 
   const postAction = async (path: string, body?: Record<string, unknown>) => {
     setMessage(null);
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const response = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -56,20 +54,39 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
           </div>
           <div className="mt-4 rounded-2xl border border-black/10 bg-gray-50 p-4 text-xs text-gray-600">
             <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Order progress</p>
-            <div className="mt-3 space-y-2">
+            <div className="mt-4 space-y-3">
               {(order.events && order.events.length > 0 ? order.events : buildFallbackEvents(order)).map(
-                (event, index) => (
-                  <div key={`${order.id}-${event.status}-${index}`} className="flex items-start gap-3">
-                    <span className="mt-0.5 h-2 w-2 rounded-full bg-black/70" />
-                    <div>
-                      <p className="text-xs font-semibold text-black">{formatStatus(event.status)}</p>
-                      {event.note && <p className="text-xs text-gray-500">{event.note}</p>}
-                      <p className="text-[10px] text-gray-400">
-                        {new Date(event.createdAt).toLocaleString()} · {event.actor}
-                      </p>
+                (event, index, list) => {
+                  const isDelivered = event.status === "DELIVERED" || event.status === "COMPLETED";
+                  const isSuccess = event.status === "DELIVERED";
+                  const isLast = index === list.length - 1;
+                  return (
+                    <div key={`${order.id}-${event.status}-${index}`} className="flex items-start gap-3">
+                      <div className="flex flex-col items-center">
+                        <span
+                          className={`mt-0.5 flex h-3 w-3 items-center justify-center rounded-full ${
+                            isDelivered ? "bg-emerald-500" : "bg-black/60"
+                          }`}
+                        />
+                        {!isLast && <span className="mt-1 h-6 w-px bg-black/10" />}
+                      </div>
+                      <div>
+                        <p className={`text-xs font-semibold ${isDelivered ? "text-black" : "text-black"}`}>
+                          {formatStatus(event.status)}
+                        </p>
+                        {event.note && <p className="text-xs text-gray-500">{event.note}</p>}
+                        <p className="text-[10px] text-gray-400">
+                          {new Date(event.createdAt).toLocaleString()} · {event.actor}
+                        </p>
+                        {isSuccess && (
+                          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
+                            Success delivery
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
+                  );
+                }
               )}
             </div>
           </div>
