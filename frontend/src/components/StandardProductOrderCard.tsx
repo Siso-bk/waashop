@@ -43,7 +43,7 @@ export function StandardProductOrderCard({
             src={imageSrc}
             alt={product.name}
             fill
-            className={hasImage ? "object-cover" : "object-contain p-6"}
+            className={hasImage ? "object-cover" : "object-contain px-4 py-3"}
             sizes="(max-width: 768px) 100vw, 100vw"
           />
         </div>
