@@ -17,6 +17,8 @@ export function StandardProductOrderCard({
   onOrderNow: (product: StandardProduct) => void;
 }) {
   const router = useRouter();
+  const hasImage = Boolean(product.imageUrl);
+  const imageSrc = product.imageUrl || "/images/no-image.svg";
   const handleNavigate = () => {
     router.push(`/products/${product.id}`);
   };
@@ -36,17 +38,15 @@ export function StandardProductOrderCard({
       }}
     >
       <div className="relative z-10 mb-2 block">
-        {product.imageUrl && (
-          <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-[color:var(--surface-bg)]">
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 100vw"
-            />
-          </div>
-        )}
+        <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-[color:var(--surface-bg)]">
+          <Image
+            src={imageSrc}
+            alt={product.name}
+            fill
+            className={hasImage ? "object-cover" : "object-contain p-6"}
+            sizes="(max-width: 768px) 100vw, 100vw"
+          />
+        </div>
       </div>
       <div className="relative z-10 space-y-0.5 text-xs text-gray-500">
         <p>
