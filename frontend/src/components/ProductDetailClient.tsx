@@ -95,14 +95,14 @@ export function ProductDetailClient({
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="w-full rounded-full border border-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+                className="w-full rounded-full border border-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
               >
                 Add to cart
               </button>
               <button
                 type="button"
                 onClick={handleOrderNow}
-                className="w-full rounded-full bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900"
+                className="w-full rounded-full border border-white/15 bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900"
               >
                 Order now
               </button>

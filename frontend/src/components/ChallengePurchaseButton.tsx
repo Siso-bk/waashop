@@ -45,7 +45,7 @@ export function ChallengePurchaseButton({ challenge }: Props) {
       <button
         onClick={handleBuy}
         disabled={isLoading || remaining <= 0}
-        className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="w-full rounded-full border border-white/15 bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {remaining <= 0 ? "Sold out" : isLoading ? "Processing..." : "Buy ticket"}
       </button>

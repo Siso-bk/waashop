@@ -65,7 +65,7 @@ export function StandardProductOrderCard({
               event.stopPropagation();
               onAddToCart(product);
             }}
-            className="w-full rounded-full border border-black/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-black transition hover:bg-black hover:text-white"
+            className="w-full rounded-full border border-black/20 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-black transition hover:bg-black hover:text-white"
           >
             Add to cart
           </button>
@@ -75,7 +75,7 @@ export function StandardProductOrderCard({
               event.stopPropagation();
               onOrderNow(product);
             }}
-            className="w-full rounded-full bg-black px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-white transition hover:bg-gray-900"
+            className="w-full rounded-full border border-white/15 bg-black px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-white transition hover:bg-gray-900"
           >
             Order now
           </button>
