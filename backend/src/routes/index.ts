@@ -2446,7 +2446,10 @@ router.get("/products/:id", async (req, res) => {
   if (!Types.ObjectId.isValid(req.params.id)) {
     return res.status(400).json({ error: "Invalid product id" });
   }
-  const product = await Product.findOne({ _id: req.params.id, status: "ACTIVE" }).lean();
+  let product = await Product.findOne({ _id: req.params.id, status: "ACTIVE" }).lean();
+  if (!product) {
+    product = await Product.findOne({ _id: req.params.id, type: "STANDARD" }).lean();
+  }
   if (!product) {
     return res.status(404).json({ error: "Product not found" });
   }
