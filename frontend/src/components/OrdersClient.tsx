@@ -48,6 +48,12 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
               {order.status}
             </span>
           </div>
+          {!order.escrowReleased &&
+            !["COMPLETED", "REFUNDED", "CANCELLED"].includes(order.status) && (
+              <div className="mt-2 text-xs text-gray-500">
+                Held in escrow until delivery is confirmed.
+              </div>
+            )}
           <div className="mt-2 text-xs text-gray-500">
             <p>Shipping: {order.shippingAddress || "—"}</p>
             <p>Tracking: {order.trackingCode || "—"}</p>

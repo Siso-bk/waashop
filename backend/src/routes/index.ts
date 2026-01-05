@@ -3174,18 +3174,32 @@ router.get("/ledger", authMiddleware, async (req, res) => {
   const querySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(50),
+    reason: z.string().max(80).optional(),
+    start: z.string().optional(),
+    end: z.string().optional(),
   });
 
   const params = querySchema.parse(req.query);
   await connectDB();
   const skip = (params.page - 1) * params.limit;
+  const filter: Record<string, unknown> = { userId: req.userId };
+  if (params.reason) {
+    const escaped = params.reason.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.reason = new RegExp(escaped, "i");
+  }
+  if (params.start || params.end) {
+    const createdAt: Record<string, Date> = {};
+    if (params.start) createdAt.$gte = new Date(params.start);
+    if (params.end) createdAt.$lte = new Date(params.end);
+    filter.createdAt = createdAt;
+  }
   const [items, total] = await Promise.all([
-    Ledger.find({ userId: req.userId })
+    Ledger.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(params.limit)
       .lean(),
-    Ledger.countDocuments({ userId: req.userId }),
+    Ledger.countDocuments(filter),
   ]);
 
   res.json({

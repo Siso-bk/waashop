@@ -156,6 +156,7 @@ export interface CustomerOrder {
   cancelledAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  escrowReleased?: boolean;
 }
 
 export interface NotificationItem {

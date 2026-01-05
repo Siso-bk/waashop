@@ -106,8 +106,21 @@ export const getAdminOrders = async (status?: string) => {
   return backendFetch<{ orders: OrderDto[] }>(`/api/admin/orders${query}`);
 };
 
-export const getUserLedger = async (page = 1, limit = 50) => {
-  const query = `?page=${page}&limit=${limit}`;
+export const getUserLedger = async (
+  page = 1,
+  limit = 50,
+  reason?: string,
+  start?: string,
+  end?: string
+) => {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (reason) params.set("reason", reason);
+  if (start) params.set("start", start);
+  if (end) params.set("end", end);
+  const query = `?${params.toString()}`;
   return backendFetch<{
     items: LedgerEntryDto[];
     page: number;

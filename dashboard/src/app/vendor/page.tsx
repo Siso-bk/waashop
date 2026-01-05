@@ -357,6 +357,13 @@ function OrderCard({ order }: { order: OrderDto }) {
         <p>Phone: {order.shippingPhone || "—"}</p>
         <p>Address: {order.shippingAddress || "—"}</p>
       </div>
+      <div className="mt-2 text-xs text-slate-500">
+        {order.escrowReleased ? (
+          <span className="font-semibold text-emerald-600">Funds paid out</span>
+        ) : (
+          <span className="font-semibold text-amber-600">Funds pending in escrow</span>
+        )}
+      </div>
       {order.status !== "COMPLETED" &&
         order.status !== "REFUNDED" &&
         order.status !== "CANCELLED" && (
