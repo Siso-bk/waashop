@@ -32,6 +32,18 @@ export default async function AdminSettingsPage() {
             />
           </label>
           <label className="block text-sm text-slate-600">
+            Mystery box platform fee (%)
+            <input
+              name="feeMysteryBoxPercent"
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              defaultValue={settings.feeMysteryBoxPercent}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+            />
+          </label>
+          <label className="block text-sm text-slate-600">
             Challenge fee (MINI)
             <input
               name="feeChallenge"
@@ -104,6 +116,7 @@ async function updateFees(formData: FormData) {
   "use server";
   const payload = {
     feeMysteryBox: Number(formData.get("feeMysteryBox")),
+    feeMysteryBoxPercent: Number(formData.get("feeMysteryBoxPercent")),
     feeChallenge: Number(formData.get("feeChallenge")),
     feePromoCard: Number(formData.get("feePromoCard")),
     feeTopWinnerPercent: Number(formData.get("feeTopWinnerPercent")),

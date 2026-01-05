@@ -181,12 +181,20 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
 
   const priceMinis = Number(formData.get("priceMinis"));
   const guaranteedMinMinis = Number(formData.get("guaranteedMinMinis"));
+  const totalTries = Number(formData.get("totalTries"));
+  const fundingMinis = Number(formData.get("fundingMinis"));
   const tiersRaw = formData.get("rewardTiers");
   if (!Number.isFinite(priceMinis) || priceMinis <= 0) {
     return { error: "Price must be a positive number" };
   }
-  if (!Number.isFinite(guaranteedMinMinis) || guaranteedMinMinis <= 0) {
-    return { error: "Guaranteed minimum must be a positive number" };
+  if (!Number.isFinite(guaranteedMinMinis) || guaranteedMinMinis < 0) {
+    return { error: "Guaranteed minimum must be a non-negative number" };
+  }
+  if (!Number.isFinite(totalTries) || totalTries <= 0) {
+    return { error: "Total tries must be a positive number" };
+  }
+  if (!Number.isFinite(fundingMinis) || fundingMinis < 0) {
+    return { error: "Funding MINIS must be a non-negative number" };
   }
   if (!tiersRaw || typeof tiersRaw !== "string") {
     return { error: "Reward tiers JSON is required" };
@@ -212,6 +220,9 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
   if (tiers.some((tier) => !Number.isFinite(tier.minis) || !Number.isFinite(tier.probability))) {
     return { error: "Each tier requires numeric MINI/probability" };
   }
+  if (tiers.some((tier) => tier.minis < 0 || tier.probability <= 0)) {
+    return { error: "Each tier requires non-negative MINI and positive probability" };
+  }
   const probabilitySum = tiers.reduce((acc, tier) => acc + tier.probability, 0);
   if (Math.abs(probabilitySum - 1) > 0.01) {
     return { error: "Tier probabilities must sum to 1" };
@@ -228,6 +239,8 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
       imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
       priceMinis,
       guaranteedMinMinis,
+      totalTries,
+      fundingMinis,
       rewardTiers: tiers,
     },
   };

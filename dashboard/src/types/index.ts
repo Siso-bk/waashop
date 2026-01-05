@@ -37,6 +37,10 @@ export interface ProductDto {
   priceMinis: number;
   guaranteedMinMinis?: number;
   rewardTiers?: RewardTierDto[];
+  boxTotalTries?: number;
+  boxTriesSold?: number;
+  boxFundingMinis?: number;
+  boxPoolRemaining?: number;
   ticketPriceMinis?: number;
   ticketCount?: number;
   ticketsSold?: number;
@@ -161,6 +165,7 @@ export interface AdminUser {
 
 export interface PlatformSettingsDto {
   feeMysteryBox: number;
+  feeMysteryBoxPercent: number;
   feeChallenge: number;
   feePromoCard: number;
   feeTopWinnerPercent: number;

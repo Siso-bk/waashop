@@ -14,6 +14,7 @@ export const getPlatformSettings = async () => {
   if (!settings) {
     settings = await PlatformSettings.create({
       feeMysteryBox: env.FEE_MYSTERY_BOX,
+      feeMysteryBoxPercent: env.FEE_MYSTERY_BOX_PERCENT,
       feeChallenge: env.FEE_CHALLENGE,
       feePromoCard: env.FEE_PROMO_CARD,
       feeTopWinnerPercent: env.FEE_TOP_WINNER_PERCENT,

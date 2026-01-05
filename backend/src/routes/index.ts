@@ -136,6 +136,10 @@ const normalizeProduct = (product: any) => ({
   priceMinis: product.priceMinis ?? 0,
   guaranteedMinMinis: product.guaranteedMinMinis ?? 0,
   rewardTiers: normalizeRewardTiers(product.rewardTiers),
+  boxTotalTries: product.boxTotalTries ?? undefined,
+  boxTriesSold: product.boxTriesSold ?? 0,
+  boxFundingMinis: product.boxFundingMinis ?? undefined,
+  boxPoolRemaining: product.boxPoolRemaining ?? undefined,
   ticketPriceMinis: product.ticketPriceMinis ?? undefined,
   ticketCount: product.ticketCount,
   ticketsSold: product.ticketsSold,
@@ -1833,6 +1837,7 @@ router.get(
     res.json({
       settings: {
         feeMysteryBox: settings.feeMysteryBox,
+        feeMysteryBoxPercent: settings.feeMysteryBoxPercent,
         feeChallenge: settings.feeChallenge,
         feePromoCard: settings.feePromoCard,
         feeTopWinnerPercent: settings.feeTopWinnerPercent,
@@ -1850,6 +1855,7 @@ router.patch(
   async (req, res) => {
     const schema = z.object({
       feeMysteryBox: z.number().nonnegative().optional(),
+      feeMysteryBoxPercent: z.number().min(0).max(100).optional(),
       feeChallenge: z.number().nonnegative().optional(),
       feePromoCard: z.number().nonnegative().optional(),
       feeTopWinnerPercent: z.number().min(0).max(100).optional(),
@@ -1863,6 +1869,7 @@ router.patch(
       res.json({
         settings: {
           feeMysteryBox: doc.feeMysteryBox,
+          feeMysteryBoxPercent: doc.feeMysteryBoxPercent,
           feeChallenge: doc.feeChallenge,
           feePromoCard: doc.feePromoCard,
           feeTopWinnerPercent: doc.feeTopWinnerPercent,
@@ -2197,8 +2204,8 @@ router.patch(
 
 /** Product management */
 const rewardTierSchema = z.object({
-  minis: z.number().int().positive(),
-  probability: z.number().positive(),
+  minis: z.number().int().nonnegative(),
+  probability: z.number().nonnegative(),
   isTop: z.boolean().optional(),
 });
 
@@ -2207,7 +2214,9 @@ const mysteryBoxSchema = z.object({
   description: z.string().max(500).optional(),
   imageUrl: z.string().max(2000000).optional(),
   priceMinis: z.number().int().positive(),
-  guaranteedMinMinis: z.number().int().positive(),
+  guaranteedMinMinis: z.number().int().nonnegative(),
+  totalTries: z.number().int().positive(),
+  fundingMinis: z.number().int().positive(),
   rewardTiers: z.array(rewardTierSchema).min(1),
 });
 
@@ -2279,11 +2288,26 @@ router.post(
       }
       const payload = mysteryBoxSchema.parse(req.body);
       const totalProbability = payload.rewardTiers.reduce((acc, tier) => acc + tier.probability, 0);
-      if (Math.abs(totalProbability - 1) > 0.01) {
+      if (totalProbability <= 0 || Math.abs(totalProbability - 1) > 0.01) {
         return res.status(400).json({ error: "Reward probabilities must sum to 1" });
       }
-      await chargeSubmissionFee(submitter, settings.feeMysteryBox || 0, "MYSTERY_BOX_SUBMISSION_FEE", {
+      ensureMinisBalance(submitter);
+      const submissionFee = settings.feeMysteryBox || 0;
+      const fundingMinis = payload.fundingMinis;
+      const totalCost = submissionFee + fundingMinis;
+      if (submitter.minisBalance < totalCost) {
+        return res.status(400).json({ error: "Insufficient balance to fund this mystery box" });
+      }
+      await chargeSubmissionFee(submitter, submissionFee, "MYSTERY_BOX_SUBMISSION_FEE", {
         name: payload.name,
+      });
+      submitter.minisBalance -= fundingMinis;
+      await submitter.save();
+      await Ledger.create({
+        userId: submitter._id,
+        deltaMinis: -fundingMinis,
+        reason: "MYSTERY_BOX_FUNDING_DEBIT",
+        meta: { name: payload.name },
       });
       const product = new Product({
         vendorId: req.vendorDoc!._id,
@@ -2293,6 +2317,10 @@ router.post(
         priceMinis: payload.priceMinis,
         guaranteedMinMinis: payload.guaranteedMinMinis,
         rewardTiers: payload.rewardTiers,
+        boxTotalTries: payload.totalTries,
+        boxTriesSold: 0,
+        boxFundingMinis: payload.fundingMinis,
+        boxPoolRemaining: payload.fundingMinis,
         type: "MYSTERY_BOX",
         status: "PENDING",
       });
@@ -2357,6 +2385,10 @@ router.patch(
           priceMinis: payload.priceMinis,
           guaranteedMinMinis: payload.guaranteedMinMinis,
           rewardTiers: payload.rewardTiers,
+          boxTotalTries: payload.totalTries,
+          boxTriesSold: 0,
+          boxFundingMinis: payload.fundingMinis,
+          boxPoolRemaining: payload.fundingMinis,
           type: "MYSTERY_BOX",
           ticketPriceMinis: undefined,
           ticketCount: undefined,
@@ -2536,6 +2568,8 @@ router.get("/boxes", async (_req, res) => {
         probability: tier.probability,
         isTop: tier.isTop,
       })),
+      totalTries: product.boxTotalTries ?? 0,
+      triesSold: product.boxTriesSold ?? 0,
       vendor: product.vendorId,
     })),
   });
@@ -3101,7 +3135,7 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
     const { boxId, purchaseId } = bodySchema.parse(req.body);
     await connectDB();
     const settings = await getPlatformSettings();
-    const topWinnerFeePercent = settings?.feeTopWinnerPercent ?? 0;
+    const mysteryBoxFeePercent = settings?.feeMysteryBoxPercent ?? 0;
 
     const existing = await Purchase.findOne({ purchaseId }).exec();
     if (existing) {
@@ -3124,6 +3158,14 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
       if (!priceMinis) {
         return { error: "Mystery box price not configured" } as const;
       }
+      const totalTries = product.boxTotalTries ?? 0;
+      const triesSold = product.boxTriesSold ?? 0;
+      if (!totalTries) {
+        return { error: "Mystery box trials not configured" } as const;
+      }
+      if (triesSold >= totalTries) {
+        return { error: "Mystery box sold out" } as const;
+      }
       if (userDoc.minisBalance < priceMinis) {
         return { error: "Insufficient balance" } as const;
       }
@@ -3140,20 +3182,17 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
 
       userDoc.minisBalance -= priceMinis;
       const { rewardMinis: grossRewardMinis, awardedTop, tier } = resolveReward(product, userDoc);
-      let platformFeeMinis = 0;
-      if (awardedTop && topWinnerFeePercent > 0) {
-        platformFeeMinis = Math.min(
-          grossRewardMinis,
-          Math.max(0, Math.round((grossRewardMinis * topWinnerFeePercent) / 100))
-        );
-      }
-      const netRewardMinis = grossRewardMinis - platformFeeMinis;
-      userDoc.minisBalance += grossRewardMinis;
-      if (platformFeeMinis > 0) {
-        userDoc.minisBalance -= platformFeeMinis;
-      }
+      const currentPool = product.boxPoolRemaining ?? product.boxFundingMinis ?? 0;
+      const netRewardMinis = Math.min(grossRewardMinis, Math.max(0, currentPool));
+      userDoc.minisBalance += netRewardMinis;
       if (awardedTop) {
         userDoc.lastTopWinAt = new Date();
+      }
+      product.boxPoolRemaining = Math.max(0, currentPool - netRewardMinis);
+      product.boxTriesSold = triesSold + 1;
+      const isComplete = product.boxTriesSold >= totalTries;
+      if (isComplete) {
+        product.status = "INACTIVE";
       }
 
       const rewardMeta: Record<string, unknown> = {
@@ -3163,8 +3202,6 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
         awardedTop,
         netMinis: netRewardMinis,
         grossMinis: grossRewardMinis,
-        platformFeeMinis,
-        feePercent: topWinnerFeePercent,
       };
 
       const ledgerEntries = [
@@ -3176,19 +3213,11 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
         },
         {
           userId: userDoc._id,
-          deltaMinis: grossRewardMinis,
+          deltaMinis: netRewardMinis,
           reason: "BOX_REWARD_CREDIT",
           meta: rewardMeta,
         },
       ];
-      if (platformFeeMinis > 0) {
-        ledgerEntries.push({
-          userId: userDoc._id,
-          deltaMinis: -platformFeeMinis,
-          reason: "TOP_WINNER_FEE",
-          meta: { ...rewardMeta, feeApplied: true },
-        });
-      }
 
       if (session) {
         await userDoc.save({ session });
@@ -3203,13 +3232,62 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
       if (session) await purchase.save({ session });
       else await purchase.save();
 
+      if (session) {
+        await product.save({ session });
+      } else {
+        await product.save();
+      }
+
+      let vendorPayout: number | null = null;
+      if (product.boxTriesSold >= totalTries) {
+        const vendorQuery = Vendor.findById(product.vendorId);
+        if (session) vendorQuery.session(session);
+        const vendorDoc = await vendorQuery;
+        if (vendorDoc?.ownerUserId) {
+          const ownerQuery = User.findById(vendorDoc.ownerUserId);
+          if (session) ownerQuery.session(session);
+          const ownerDoc = await ownerQuery;
+          if (ownerDoc) {
+            ensureMinisBalance(ownerDoc);
+            const grossRevenue = priceMinis * totalTries;
+            const platformFee = Math.max(0, Math.round((grossRevenue * mysteryBoxFeePercent) / 100));
+            vendorPayout = Math.max(0, grossRevenue - platformFee);
+            ownerDoc.minisBalance += vendorPayout;
+            if (session) {
+              await ownerDoc.save({ session });
+              await Ledger.create(
+                [
+                  {
+                    userId: ownerDoc._id,
+                    deltaMinis: vendorPayout,
+                    reason: "MYSTERY_BOX_REVENUE_PAYOUT",
+                    meta: { productId: product._id, grossRevenue, platformFee },
+                  },
+                ],
+                { session }
+              );
+            } else {
+              await ownerDoc.save();
+              await Ledger.create({
+                userId: ownerDoc._id,
+                deltaMinis: vendorPayout,
+                reason: "MYSTERY_BOX_REVENUE_PAYOUT",
+                meta: { productId: product._id, grossRevenue, platformFee },
+              });
+            }
+          }
+        }
+      }
+
       return {
         purchase,
         userDoc,
         netRewardMinis,
         grossRewardMinis,
-        platformFeeMinis,
         tier,
+        totalTries,
+        triesSold: product.boxTriesSold,
+        vendorPayout,
       } as const;
     });
 
@@ -3221,8 +3299,10 @@ router.post("/boxes/buy", authMiddleware, async (req, res) => {
       purchaseId,
       rewardMinis: result.netRewardMinis,
       grossRewardMinis: result.grossRewardMinis,
-      platformFeeMinis: result.platformFeeMinis,
       tier: result.tier,
+      totalTries: result.totalTries,
+      triesSold: result.triesSold,
+      vendorPayout: result.vendorPayout,
       balances: {
         minis: result.userDoc.minisBalance,
       },

@@ -27,6 +27,10 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
     tier?: { minis: number; probability: number; isTop?: boolean };
   }>(null);
   const [showResult, setShowResult] = useState(false);
+  const totalTries = box.totalTries ?? 0;
+  const triesSold = box.triesSold ?? 0;
+  const remaining = totalTries > 0 ? Math.max(totalTries - triesSold, 0) : null;
+  const isSoldOut = remaining !== null && remaining <= 0;
 
   const handleBuy = async () => {
     setIsLoading(true);
@@ -67,10 +71,10 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
     <div className="space-y-2">
       <button
         onClick={handleBuy}
-        disabled={disabled || isLoading}
+        disabled={disabled || isLoading || isSoldOut}
         className="w-full rounded-full border border-white/15 bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        {isLoading ? "Processing..." : `Join for ${formatMinis(box.priceMinis ?? 0)}`}
+        {isSoldOut ? "Sold out" : isLoading ? "Processing..." : `Join for ${formatMinis(box.priceMinis ?? 0)}`}
       </button>
       {error && <p className="text-sm text-red-500">{error}</p>}
       {result && showResult && (

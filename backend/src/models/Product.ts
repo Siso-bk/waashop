@@ -20,6 +20,10 @@ export interface IProduct extends Document {
   priceMinis: number;
   guaranteedMinMinis?: number;
   rewardTiers?: IRewardTier[];
+  boxTotalTries?: number;
+  boxTriesSold?: number;
+  boxFundingMinis?: number;
+  boxPoolRemaining?: number;
   ticketPriceMinis?: number;
   ticketCount?: number;
   ticketsSold?: number;
@@ -49,6 +53,10 @@ const ProductSchema = new Schema<IProduct>(
     priceMinis: { type: Number, required: true },
     guaranteedMinMinis: { type: Number },
     rewardTiers: { type: [RewardTierSchema], default: undefined },
+    boxTotalTries: { type: Number },
+    boxTriesSold: { type: Number, default: 0 },
+    boxFundingMinis: { type: Number },
+    boxPoolRemaining: { type: Number },
     ticketPriceMinis: { type: Number },
     ticketCount: { type: Number },
     ticketsSold: { type: Number, default: 0 },

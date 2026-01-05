@@ -11,6 +11,8 @@ export interface MysteryBoxDto {
   priceMinis: number;
   guaranteedMinMinis: number;
   rewardTiers: RewardTier[];
+  totalTries?: number;
+  triesSold?: number;
 }
 
 export interface LedgerEntryDto {

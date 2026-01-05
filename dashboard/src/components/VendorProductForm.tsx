@@ -16,6 +16,8 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [imageUrl, setImageUrl] = useState("");
   const [priceMinis, setPriceMinis] = useState("");
   const [guaranteedMinMinis, setGuaranteedMinMinis] = useState("");
+  const [totalTries, setTotalTries] = useState("");
+  const [fundingMinis, setFundingMinis] = useState("");
   const [ticketPriceMinis, setTicketPriceMinis] = useState("");
   const [ticketCount, setTicketCount] = useState("");
   const [tiers, setTiers] = useState([
@@ -34,7 +36,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
         probability: Number(tier.probability),
         isTop: Boolean(tier.isTop),
       }))
-      .filter((tier) => Number.isFinite(tier.minis) && Number.isFinite(tier.probability) && tier.minis > 0 && tier.probability > 0);
+      .filter((tier) => Number.isFinite(tier.minis) && Number.isFinite(tier.probability) && tier.minis >= 0 && tier.probability > 0);
     return JSON.stringify(normalized, null, 2);
   }, [tiers]);
 
@@ -50,7 +52,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
         : "Price";
   const previewMeta =
     productType === "MYSTERY_BOX"
-      ? `Guaranteed minimum: ${guaranteedMinMinis || "—"} MINI`
+      ? `Guaranteed minimum: ${guaranteedMinMinis || "—"} MINI · Tries: ${totalTries || "—"}`
       : productType === "CHALLENGE"
         ? `Tickets: ${ticketCount || "—"}`
         : "";
@@ -202,11 +204,43 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                 id="guaranteedMinMinis"
                 name="guaranteedMinMinis"
                 type="number"
-                min={1}
+                min={0}
                 required
                 disabled={isLocked}
                 value={guaranteedMinMinis}
                 onChange={(event) => setGuaranteedMinMinis(event.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-600" htmlFor="totalTries">
+                Total tries
+              </label>
+              <input
+                id="totalTries"
+                name="totalTries"
+                type="number"
+                min={1}
+                required
+                disabled={isLocked}
+                value={totalTries}
+                onChange={(event) => setTotalTries(event.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-600" htmlFor="fundingMinis">
+                Funding MINIS
+              </label>
+              <input
+                id="fundingMinis"
+                name="fundingMinis"
+                type="number"
+                min={0}
+                required
+                disabled={isLocked}
+                value={fundingMinis}
+                onChange={(event) => setFundingMinis(event.target.value)}
                 className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
               />
             </div>
@@ -221,7 +255,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                 <div key={idx} className="grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-[1fr,1fr,auto]">
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     placeholder="MINI"
                     value={tier.minis}
                     disabled={isLocked}

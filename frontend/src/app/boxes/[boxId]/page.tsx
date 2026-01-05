@@ -32,6 +32,11 @@ export default async function BoxDetails({ params }: Props) {
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Box</p>
             <h1 className="text-3xl font-semibold text-black">{box.name}</h1>
             <p className="text-sm text-gray-600">{formatMinis(box.priceMinis ?? 0)}</p>
+            {box.totalTries ? (
+              <p className="mt-1 text-xs text-gray-500">
+                {Math.max((box.totalTries || 0) - (box.triesSold || 0), 0)} of {box.totalTries} tries left
+              </p>
+            ) : null}
           </div>
           <div className="rounded-2xl border border-black/10 bg-black px-6 py-4 text-right text-white">
             <p className="text-xs uppercase tracking-[0.3em] text-white/60">Guaranteed minimum</p>

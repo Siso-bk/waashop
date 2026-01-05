@@ -19,6 +19,8 @@ type RawBox = Partial<MysteryBoxDto> & {
   priceMinis?: number;
   guaranteedMinMinis?: number;
   rewardTiers?: MysteryBoxDto["rewardTiers"];
+  totalTries?: number;
+  triesSold?: number;
 };
 
 type RawLedger = LedgerEntryDto & {
@@ -32,6 +34,8 @@ const mapBox = (box: RawBox): MysteryBoxDto => ({
   priceMinis: box.priceMinis ?? 0,
   guaranteedMinMinis: box.guaranteedMinMinis ?? 0,
   rewardTiers: box.rewardTiers ?? [],
+  totalTries: box.totalTries ?? 0,
+  triesSold: box.triesSold ?? 0,
 });
 
 export const getActiveBoxes = async (): Promise<MysteryBoxDto[]> => {
