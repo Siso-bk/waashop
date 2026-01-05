@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   getSessionUser,
   getActiveBoxes,
@@ -47,9 +48,11 @@ export default async function HomePage() {
       backgroundClass: card.backgroundClass || "bg-white",
       textClass,
       borderClass: card.borderClass || "border-black/10",
-      descriptionTone: prefersLightText ? "text-white/80" : "text-gray-600",
-      eyebrowTone: prefersLightText ? "text-white/60" : "text-gray-400",
-      ctaVariant: prefersLightText ? "border border-white/40 text-white hover:bg-white/10" : "bg-black text-white",
+      descriptionTone: prefersLightText ? "text-white/80" : "text-[color:var(--app-text-muted)]",
+      eyebrowTone: prefersLightText ? "text-white/60" : "text-[color:var(--app-text-muted)]",
+      ctaVariant: prefersLightText
+        ? "border border-white/40 text-white hover:bg-white/10"
+        : "bg-[color:var(--app-text)] text-[color:var(--app-bg)] hover:opacity-90",
     };
   });
 
@@ -68,7 +71,7 @@ export default async function HomePage() {
           {highlightCards.map((card) => (
             <article
               key={card.key}
-              className={`rounded-3xl border p-5 shadow-sm ${card.backgroundClass} ${card.borderClass} ${card.textClass}`}
+              className={`highlight-surface rounded-3xl border p-5 shadow-sm ${card.backgroundClass} ${card.borderClass} ${card.textClass}`}
             >
               {card.eyebrow && (
                 <p className={`text-xs uppercase tracking-[0.3em] ${card.eyebrowTone}`}>{card.eyebrow}</p>
@@ -103,12 +106,16 @@ export default async function HomePage() {
             {promoCards.map((card) => (
               <article key={card.id} className="flex min-w-[240px] flex-col gap-4 rounded-2xl border border-black/10 p-4">
                 {card.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={card.imageUrl}
-                    alt={card.title}
-                    className="h-40 w-full rounded-xl object-cover"
-                  />
+                  <div className="relative h-40 w-full overflow-hidden rounded-xl">
+                    <Image
+                      src={card.imageUrl}
+                      alt={card.title}
+                      fill
+                      className="object-cover"
+                      sizes="240px"
+                      unoptimized
+                    />
+                  </div>
                 )}
                 <div>
                   <h3 className="text-xl font-semibold text-black">{card.title}</h3>
@@ -186,30 +193,20 @@ export default async function HomePage() {
                 aria-label={`View ${product.name}`}
                 className="group flex min-w-[220px] flex-col gap-3 rounded-2xl border border-black/10 p-4 transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg"
               >
-                {product.imageUrl ? (
-                  <div className="h-32 w-full overflow-hidden rounded-xl border border-black/10 bg-[color:var(--surface-bg)]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                {product.imageUrl && (
+                  <div className="relative h-32 w-full overflow-hidden rounded-xl border border-black/10 bg-[color:var(--surface-bg)]">
+                    <Image
                       src={product.imageUrl}
                       alt={product.name}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="220px"
+                      unoptimized
                     />
-                  </div>
-                ) : (
-                  <div className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-black/15 bg-[color:var(--surface-bg)]">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-gray-400">
-                      <path
-                        fill="currentColor"
-                        d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v9A2.5 2.5 0 0 1 17.5 17h-11A2.5 2.5 0 0 1 4 14.5v-9Zm2.5-.5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V9l-3.2 3.2a1 1 0 0 1-1.3.1L10 11l-4 4V5.5a.5.5 0 0 0-.5-.5Z"
-                      />
-                    </svg>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-400">
-                      No image
-                    </span>
                   </div>
                 )}
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Standard product</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Product</p>
                   <p className="mt-2 text-lg font-semibold text-black">{product.name}</p>
                   {product.description && (
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">{product.description}</p>
@@ -313,6 +310,18 @@ function WinnerRow({ title, entries }: { title: string; entries: WinnerSpotlight
       <div className="mt-3 flex gap-3 overflow-x-auto pb-3">
         {entries.map((entry) => (
           <article key={entry.id} className="min-w-[220px] rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+            {entry.imageUrl && (
+              <div className="relative mb-3 h-28 overflow-hidden rounded-xl border border-black/10 bg-black/5">
+                <Image
+                  src={entry.imageUrl}
+                  alt={entry.headline}
+                  fill
+                  className="object-cover"
+                  sizes="220px"
+                  unoptimized
+                />
+              </div>
+            )}
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{entry.winnerName}</p>
             <h3 className="mt-1 text-sm font-semibold text-black">{entry.headline}</h3>
             {entry.description && <p className="text-xs text-gray-500">{entry.description}</p>}

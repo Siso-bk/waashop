@@ -9,6 +9,7 @@ export interface IWinnerSpotlight extends Document {
   winnerName: string;
   headline: string;
   description?: string;
+  imageUrl?: string;
   status: "PENDING" | "PUBLISHED";
 }
 
@@ -20,6 +21,7 @@ const WinnerSpotlightSchema = new Schema<IWinnerSpotlight>(
     winnerName: { type: String, required: true },
     headline: { type: String, required: true },
     description: { type: String },
+    imageUrl: { type: String },
     status: { type: String, enum: ["PENDING", "PUBLISHED"], default: "PUBLISHED" },
   },
   { timestamps: true }

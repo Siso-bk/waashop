@@ -102,6 +102,12 @@ body {
   background-color: var(--surface-bg) !important;
 }
 
+.highlight-surface {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.06)),
+    var(--surface-bg) !important;
+  border-color: var(--surface-border) !important;
+}
+
 @supports (overscroll-behavior-y: none) {
   html,
   body {

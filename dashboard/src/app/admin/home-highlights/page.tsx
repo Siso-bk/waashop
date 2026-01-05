@@ -26,14 +26,48 @@ export default async function AdminHomeHighlightsPage({ searchParams }: Props) {
   const { cards } = await getAdminHomeHighlights();
   const status = statusValue;
   const message = messageValue ? decodeURIComponent(messageValue) : null;
+  const totalCards = cards.length;
+  const cardsWithGuestCta = cards.filter((card) => Boolean(card.guestCtaLabel || card.guestCtaHref)).length;
+  const cardsWithAuthedCta = cards.filter((card) => Boolean(card.authedCtaLabel || card.authedCtaHref)).length;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Admin"
-        title="Home Highlights"
-        description="Control the callouts beneath the hero."
-      />
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">Admin</p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900">Home Highlights</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Shape the value props beneath the hero. Keep copy concise and action driven.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+            <span className="rounded-full border border-slate-200 px-3 py-2">Total {totalCards}</span>
+            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700">
+              Guest CTAs {cardsWithGuestCta}
+            </span>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
+              Signed-in CTAs {cardsWithAuthedCta}
+            </span>
+          </div>
+        </div>
+      </section>
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Copy checklist</h2>
+            <ul className="mt-3 space-y-2 text-sm text-slate-600">
+              <li>Keep titles under 45 characters for mobile readability.</li>
+              <li>Match CTA labels to the destination (“View wallet”, “Shop now”).</li>
+              <li>Use the same tone across cards to feel cohesive.</li>
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Design tip</p>
+            <p className="mt-2">Pick one highlight to be the “hero” and give it the strongest CTA.</p>
+          </div>
+        </div>
+      </section>
       {status === "updated" && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           Highlights updated successfully.
@@ -54,11 +88,42 @@ function HighlightsForm({ cards }: { cards: HomeHighlightCard[] }) {
     <form action={updateHomeHighlights} className="space-y-6">
       <input type="hidden" name="cardCount" value={cards.length} />
       {cards.map((card, index) => (
-        <fieldset key={card.key} className="space-y-4 rounded-2xl border border-slate-200 p-4">
+        <fieldset key={card.key} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <legend className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
             Card {index + 1}
           </legend>
           <input type="hidden" name={`card-${index}-key`} defaultValue={card.key} />
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500">
+            <span className="font-semibold uppercase tracking-[0.2em]">Preview:</span>{" "}
+            <span className="text-slate-700">
+              {card.title || "Highlight title"} — {card.description || "Add a short description."}
+            </span>
+          </div>
+          <div
+            className={`preview-theme rounded-2xl border p-4 ${card.backgroundClass || "bg-white"} ${card.borderClass || "border-slate-200"}`}
+          >
+            <p className={`text-xs uppercase tracking-[0.3em] ${card.textClass || "text-slate-500"}`}>
+              {card.eyebrow || "Eyebrow"}
+            </p>
+            <p className={`mt-2 text-lg font-semibold ${card.textClass || "text-slate-900"}`}>
+              {card.title || "Highlight title"}
+            </p>
+            <p className={`mt-2 text-sm ${card.textClass || "text-slate-600"}`}>
+              {card.description || "Add a short description."}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.2em]">
+              {(card.guestCtaLabel || card.guestCtaHref) && (
+                <span className={`rounded-full border px-3 py-1 ${card.textClass || "text-slate-600"} ${card.borderClass || "border-slate-200"}`}>
+                  {card.guestCtaLabel || "Guest CTA"}
+                </span>
+              )}
+              {(card.authedCtaLabel || card.authedCtaHref) && (
+                <span className={`rounded-full border px-3 py-1 ${card.textClass || "text-slate-600"} ${card.borderClass || "border-slate-200"}`}>
+                  {card.authedCtaLabel || "Signed-in CTA"}
+                </span>
+              )}
+            </div>
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm text-slate-600">
               <span>Eyebrow</span>
@@ -91,44 +156,48 @@ function HighlightsForm({ cards }: { cards: HomeHighlightCard[] }) {
             />
           </label>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Guest CTA label</span>
-              <input
-                name={`card-${index}-guestCtaLabel`}
-                defaultValue={card.guestCtaLabel || ""}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-                placeholder="Create profile"
-              />
-            </label>
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Guest CTA URL</span>
-              <input
-                name={`card-${index}-guestCtaHref`}
-                defaultValue={card.guestCtaHref || ""}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-                placeholder="/login"
-              />
-            </label>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Signed-in CTA label</span>
-              <input
-                name={`card-${index}-authedCtaLabel`}
-                defaultValue={card.authedCtaLabel || ""}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-                placeholder="View wallet"
-              />
-            </label>
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Signed-in CTA URL</span>
-              <input
-                name={`card-${index}-authedCtaHref`}
-                defaultValue={card.authedCtaHref || ""}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
-                placeholder="/wallet"
-              />
-            </label>
+            <div className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Guest CTA</p>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Label</span>
+                <input
+                  name={`card-${index}-guestCtaLabel`}
+                  defaultValue={card.guestCtaLabel || ""}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                  placeholder="Create profile"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>URL</span>
+                <input
+                  name={`card-${index}-guestCtaHref`}
+                  defaultValue={card.guestCtaHref || ""}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                  placeholder="/login"
+                />
+              </label>
+            </div>
+            <div className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Signed-in CTA</p>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Label</span>
+                <input
+                  name={`card-${index}-authedCtaLabel`}
+                  defaultValue={card.authedCtaLabel || ""}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                  placeholder="View wallet"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>URL</span>
+                <input
+                  name={`card-${index}-authedCtaHref`}
+                  defaultValue={card.authedCtaHref || ""}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900"
+                  placeholder="/wallet"
+                />
+              </label>
+            </div>
           </div>
           <label className="space-y-2 text-sm text-slate-600">
             <span>Background class</span>

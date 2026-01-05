@@ -13,6 +13,7 @@ export interface IProduct extends Document {
   vendorId: Types.ObjectId;
   name: string;
   description?: string;
+  imageUrl?: string;
   type: ProductType;
   status: ProductStatus;
   categories?: string[];
@@ -39,9 +40,10 @@ const RewardTierSchema = new Schema<IRewardTier>(
 const ProductSchema = new Schema<IProduct>(
   {
     vendorId: { type: Schema.Types.ObjectId, ref: "Vendor", required: true },
-    name: { type: String, required: true },
-    description: { type: String },
-    type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE"], default: "MYSTERY_BOX" },
+  name: { type: String, required: true },
+  description: { type: String },
+  imageUrl: { type: String },
+  type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE"], default: "MYSTERY_BOX" },
     status: { type: String, enum: ["DRAFT", "PENDING", "ACTIVE", "INACTIVE"], default: "DRAFT" },
     categories: { type: [String], default: [] },
     priceMinis: { type: Number, required: true },

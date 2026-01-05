@@ -3,14 +3,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
-import { getAdminDeposits, getProfile } from "@/lib/queries";
+import { getAdminWithdrawals, getProfile } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
 import { PendingButton } from "@/components/PendingButton";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDepositsPage() {
+export default async function AdminWithdrawalsPage() {
   await requireToken();
   const { user } = await getProfile();
   if (!user.roles.includes("admin")) {
@@ -18,16 +18,16 @@ export default async function AdminDepositsPage() {
   }
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Admin" title="Deposit queue" description="Review payment proofs and credit MINIS." />
-      <Suspense fallback={<DepositsSkeleton />}>
-        <DepositsTable />
+      <PageHeader eyebrow="Admin" title="Withdrawal queue" description="Approve payout requests and confirm releases." />
+      <Suspense fallback={<WithdrawalsSkeleton />}>
+        <WithdrawalsTable />
       </Suspense>
     </div>
   );
 }
 
-async function DepositsTable() {
-  const { deposits } = await getAdminDeposits();
+async function WithdrawalsTable() {
+  const { withdrawals } = await getAdminWithdrawals();
   return (
     <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
       <table className="w-full text-sm">
@@ -36,18 +36,19 @@ async function DepositsTable() {
             <th className="px-4 py-3">Submitted</th>
             <th className="px-4 py-3">User</th>
             <th className="px-4 py-3">Amount</th>
-            <th className="px-4 py-3">Payment</th>
-            <th className="px-4 py-3">Proof</th>
+            <th className="px-4 py-3">Payout</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {deposits.map((entry) => (
+          {withdrawals.map((entry) => (
             <tr key={entry.id} className="border-t border-slate-100 align-top">
               <td className="px-4 py-3 text-xs text-slate-500">
                 <p>{new Date(entry.createdAt).toLocaleString()}</p>
-                {entry.reviewedAt && <p className="mt-1 text-slate-400">Reviewed {new Date(entry.reviewedAt).toLocaleString()}</p>}
+                {entry.reviewedAt && (
+                  <p className="mt-1 text-slate-400">Reviewed {new Date(entry.reviewedAt).toLocaleString()}</p>
+                )}
               </td>
               <td className="px-4 py-3 text-xs text-slate-600">
                 <p className="font-semibold text-slate-900">{entry.userEmail || entry.username || entry.userId}</p>
@@ -57,21 +58,12 @@ async function DepositsTable() {
               </td>
               <td className="px-4 py-3 font-semibold text-slate-900">
                 {entry.amountMinis.toLocaleString()} MINIS
-                {entry.currency && <p className="text-xs font-normal text-slate-500">Paid in {entry.currency}</p>}
               </td>
               <td className="px-4 py-3 text-xs text-slate-600">
-                <p>{entry.paymentMethod}</p>
-                {entry.paymentReference && <p className="text-slate-400">{entry.paymentReference}</p>}
+                <p>{entry.payoutMethod}</p>
+                {entry.payoutAddress && <p className="text-slate-400">{entry.payoutAddress}</p>}
+                {entry.accountName && <p className="text-slate-400">{entry.accountName}</p>}
                 {entry.note && <p className="mt-1 text-slate-400">{entry.note}</p>}
-              </td>
-              <td className="px-4 py-3 text-xs text-indigo-600">
-                {entry.proofUrl ? (
-                  <a href={entry.proofUrl} target="_blank" rel="noreferrer" className="hover:underline">
-                    View proof
-                  </a>
-                ) : (
-                  "-"
-                )}
               </td>
               <td className="px-4 py-3">
                 <StatusBadge status={entry.status} />
@@ -80,23 +72,29 @@ async function DepositsTable() {
               <td className="px-4 py-3">
                 {entry.status === "PENDING" ? (
                   <div className="space-y-2 text-xs">
-                    <form action={approveDepositAction} className="flex flex-col gap-2">
-                      <input type="hidden" name="depositId" value={entry.id} />
+                    <form action={approveWithdrawalAction} className="flex flex-col gap-2">
+                      <input type="hidden" name="withdrawalId" value={entry.id} />
                       <input
                         type="text"
                         name="adminNote"
                         placeholder="Approval note"
                         className="rounded-xl border border-emerald-200 px-2 py-1"
                       />
+                      <input
+                        type="text"
+                        name="payoutReference"
+                        placeholder="Payout reference"
+                        className="rounded-xl border border-emerald-200 px-2 py-1"
+                      />
                       <PendingButton
                         pendingLabel="Approving..."
                         className="rounded-full bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-500"
                       >
-                        Approve & credit
+                        Approve payout
                       </PendingButton>
                     </form>
-                    <form action={rejectDepositAction} className="flex flex-col gap-2">
-                      <input type="hidden" name="depositId" value={entry.id} />
+                    <form action={rejectWithdrawalAction} className="flex flex-col gap-2">
+                      <input type="hidden" name="withdrawalId" value={entry.id} />
                       <input
                         type="text"
                         name="adminNote"
@@ -117,10 +115,10 @@ async function DepositsTable() {
               </td>
             </tr>
           ))}
-          {deposits.length === 0 && (
+          {withdrawals.length === 0 && (
             <tr>
-              <td className="px-4 py-6 text-center text-slate-500" colSpan={7}>
-                No deposit requests yet.
+              <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>
+                No withdrawal requests yet.
               </td>
             </tr>
           )}
@@ -130,7 +128,7 @@ async function DepositsTable() {
   );
 }
 
-function DepositsSkeleton() {
+function WithdrawalsSkeleton() {
   return (
     <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
       <table className="w-full text-sm">
@@ -139,8 +137,7 @@ function DepositsSkeleton() {
             <th className="px-4 py-3">Submitted</th>
             <th className="px-4 py-3">User</th>
             <th className="px-4 py-3">Amount</th>
-            <th className="px-4 py-3">Payment</th>
-            <th className="px-4 py-3">Proof</th>
+            <th className="px-4 py-3">Payout</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Actions</th>
           </tr>
@@ -163,9 +160,6 @@ function DepositsSkeleton() {
                 <div className="mt-2 h-3 w-40 rounded bg-slate-100 animate-pulse" />
               </td>
               <td className="px-4 py-3">
-                <div className="h-4 w-16 rounded bg-slate-200 animate-pulse" />
-              </td>
-              <td className="px-4 py-3">
                 <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
               </td>
               <td className="px-4 py-3">
@@ -179,36 +173,39 @@ function DepositsSkeleton() {
   );
 }
 
-
-
-async function approveDepositAction(formData: FormData) {
+async function approveWithdrawalAction(formData: FormData) {
   "use server";
-  const depositId = formData.get("depositId");
-  if (!depositId || typeof depositId !== "string") {
+  const withdrawalId = formData.get("withdrawalId");
+  if (!withdrawalId || typeof withdrawalId !== "string") {
     return;
   }
   const adminNote = formData.get("adminNote");
-  await backendFetch(`/api/admin/deposits/${depositId}/approve`, {
+  const payoutReference = formData.get("payoutReference");
+  await backendFetch(`/api/admin/withdrawals/${withdrawalId}/approve`, {
     method: "POST",
-    body: JSON.stringify({ adminNote: typeof adminNote === "string" && adminNote.trim() ? adminNote.trim() : undefined }),
+    body: JSON.stringify({
+      adminNote: typeof adminNote === "string" && adminNote.trim() ? adminNote.trim() : undefined,
+      payoutReference:
+        typeof payoutReference === "string" && payoutReference.trim() ? payoutReference.trim() : undefined,
+    }),
   });
-  revalidatePath("/admin/deposits");
+  revalidatePath("/admin/withdrawals");
   revalidatePath("/admin/users");
-  revalidatePath("/deposits");
+  revalidatePath("/withdrawals");
 }
 
-async function rejectDepositAction(formData: FormData) {
+async function rejectWithdrawalAction(formData: FormData) {
   "use server";
-  const depositId = formData.get("depositId");
-  if (!depositId || typeof depositId !== "string") {
+  const withdrawalId = formData.get("withdrawalId");
+  if (!withdrawalId || typeof withdrawalId !== "string") {
     return;
   }
   const adminNote = formData.get("adminNote");
-  await backendFetch(`/api/admin/deposits/${depositId}/reject`, {
+  await backendFetch(`/api/admin/withdrawals/${withdrawalId}/reject`, {
     method: "POST",
     body: JSON.stringify({ adminNote: typeof adminNote === "string" && adminNote.trim() ? adminNote.trim() : undefined }),
   });
-  revalidatePath("/admin/deposits");
-  revalidatePath("/deposits");
+  revalidatePath("/admin/withdrawals");
+  revalidatePath("/admin/users");
+  revalidatePath("/withdrawals");
 }
-

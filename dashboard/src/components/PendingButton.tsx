@@ -17,6 +17,7 @@ export function PendingButton({ children, pendingLabel, className = "", disabled
       disabled={pending || disabled}
       className={`${className} ${pending ? "opacity-70" : ""}`.trim()}
       aria-busy={pending ? "true" : undefined}
+      suppressHydrationWarning
     >
       {pending && pendingLabel ? pendingLabel : children}
     </button>

@@ -136,6 +136,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
   const name = formData.get("productName");
   const description = formData.get("productDescription");
   const type = (formData.get("productType") || formData.get("type") || "MYSTERY_BOX") as string;
+  const imageUrl = formData.get("imageUrl");
 
   if (!name || typeof name !== "string") {
     return { error: "Product name is required" };
@@ -151,6 +152,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
         type: "STANDARD",
         name,
         description: typeof description === "string" ? description : undefined,
+        imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
         priceMinis,
       },
     };
@@ -170,6 +172,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
         type: "CHALLENGE",
         name,
         description: typeof description === "string" ? description : undefined,
+        imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
         ticketPriceMinis,
         ticketCount,
       },
@@ -222,6 +225,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
       type: "MYSTERY_BOX",
       name,
       description: typeof description === "string" ? description : undefined,
+      imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
       priceMinis,
       guaranteedMinMinis,
       rewardTiers: tiers,

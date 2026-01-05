@@ -7,6 +7,8 @@ import { PendingButton } from "@/components/PendingButton";
 import { requireToken } from "@/lib/session";
 import { getProfile } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
+import { WinnerFormClient } from "./WinnerFormClient";
+import { ClearImageFormClient } from "./ClearImageFormClient";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,7 @@ type WinnerEntry = {
   winnerName: string;
   headline: string;
   description?: string;
+  imageUrl?: string;
   status: "PENDING" | "PUBLISHED";
 };
 
@@ -34,7 +37,7 @@ export default async function AdminWinnersPage() {
     <div className="space-y-6">
       <PageHeader eyebrow="Admin" title="Winner spotlights" description="Highlight recent challenge or mystery winners." />
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <CreateWinnerForm />
+        <WinnerFormClient action={createWinner} />
       </section>
       <Suspense fallback={<WinnersSkeleton />}>
         <WinnersTable />
@@ -60,25 +63,41 @@ async function WinnersTable() {
           {winners.map((entry) => (
             <tr key={entry.id} className="border-t border-slate-100">
               <td className="px-4 py-3">
-                <p className="font-semibold text-slate-900">{entry.headline}</p>
-                <p className="text-xs text-slate-500">{entry.winnerName}</p>
-                {entry.description && <p className="text-xs text-slate-500">{entry.description}</p>}
+                <div className="flex items-start gap-3">
+                  {entry.imageUrl && (
+                    <div className="h-12 w-12 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                      <img src={entry.imageUrl} alt={entry.headline} className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-slate-900">{entry.headline}</p>
+                    <p className="text-xs text-slate-500">{entry.winnerName}</p>
+                    {entry.description && <p className="text-xs text-slate-500">{entry.description}</p>}
+                  </div>
+                </div>
               </td>
               <td className="px-4 py-3 text-slate-600">{entry.winnerType}</td>
               <td className="px-4 py-3">
                 <StatusBadge status={entry.status} />
               </td>
               <td className="px-4 py-3">
-                <form action={updateWinnerStatus} className="flex items-center gap-2 text-xs">
+                <form action={updateWinnerStatus} className="flex flex-wrap items-center gap-2 text-xs">
                   <input type="hidden" name="winnerId" value={entry.id} />
                   <select name="status" defaultValue={entry.status} className="rounded-md border border-slate-200 px-2 py-1">
                     <option value="PENDING">Pending</option>
                     <option value="PUBLISHED">Published</option>
                   </select>
+                  <input
+                    name="imageUrl"
+                    defaultValue={entry.imageUrl || ""}
+                    placeholder="Image URL (optional)"
+                    className="min-w-[160px] flex-1 rounded-md border border-slate-200 px-2 py-1"
+                  />
                   <PendingButton pendingLabel="Updating..." className="rounded-md bg-indigo-600 px-3 py-1 text-white">
                     Update
                   </PendingButton>
                 </form>
+                <ClearImageFormClient action={updateWinnerStatus} winnerId={entry.id} status={entry.status} />
                 <form action={deleteWinner}>
                   <input type="hidden" name="winnerId" value={entry.id} />
                   <PendingButton pendingLabel="Removing..." className="text-xs font-semibold text-red-500">
@@ -117,8 +136,13 @@ function WinnersSkeleton() {
           {Array.from({ length: 4 }).map((_, idx) => (
             <tr key={idx} className="border-t border-slate-100">
               <td className="px-4 py-3">
-                <div className="h-4 w-48 rounded bg-slate-200 animate-pulse" />
-                <div className="mt-2 h-3 w-40 rounded bg-slate-100 animate-pulse" />
+                <div className="flex items-start gap-3">
+                  <div className="h-12 w-12 rounded-xl bg-slate-200 animate-pulse" />
+                  <div>
+                    <div className="h-4 w-48 rounded bg-slate-200 animate-pulse" />
+                    <div className="mt-2 h-3 w-40 rounded bg-slate-100 animate-pulse" />
+                  </div>
+                </div>
               </td>
               <td className="px-4 py-3">
                 <div className="h-4 w-20 rounded bg-slate-200 animate-pulse" />
@@ -137,37 +161,6 @@ function WinnersSkeleton() {
   );
 }
 
-function CreateWinnerForm() {
-  return (
-    <form action={createWinner} className="grid gap-4 md:grid-cols-2">
-      <label className="text-sm text-slate-600">
-        Winner type
-        <select name="winnerType" className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-          <option value="CHALLENGE">Challenge</option>
-          <option value="MYSTERY_BOX">Mystery box</option>
-        </select>
-      </label>
-      <label className="text-sm text-slate-600">
-        Winner name
-        <input name="winnerName" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-      </label>
-      <label className="text-sm text-slate-600">
-        Headline
-        <input name="headline" required className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-      </label>
-      <label className="text-sm text-slate-600">
-        Description
-        <textarea name="description" rows={2} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-      </label>
-      <div className="md:col-span-2">
-        <PendingButton pendingLabel="Publishing..." className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white">
-          Publish winner
-        </PendingButton>
-      </div>
-    </form>
-  );
-}
-
 async function createWinner(formData: FormData) {
   "use server";
   const payload = {
@@ -175,6 +168,7 @@ async function createWinner(formData: FormData) {
     winnerName: formData.get("winnerName"),
     headline: formData.get("headline"),
     description: formData.get("description"),
+    imageUrl: formData.get("imageUrl") || undefined,
   };
   await backendFetch("/api/admin/winners", {
     method: "POST",
@@ -188,9 +182,14 @@ async function updateWinnerStatus(formData: FormData) {
   const winnerId = formData.get("winnerId");
   const status = formData.get("status");
   if (!winnerId || !status) return;
+  const imageUrl = formData.get("imageUrl");
+  const payload: Record<string, unknown> = { status };
+  if (typeof imageUrl === "string") {
+    payload.imageUrl = imageUrl.trim();
+  }
   await backendFetch(`/api/admin/winners/${winnerId}`, {
     method: "PATCH",
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(payload),
   });
   revalidatePath("/admin/winners");
 }

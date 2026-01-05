@@ -176,4 +176,5 @@ export interface WinnerSpotlightDto {
   winnerName: string;
   headline: string;
   description?: string;
+  imageUrl?: string;
 }

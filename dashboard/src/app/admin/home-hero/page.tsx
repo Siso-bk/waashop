@@ -28,6 +28,7 @@ export default async function AdminHomeHeroPage({ searchParams }: PageProps) {
   const message = messageValue ? decodeURIComponent(messageValue) : null;
   const totalCards = hero.cards?.length ?? 0;
   const publishedCards = hero.cards?.filter((card) => card.status !== "DRAFT").length ?? 0;
+  const draftCards = totalCards - publishedCards;
 
   return (
     <div className="space-y-6">
@@ -45,6 +46,27 @@ export default async function AdminHomeHeroPage({ searchParams }: PageProps) {
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
               Published {publishedCards}
             </span>
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-amber-700">
+              Drafts {draftCards}
+            </span>
+          </div>
+        </div>
+      </section>
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Publishing checklist</h2>
+            <ul className="mt-3 space-y-2 text-sm text-slate-600">
+              <li>Keep hero titles under 40 characters for best mobile fit.</li>
+              <li>Use one primary CTA per card and keep links relative.</li>
+              <li>Set overlay opacity to keep text readable over images.</li>
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Preview tip</p>
+            <p className="mt-2">
+              Drag cards to reorder them in the carousel. Draft cards stay hidden until published.
+            </p>
           </div>
         </div>
       </section>

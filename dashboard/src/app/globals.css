@@ -112,6 +112,14 @@ body {
   border-color: rgba(245, 158, 11, 0.35) !important;
 }
 
+.portal-theme .preview-theme [class*="text-black"] {
+  color: var(--portal-text) !important;
+}
+
+.portal-theme .preview-theme [class*="border-black"] {
+  border-color: var(--portal-border) !important;
+}
+
 .portal-theme select,
 .portal-theme option {
   background-color: var(--portal-surface);

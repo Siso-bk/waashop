@@ -28,6 +28,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   );
   const q = typeof plainParams.q === "string" ? plainParams.q.trim() : "";
   const status = typeof plainParams.status === "string" ? plainParams.status : "";
+  const sort = typeof plainParams.sort === "string" ? plainParams.sort : "newest";
   await requireToken();
   const { user } = await getProfile();
   if (!user.roles.includes("admin")) {
@@ -67,6 +68,11 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                 </option>
               ))}
             </select>
+            <select name="sort" defaultValue={sort} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="status">Status</option>
+            </select>
             <button className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Search</button>
           </form>
           <p className="text-xs text-slate-500">Search by name, status, or vendor.</p>
@@ -78,6 +84,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
           limit={Number.isFinite(limit) && limit > 0 ? limit : 20}
           q={q}
           status={status || undefined}
+          sort={sort}
         />
       </Suspense>
     </div>
@@ -89,17 +96,20 @@ async function ProductsTable({
   limit,
   q,
   status,
+  sort,
 }: {
   page: number;
   limit: number;
   q: string;
   status?: string;
+  sort: string;
 }) {
   const { products, total, pageSize, hasMore } = await getAdminProducts({
     page,
     limit,
     q: q || undefined,
     status,
+    sort,
   });
   const safeTotal = Number.isFinite(total) ? total : 0;
   const safePageSize = pageSize || limit;
@@ -112,6 +122,7 @@ async function ProductsTable({
     if (status) params.set("status", status);
     params.set("page", String(nextPage));
     params.set("limit", String(safePageSize));
+    if (sort) params.set("sort", sort);
     return `?${params.toString()}`;
   };
   return (

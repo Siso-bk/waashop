@@ -11,6 +11,13 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [state, action] = useActionState(createVendorProductAction, initialState);
   const { pending } = useFormStatus();
   const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE" | "STANDARD">("MYSTERY_BOX");
+  const [productName, setProductName] = useState("");
+  const [productDescription, setProductDescription] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [priceMinis, setPriceMinis] = useState("");
+  const [guaranteedMinMinis, setGuaranteedMinMinis] = useState("");
+  const [ticketPriceMinis, setTicketPriceMinis] = useState("");
+  const [ticketCount, setTicketCount] = useState("");
   const [tiers, setTiers] = useState([
     { minis: "600", probability: "0.55", isTop: false },
     { minis: "800", probability: "0.25", isTop: false },
@@ -30,6 +37,23 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
       .filter((tier) => Number.isFinite(tier.minis) && Number.isFinite(tier.probability) && tier.minis > 0 && tier.probability > 0);
     return JSON.stringify(normalized, null, 2);
   }, [tiers]);
+
+  const previewName = productName.trim() || "Product name";
+  const previewDescription = productDescription.trim() || "Add a concise description for your listing.";
+  const previewPrice =
+    productType === "CHALLENGE"
+      ? ticketPriceMinis
+        ? `${ticketPriceMinis} MINIS`
+        : "Ticket price"
+      : priceMinis
+        ? `${priceMinis} MINIS`
+        : "Price";
+  const previewMeta =
+    productType === "MYSTERY_BOX"
+      ? `Guaranteed minimum: ${guaranteedMinMinis || "—"} MINI`
+      : productType === "CHALLENGE"
+        ? `Tickets: ${ticketCount || "—"}`
+        : "";
 
   const updateTier = (index: number, key: "minis" | "probability" | "isTop", value: string | boolean) => {
     setTiers((prev) =>
@@ -76,6 +100,8 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           name="productName"
           required
           disabled={isLocked}
+          value={productName}
+          onChange={(event) => setProductName(event.target.value)}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         />
       </div>
@@ -88,8 +114,66 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           name="productDescription"
           rows={3}
           disabled={isLocked}
+          value={productDescription}
+          onChange={(event) => setProductDescription(event.target.value)}
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-slate-600" htmlFor="productImageUrl">
+          Product image
+        </label>
+        <input
+          id="productImageUrl"
+          name="imageUrl"
+          value={imageUrl}
+          disabled={isLocked}
+          onChange={(event) => setImageUrl(event.target.value)}
+          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+          placeholder="https://..."
+        />
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
+            Upload
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={isLocked}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                if (file.size > 1024 * 1024) {
+                  window.alert("Please use an image under 1MB.");
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                  if (typeof reader.result === "string") {
+                    setImageUrl(reader.result);
+                  }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </label>
+          {imageUrl && (
+            <button
+              type="button"
+              onClick={() => setImageUrl("")}
+              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
+            >
+              Clear
+            </button>
+          )}
+          <span>Uploads store as data URLs. Use hosted URLs for production.</span>
+        </div>
+        {imageUrl && (
+          <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageUrl} alt={productName || "Product preview"} className="h-36 w-full object-cover" />
+          </div>
+        )}
       </div>
       {productType === "MYSTERY_BOX" ? (
         <>
@@ -105,6 +189,8 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                 min={1}
                 required
                 disabled={isLocked}
+                value={priceMinis}
+                onChange={(event) => setPriceMinis(event.target.value)}
                 className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
               />
             </div>
@@ -119,6 +205,8 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                 min={1}
                 required
                 disabled={isLocked}
+                value={guaranteedMinMinis}
+                onChange={(event) => setGuaranteedMinMinis(event.target.value)}
                 className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
               />
             </div>
@@ -199,6 +287,8 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
             min={1}
             required
             disabled={isLocked}
+            value={priceMinis}
+            onChange={(event) => setPriceMinis(event.target.value)}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
           />
         </div>
@@ -215,6 +305,8 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
               min={1}
               required
               disabled={isLocked}
+              value={ticketPriceMinis}
+              onChange={(event) => setTicketPriceMinis(event.target.value)}
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
@@ -229,11 +321,31 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
               min={1}
               required
               disabled={isLocked}
+              value={ticketCount}
+              onChange={(event) => setTicketCount(event.target.value)}
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
         </div>
       )}
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Preview</p>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          {imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt={previewName} className="h-36 w-full object-cover" />
+          )}
+          <div className="p-4">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="uppercase tracking-[0.3em]">{productType.replace(/_/g, " ")}</span>
+              <span className="font-semibold text-slate-600">{previewPrice}</span>
+            </div>
+            <p className="mt-2 text-lg font-semibold text-slate-900">{previewName}</p>
+            <p className="mt-1 text-sm text-slate-500">{previewDescription}</p>
+            {previewMeta && <p className="mt-2 text-xs text-slate-500">{previewMeta}</p>}
+          </div>
+        </div>
+      </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
       <PendingButton
         pendingLabel="Submitting..."

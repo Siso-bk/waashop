@@ -15,29 +15,85 @@ import {
   deletePromoCardAction,
   updateVendorOrderAction,
 } from "@/app/vendor/actions";
+import { PromoEditFormClient } from "./PromoEditFormClient";
+import { VendorWorkspaceClient } from "./VendorWorkspaceClient";
 
 export const dynamic = "force-dynamic";
+
+const CLOSED_ORDER_STATUSES: OrderDto["status"][] = ["COMPLETED", "REFUNDED", "CANCELLED"];
+const ORDER_STATUS_SEQUENCE: OrderDto["status"][] = [
+  "PLACED",
+  "PACKED",
+  "SHIPPED",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "COMPLETED",
+  "DISPUTED",
+  "REFUNDED",
+  "CANCELLED",
+  "REJECTED",
+  "DAMAGED",
+  "UNSUCCESSFUL",
+];
+
+const formatMinis = (value: number) => value.toLocaleString();
+
+const formatStatusLabel = (status: string) => status.replace(/_/g, " ").toLowerCase();
+const formatProductType = (type: ProductDto["type"]) => type.replace(/_/g, " ").toLowerCase();
+
+function SummarySkeleton() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="animate-pulse space-y-4">
+        <div className="h-4 w-32 rounded bg-slate-200" />
+        <div className="h-6 w-48 rounded bg-slate-200" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="h-20 rounded-xl border border-slate-100 bg-slate-50" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default async function VendorDashboardPage() {
   await requireToken();
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Vendor" title="Vendor Workspace" description="Submit your profile, products, mystery boxes, and challenges." />
-      <Suspense fallback={<ProfileSkeleton />}>
-        <ProfileSection />
+      <Suspense fallback={<SummarySkeleton />}>
+        <SummarySection />
       </Suspense>
-      <Suspense fallback={<PromoSkeleton />}>
-        <PromoSection />
-      </Suspense>
-      <Suspense fallback={<ProductSubmitSkeleton />}>
-        <SubmissionSection />
-      </Suspense>
-      <Suspense fallback={<OrdersSkeleton />}>
-        <OrdersSection />
-      </Suspense>
-      <Suspense fallback={<ProductListSkeleton />}>
-        <ProductsSection />
-      </Suspense>
+      <VendorWorkspaceClient
+        sections={{
+          profile: (
+            <Suspense fallback={<ProfileSkeleton />}>
+              <ProfileSection />
+            </Suspense>
+          ),
+          promos: (
+            <Suspense fallback={<PromoSkeleton />}>
+              <PromoSection />
+            </Suspense>
+          ),
+          submissions: (
+            <Suspense fallback={<ProductSubmitSkeleton />}>
+              <SubmissionSection />
+            </Suspense>
+          ),
+          orders: (
+            <Suspense fallback={<OrdersSkeleton />}>
+              <OrdersSection />
+            </Suspense>
+          ),
+          products: (
+            <Suspense fallback={<ProductListSkeleton />}>
+              <ProductsSection />
+            </Suspense>
+          ),
+        }}
+      />
     </div>
   );
 }
@@ -45,7 +101,7 @@ export default async function VendorDashboardPage() {
 async function ProfileSection() {
   const { vendor } = await getProfile();
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section id="vendor-profile" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-900">Profile</h2>
         {vendor && <StatusBadge status={vendor.status} />}
@@ -59,6 +115,79 @@ async function ProfileSection() {
     </section>
   );
 }
+
+async function SummarySection() {
+  const { vendor, user } = await getProfile();
+  const isApproved = vendor?.status === "APPROVED";
+  let products: ProductDto[] = [];
+  let orders: OrderDto[] = [];
+  let promoCards: PromoCardDto[] = [];
+
+  if (isApproved) {
+    try {
+      const [productsResult, ordersResult, promosResult] = await Promise.all([
+        getVendorProducts(),
+        getVendorOrders(),
+        getVendorPromoCards(),
+      ]);
+      products = productsResult.products;
+      orders = ordersResult.orders;
+      promoCards = promosResult.promoCards;
+    } catch (error) {
+      console.error("Failed to load vendor summary", error);
+    }
+  }
+
+  const pendingProducts = products.filter((product) => product.status === "PENDING").length;
+  const activeProducts = products.filter((product) => product.status === "ACTIVE").length;
+  const openOrders = orders.filter((order) => !CLOSED_ORDER_STATUSES.includes(order.status)).length;
+  const grossSales = orders.reduce((sum, order) => sum + order.amountMinis, 0);
+  const escrowMinis = orders
+    .filter((order) => !order.escrowReleased && !CLOSED_ORDER_STATUSES.includes(order.status))
+    .reduce((sum, order) => sum + order.amountMinis, 0);
+  const paidOutMinis = orders
+    .filter((order) => Boolean(order.escrowReleased))
+    .reduce((sum, order) => sum + order.amountMinis, 0);
+
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Overview</p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-900">Hello {user.firstName || user.username || "vendor"}</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {vendor ? "Track submissions, orders, and promo visibility." : "Start by creating your vendor profile."}
+          </p>
+        </div>
+        {vendor && <StatusBadge status={vendor.status} />}
+      </div>
+      <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <SummaryCard label="Products" value={`${products.length}`} helper={`${activeProducts} active`} />
+        <SummaryCard label="Pending reviews" value={`${pendingProducts}`} helper="Awaiting approval" />
+        <SummaryCard label="Open orders" value={`${openOrders}`} helper="Need updates" />
+        <SummaryCard label="Promo cards" value={`${promoCards.length}`} helper="Submitted" />
+        <SummaryCard label="Gross sales" value={`${formatMinis(grossSales)} MINIS`} helper="All orders" />
+        <SummaryCard label="Escrow held" value={`${formatMinis(escrowMinis)} MINIS`} helper={`${formatMinis(paidOutMinis)} paid out`} />
+      </div>
+      {!vendor && (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Complete your vendor profile to submit products and promo cards.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SummaryCard({ label, value, helper }: { label: string; value: string; helper: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
+      <p className="text-xs text-slate-500">{helper}</p>
+    </div>
+  );
+}
+
 
 async function PromoSection() {
   const { vendor } = await getProfile();
@@ -74,7 +203,7 @@ async function PromoSection() {
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section id="vendor-promos" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-900">Promoted card</h2>
         <span className="text-xs text-slate-500">Optional paid slot</span>
@@ -103,40 +232,14 @@ function PromoCardItem({ card }: { card: PromoCardDto }) {
         <p className="font-semibold text-slate-900">{card.title}</p>
         {card.status && <StatusBadge status={card.status} />}
       </div>
+      {card.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={card.imageUrl} alt={card.title} className="mt-3 h-32 w-full rounded-xl object-cover" />
+      )}
       {card.description && <p className="mt-2 text-sm text-slate-500">{card.description}</p>}
       {card.status === "PENDING" && (
         <div className="mt-3 space-y-2">
-          <form action={vendorUpdatePromo} className="space-y-2">
-            <input type="hidden" name="promoId" value={card.id} />
-            <input name="promoTitle" defaultValue={card.title} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-            <textarea
-              name="promoDescription"
-              defaultValue={card.description || ""}
-              rows={2}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            />
-            <input
-              name="promoCtaLabel"
-              defaultValue={card.ctaLabel || ""}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              placeholder="CTA label"
-            />
-            <input
-              name="promoCtaHref"
-              defaultValue={card.ctaHref || ""}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              placeholder="/boxes/BOX_123"
-            />
-            <input
-              name="promoImageUrl"
-              defaultValue={card.imageUrl || ""}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              placeholder="https://..."
-            />
-            <PendingButton pendingLabel="Saving..." className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
-              Save promo
-            </PendingButton>
-          </form>
+          <PromoEditFormClient action={vendorUpdatePromo} card={card} />
           <form action={vendorDeletePromo}>
             <input type="hidden" name="promoId" value={card.id} />
             <PendingButton pendingLabel="Deleting..." className="text-sm font-semibold text-red-500">
@@ -153,7 +256,7 @@ async function SubmissionSection() {
   const { vendor } = await getProfile();
   const approved = vendor?.status === "APPROVED";
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section id="vendor-submissions" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-900">Product Submissions</h2>
         <span className="text-xs text-slate-500">Status: {vendor?.status || "N/A"}</span>
@@ -163,8 +266,33 @@ async function SubmissionSection() {
           Products, mystery boxes, and challenges can be submitted once your vendor profile is approved.
         </p>
       ) : (
-        <div className="mt-4">
-          <VendorProductForm />
+        <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,2fr),minmax(0,1fr)]">
+          <div className="space-y-4">
+            <VendorProductForm />
+          </div>
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Checklist</p>
+              <ul className="mt-3 space-y-2 text-xs text-slate-500">
+                <li>Clear title + short description.</li>
+                <li>High-quality image (optional but recommended).</li>
+                <li>Pricing aligned to audience value.</li>
+                <li>For challenges: ticket price + total count.</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Review window</p>
+              <p className="mt-2 text-xs text-slate-500">
+                Most submissions are reviewed within 24–48 hours. You can update details while pending.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Quality bar</p>
+              <p className="mt-2 text-xs text-slate-500">
+                Products with clear value, realistic rewards, and clean imagery move faster through approvals.
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </section>
@@ -186,9 +314,14 @@ async function ProductsSection() {
     }
   }
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">Your Products</h2>
-      <p className="text-sm text-slate-500">Track approval status and pricing.</p>
+    <section id="vendor-products" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Your Products</h2>
+          <p className="text-sm text-slate-500">Track approval status and pricing.</p>
+        </div>
+        <span className="text-xs text-slate-500">Total = {products.length}</span>
+      </div>
       <div className="mt-4 space-y-3">
         {products.map((product) => (
           <ProductCard key={product._id} product={product} />
@@ -203,7 +336,7 @@ async function OrdersSection() {
   const { vendor } = await getProfile();
   if (!vendor || vendor.status !== "APPROVED") {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section id="vendor-orders" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Orders</h2>
         <p className="text-sm text-slate-500">Orders will appear after approval.</p>
       </section>
@@ -216,10 +349,28 @@ async function OrdersSection() {
   } catch (error) {
     console.error("Failed to load vendor orders", error);
   }
+  const statusSummary = orders.reduce<Record<string, number>>((acc, order) => {
+    acc[order.status] = (acc[order.status] || 0) + 1;
+    return acc;
+  }, {});
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">Orders</h2>
-      <p className="text-sm text-slate-500">Manage fulfillment and tracking.</p>
+    <section id="vendor-orders" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Orders</h2>
+          <p className="text-sm text-slate-500">Manage fulfillment and tracking.</p>
+        </div>
+        <span className="text-xs text-slate-500">Total = {orders.length}</span>
+      </div>
+      {orders.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+          {ORDER_STATUS_SEQUENCE.filter((status) => statusSummary[status]).map((status) => (
+            <span key={status} className="rounded-full border border-slate-200 px-3 py-1">
+              {formatStatusLabel(status)} · {statusSummary[status]}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="mt-4 space-y-3">
         {orders.map((order) => (
           <OrderCard key={order.id} order={order} />
@@ -237,9 +388,21 @@ function ProductCard({ product }: { product: ProductDto }) {
         <div>
           <p className="font-semibold text-slate-900">{product.name}</p>
           <p className="text-xs text-slate-500">{product.priceMinis.toLocaleString()} MINIS</p>
+          <p className="text-xs text-slate-400">Updated {new Date(product.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
         </div>
-        <StatusBadge status={product.status} />
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+            {formatProductType(product.type)}
+          </span>
+          <StatusBadge status={product.status} />
+        </div>
       </div>
+      {product.imageUrl && (
+        <div className="mt-3 h-28 w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+        </div>
+      )}
       <p className="mt-2 text-sm text-slate-500">{product.description || "No description"}</p>
       {product.type === "CHALLENGE" ? (
         <p className="mt-2 text-xs text-slate-500">
@@ -364,6 +527,20 @@ function OrderCard({ order }: { order: OrderDto }) {
           <span className="font-semibold text-amber-600">Funds pending in escrow</span>
         )}
       </div>
+      {order.events && order.events.length > 0 && (
+        <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          {(() => {
+            const latestEvent = order.events?.[order.events.length - 1];
+            if (!latestEvent) return null;
+            return (
+              <>
+                <p className="font-semibold text-slate-700">Latest update: {formatStatusLabel(latestEvent.status)}</p>
+                {latestEvent.note && <p>{latestEvent.note}</p>}
+              </>
+            );
+          })()}
+        </div>
+      )}
       {order.status !== "COMPLETED" &&
         order.status !== "REFUNDED" &&
         order.status !== "CANCELLED" && (

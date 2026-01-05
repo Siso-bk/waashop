@@ -34,6 +34,7 @@ type AdminListParams = {
   limit?: number;
   q?: string;
   status?: string;
+  sort?: string;
 };
 
 export const getAdminVendors = async (params: AdminListParams = {}) => {
@@ -42,6 +43,7 @@ export const getAdminVendors = async (params: AdminListParams = {}) => {
   if (params.page) search.set("page", String(params.page));
   if (params.limit) search.set("limit", String(params.limit));
   if (params.q) search.set("q", params.q);
+  if (params.sort) search.set("sort", params.sort);
   const query = search.toString() ? `?${search.toString()}` : "";
   return backendFetch<{
     vendors: VendorProfile[];
@@ -58,6 +60,7 @@ export const getAdminProducts = async (params: AdminListParams = {}) => {
   if (params.page) search.set("page", String(params.page));
   if (params.limit) search.set("limit", String(params.limit));
   if (params.q) search.set("q", params.q);
+  if (params.sort) search.set("sort", params.sort);
   const query = search.toString() ? `?${search.toString()}` : "";
   return backendFetch<{
     products: ProductDto[];
@@ -93,6 +96,7 @@ export const getAdminUsers = async (params: AdminListParams = {}) => {
   if (params.page) search.set("page", String(params.page));
   if (params.limit) search.set("limit", String(params.limit));
   if (params.q) search.set("q", params.q);
+  if (params.sort) search.set("sort", params.sort);
   const query = search.toString() ? `?${search.toString()}` : "";
   return backendFetch<{
     users: AdminUser[];
@@ -148,6 +152,7 @@ export const getAdminOrders = async (params: AdminListParams = {}) => {
   if (params.page) search.set("page", String(params.page));
   if (params.limit) search.set("limit", String(params.limit));
   if (params.q) search.set("q", params.q);
+  if (params.sort) search.set("sort", params.sort);
   const query = search.toString() ? `?${search.toString()}` : "";
   return backendFetch<{
     orders: OrderDto[];

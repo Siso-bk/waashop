@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { HomeHeroCard } from "@/types";
 
@@ -73,13 +74,15 @@ export function HeroCards({ cards, prefersLightText }: Props) {
             aria-pressed={activeId === card.id}
             aria-label={card.title}
           >
-            {card.imageUrl ? (
+            {card.imageUrl && (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={card.imageUrl}
                   alt={card.title}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="220px"
+                  unoptimized
                 />
                 <div
                   className="absolute inset-0"
@@ -94,14 +97,6 @@ export function HeroCards({ cards, prefersLightText }: Props) {
                   }}
                 />
               </>
-            ) : (
-              <div
-                className={
-                  prefersLightText
-                    ? "absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),rgba(0,0,0,0.3))]"
-                    : "absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.08),rgba(255,255,255,0.9))]"
-                }
-              />
             )}
             <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/60 to-transparent" />
             <div className="relative z-10 flex h-full flex-col justify-end gap-1">

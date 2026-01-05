@@ -26,6 +26,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
     typeof plainParams.limit === "string" ? plainParams.limit : Array.isArray(plainParams.limit) ? plainParams.limit[0] : 20
   );
   const q = typeof plainParams.q === "string" ? plainParams.q.trim() : "";
+  const sort = typeof plainParams.sort === "string" ? plainParams.sort : "newest";
   await requireToken();
   const { user } = await getProfile();
   if (!user.roles.includes("admin")) {
@@ -57,6 +58,12 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                 </option>
               ))}
             </select>
+            <select name="sort" defaultValue={sort} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="balance_desc">Balance high</option>
+              <option value="balance_asc">Balance low</option>
+            </select>
             <button className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Search</button>
           </form>
           <p className="text-xs text-slate-500">Search by email, username, or name.</p>
@@ -67,14 +74,15 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           page={Number.isFinite(page) && page > 0 ? page : 1}
           limit={Number.isFinite(limit) && limit > 0 ? limit : 20}
           q={q}
+          sort={sort}
         />
       </Suspense>
     </div>
   );
 }
 
-async function UsersTable({ page, limit, q }: { page: number; limit: number; q: string }) {
-  const { users, total, pageSize, hasMore } = await getAdminUsers({ page, limit, q: q || undefined });
+async function UsersTable({ page, limit, q, sort }: { page: number; limit: number; q: string; sort: string }) {
+  const { users, total, pageSize, hasMore } = await getAdminUsers({ page, limit, q: q || undefined, sort });
   const safeTotal = Number.isFinite(total) ? total : 0;
   const safePageSize = pageSize || limit;
   const totalPages = Math.max(1, Math.ceil(safeTotal / safePageSize));
@@ -85,6 +93,7 @@ async function UsersTable({ page, limit, q }: { page: number; limit: number; q: 
     if (q) params.set("q", q);
     params.set("page", String(nextPage));
     params.set("limit", String(safePageSize));
+    if (sort) params.set("sort", sort);
     return `?${params.toString()}`;
   };
   return (

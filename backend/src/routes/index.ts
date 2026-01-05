@@ -129,6 +129,7 @@ const normalizeProduct = (product: any) => ({
   vendorId: product.vendorId,
   name: product.name,
   description: product.description,
+  imageUrl: product.imageUrl,
   type: product.type,
   status: product.status,
   categories: product.categories || [],
@@ -982,6 +983,7 @@ router.get(
       page: z.coerce.number().int().min(1).default(1),
       limit: z.coerce.number().int().min(1).max(100).default(50),
       q: z.string().max(120).optional(),
+      sort: z.enum(["newest", "oldest", "balance_desc", "balance_asc"]).default("newest"),
     });
     const params = querySchema.parse(req.query);
     await connectDB();
@@ -992,8 +994,14 @@ router.get(
       const regex = new RegExp(escaped, "i");
       filter.$or = [{ email: regex }, { username: regex }, { firstName: regex }, { lastName: regex }];
     }
+    const sortMap: Record<typeof params.sort, Record<string, 1 | -1>> = {
+      newest: { createdAt: -1 },
+      oldest: { createdAt: 1 },
+      balance_desc: { minisBalance: -1 },
+      balance_asc: { minisBalance: 1 },
+    };
     const [users, total] = await Promise.all([
-      User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(params.limit).lean(),
+      User.find(filter).sort(sortMap[params.sort]).skip(skip).limit(params.limit).lean(),
       User.countDocuments(filter),
     ]);
     res.json({
@@ -1883,6 +1891,7 @@ router.get(
         winnerName: entry.winnerName,
         headline: entry.headline,
         description: entry.description,
+        imageUrl: entry.imageUrl,
         status: entry.status,
       })),
     });
@@ -1894,6 +1903,7 @@ const winnerSchema = z.object({
   winnerName: z.string().min(2),
   headline: z.string().min(4),
   description: z.string().max(400).optional(),
+  imageUrl: z.union([z.string().min(4), z.literal("")]).optional(),
 });
 
 router.post(
@@ -1909,6 +1919,7 @@ router.post(
         winnerName: payload.winnerName,
         headline: payload.headline,
         description: payload.description,
+        imageUrl: payload.imageUrl,
         status: "PUBLISHED",
       });
       res.json({ winner: entry });
@@ -1927,7 +1938,13 @@ router.patch(
     try {
       const payload = winnerSchema.extend({ status: z.enum(["PENDING", "PUBLISHED"]).optional() }).partial().parse(req.body);
       await connectDB();
-      const winner = await WinnerSpotlight.findByIdAndUpdate(req.params.id, payload, { new: true }).lean();
+      const update: Record<string, unknown> = { ...payload };
+      const updateOps: Record<string, unknown> = { $set: update };
+      if (payload.imageUrl === "") {
+        delete update.imageUrl;
+        updateOps.$unset = { imageUrl: 1 };
+      }
+      const winner = await WinnerSpotlight.findByIdAndUpdate(req.params.id, updateOps, { new: true }).lean();
       if (!winner) {
         return res.status(404).json({ error: "Winner entry not found" });
       }
@@ -1968,6 +1985,44 @@ router.patch(
       res.json({ promoCard: serializePromoCard(card) });
     } catch (error) {
       console.error("Promo card status error", error);
+      res.status(400).json({ error: "Unable to update promo card" });
+    }
+  }
+);
+
+router.patch(
+  "/admin/promo-cards/:id",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    const schema = z.object({
+      imageUrl: z.union([z.string().min(4), z.literal("")]).optional(),
+    });
+    try {
+      const payload = schema.parse(req.body);
+      await connectDB();
+      const update: Record<string, unknown> = {};
+      if (typeof payload.imageUrl === "string") {
+        if (payload.imageUrl.trim().length === 0) {
+          const card = await PromoCard.findByIdAndUpdate(
+            req.params.id,
+            { $unset: { imageUrl: 1 } },
+            { new: true }
+          ).exec();
+          if (!card) {
+            return res.status(404).json({ error: "Promo card not found" });
+          }
+          return res.json({ promoCard: serializePromoCard(card) });
+        }
+        update.imageUrl = payload.imageUrl.trim();
+      }
+      const card = await PromoCard.findByIdAndUpdate(req.params.id, { $set: update }, { new: true }).exec();
+      if (!card) {
+        return res.status(404).json({ error: "Promo card not found" });
+      }
+      res.json({ promoCard: serializePromoCard(card) });
+    } catch (error) {
+      console.error("Promo card update error", error);
       res.status(400).json({ error: "Unable to update promo card" });
     }
   }
@@ -2084,6 +2139,7 @@ router.get(
       page: z.coerce.number().int().min(1).default(1),
       limit: z.coerce.number().int().min(1).max(100).default(20),
       q: z.string().max(120).optional(),
+      sort: z.enum(["newest", "oldest", "status"]).default("newest"),
     });
     const params = schema.parse(req.query);
     await connectDB();
@@ -2097,8 +2153,13 @@ router.get(
       query.$or = [{ name: regex }, { description: regex }];
     }
     const skip = (params.page - 1) * params.limit;
+    const sortMap: Record<typeof params.sort, Record<string, 1 | -1>> = {
+      newest: { createdAt: -1 },
+      oldest: { createdAt: 1 },
+      status: { status: 1, createdAt: -1 },
+    };
     const [vendors, total] = await Promise.all([
-      Vendor.find(query).sort({ createdAt: -1 }).skip(skip).limit(params.limit).lean(),
+      Vendor.find(query).sort(sortMap[params.sort]).skip(skip).limit(params.limit).lean(),
       Vendor.countDocuments(query),
     ]);
     res.json({
@@ -2144,6 +2205,7 @@ const rewardTierSchema = z.object({
 const mysteryBoxSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
+  imageUrl: z.string().max(2000000).optional(),
   priceMinis: z.number().int().positive(),
   guaranteedMinMinis: z.number().int().positive(),
   rewardTiers: z.array(rewardTierSchema).min(1),
@@ -2152,6 +2214,7 @@ const mysteryBoxSchema = z.object({
 const standardProductSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
+  imageUrl: z.string().max(2000000).optional(),
   priceMinis: z.number().positive(),
   categories: z.array(z.string().min(1).max(40)).max(8).optional(),
 });
@@ -2159,6 +2222,7 @@ const standardProductSchema = z.object({
 const challengeSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
+  imageUrl: z.string().max(2000000).optional(),
   ticketPriceMinis: z.number().int().positive(),
   ticketCount: z.number().int().positive(),
 });
@@ -2184,6 +2248,7 @@ router.post(
           vendorId: req.vendorDoc!._id,
           name: payload.name,
           description: payload.description,
+          imageUrl: payload.imageUrl,
           type: "STANDARD",
           status: "PENDING",
           priceMinis: payload.priceMinis,
@@ -2201,6 +2266,7 @@ router.post(
           vendorId: req.vendorDoc!._id,
           name: payload.name,
           description: payload.description,
+          imageUrl: payload.imageUrl,
           type: "CHALLENGE",
           status: "PENDING",
           ticketPriceMinis: payload.ticketPriceMinis,
@@ -2223,6 +2289,7 @@ router.post(
         vendorId: req.vendorDoc!._id,
         name: payload.name,
         description: payload.description,
+        imageUrl: payload.imageUrl,
         priceMinis: payload.priceMinis,
         guaranteedMinMinis: payload.guaranteedMinMinis,
         rewardTiers: payload.rewardTiers,
@@ -2259,6 +2326,7 @@ router.patch(
         Object.assign(product, {
           name: payload.name,
           description: payload.description,
+          imageUrl: payload.imageUrl,
           priceMinis: payload.priceMinis,
           type: "STANDARD",
           categories: (payload.categories || []).map((category) => category.trim().toLowerCase()),
@@ -2272,6 +2340,7 @@ router.patch(
         Object.assign(product, {
           name: payload.name,
           description: payload.description,
+          imageUrl: payload.imageUrl,
           type: "CHALLENGE",
           ticketPriceMinis: payload.ticketPriceMinis,
           ticketCount: payload.ticketCount,
@@ -2284,6 +2353,7 @@ router.patch(
         Object.assign(product, {
           name: payload.name,
           description: payload.description,
+          imageUrl: payload.imageUrl,
           priceMinis: payload.priceMinis,
           guaranteedMinMinis: payload.guaranteedMinMinis,
           rewardTiers: payload.rewardTiers,
@@ -2341,6 +2411,7 @@ router.get(
       page: z.coerce.number().int().min(1).default(1),
       limit: z.coerce.number().int().min(1).max(100).default(20),
       q: z.string().max(120).optional(),
+      sort: z.enum(["newest", "oldest", "status"]).default("newest"),
     });
     const params = schema.parse(req.query);
     await connectDB();
@@ -2362,8 +2433,13 @@ router.get(
       ];
     }
     const skip = (params.page - 1) * params.limit;
+    const sortMap: Record<typeof params.sort, Record<string, 1 | -1>> = {
+      newest: { createdAt: -1 },
+      oldest: { createdAt: 1 },
+      status: { status: 1, createdAt: -1 },
+    };
     const [products, total] = await Promise.all([
-      Product.find(query).sort({ createdAt: -1 }).skip(skip).limit(params.limit).populate("vendorId", "name").lean(),
+      Product.find(query).sort(sortMap[params.sort]).skip(skip).limit(params.limit).populate("vendorId", "name").lean(),
       Product.countDocuments(query),
     ]);
     res.json({
@@ -2391,6 +2467,7 @@ router.patch(
       Object.assign(product, {
         name: payload.name,
         description: payload.description,
+        imageUrl: payload.imageUrl,
         priceMinis: payload.priceMinis,
         guaranteedMinMinis: payload.guaranteedMinMinis,
         rewardTiers: payload.rewardTiers,
@@ -2493,6 +2570,7 @@ router.get("/winners", async (_req, res) => {
       winnerName: entry.winnerName,
       headline: entry.headline,
       description: entry.description,
+      imageUrl: entry.imageUrl,
     })),
   });
 });
@@ -2854,6 +2932,7 @@ router.get("/admin/orders", authMiddleware, requireRole("admin"), async (req, re
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(25),
     q: z.string().max(120).optional(),
+    sort: z.enum(["newest", "oldest", "status"]).default("newest"),
   });
   const params = schema.parse(req.query);
   await connectDB();
@@ -2883,8 +2962,13 @@ router.get("/admin/orders", authMiddleware, requireRole("admin"), async (req, re
     filter.$or = orFilters;
   }
   const skip = (params.page - 1) * params.limit;
+  const sortMap: Record<typeof params.sort, Record<string, 1 | -1>> = {
+    newest: { createdAt: -1 },
+    oldest: { createdAt: 1 },
+    status: { status: 1, createdAt: -1 },
+  };
   const [orders, total] = await Promise.all([
-    Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(params.limit).lean(),
+    Order.find(filter).sort(sortMap[params.sort]).skip(skip).limit(params.limit).lean(),
     Order.countDocuments(filter),
   ]);
   res.json({

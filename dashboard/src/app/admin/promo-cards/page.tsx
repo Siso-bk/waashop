@@ -5,6 +5,7 @@ import { PendingButton } from "@/components/PendingButton";
 import { backendFetch } from "@/lib/backendClient";
 import { getProfile } from "@/lib/queries";
 import { requireToken } from "@/lib/session";
+import { PromoImageFormClient } from "./PromoImageFormClient";
 
 type PromoCardAdmin = {
   id: string;
@@ -54,12 +55,19 @@ async function PromoTable() {
               <td className="px-4 py-3">
                 <p className="font-semibold text-slate-900">{card.title}</p>
                 {card.description && <p className="text-xs text-slate-500">{card.description}</p>}
+                {card.imageUrl && (
+                  <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={card.imageUrl} alt={card.title} className="h-28 w-full object-cover" />
+                  </div>
+                )}
               </td>
               <td className="px-4 py-3 text-slate-600">{card.vendor || "Unknown vendor"}</td>
               <td className="px-4 py-3">{card.status && <StatusBadge status={card.status} />}</td>
               <td className="px-4 py-3">
                 <div className="space-y-2">
                   <PromoStatusForm cardId={card.id} current={card.status || "PENDING"} />
+                  <PromoImageFormClient action={updatePromoImage} card={card} />
                   <form action={deletePromoCard}>
                     <input type="hidden" name="cardId" value={card.id} />
                     <PendingButton pendingLabel="Deleting..." className="text-xs font-semibold text-red-500">
@@ -147,6 +155,19 @@ async function updatePromoStatus(formData: FormData) {
   await backendFetch(`/api/admin/promo-cards/${cardId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/admin/promo-cards");
+}
+
+async function updatePromoImage(formData: FormData) {
+  "use server";
+  const cardId = formData.get("cardId");
+  if (!cardId || typeof cardId !== "string") return;
+  const imageUrl = formData.get("imageUrl");
+  await backendFetch(`/api/admin/promo-cards/${cardId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ imageUrl }),
   });
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/admin/promo-cards");

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { formatMinis } from "@/lib/minis";
 import type { StandardProduct } from "@/types";
@@ -35,27 +36,15 @@ export function StandardProductOrderCard({
       }}
     >
       <div className="relative z-10 mb-2 block">
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <div className="h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-[color:var(--surface-bg)]">
-            <img
+        {product.imageUrl && (
+          <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-[color:var(--surface-bg)]">
+            <Image
               src={product.imageUrl}
               alt={product.name}
-              className="h-full w-full object-cover"
-              loading="lazy"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 100vw"
             />
-          </div>
-        ) : (
-          <div className="flex h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-black/15 bg-[color:var(--surface-bg)]">
-            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7 text-gray-400">
-              <path
-                fill="currentColor"
-                d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v9A2.5 2.5 0 0 1 17.5 17h-11A2.5 2.5 0 0 1 4 14.5v-9Zm2.5-.5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V9l-3.2 3.2a1 1 0 0 1-1.3.1L10 11l-4 4V5.5a.5.5 0 0 0-.5-.5Z"
-              />
-            </svg>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-400">
-              No image
-            </span>
           </div>
         )}
       </div>

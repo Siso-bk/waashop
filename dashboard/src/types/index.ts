@@ -31,6 +31,7 @@ export interface ProductDto {
   vendorId: string | { _id: string; name: string };
   name: string;
   description?: string;
+  imageUrl?: string;
   type: "MYSTERY_BOX" | "STANDARD" | "CHALLENGE";
   status: "DRAFT" | "PENDING" | "ACTIVE" | "INACTIVE";
   priceMinis: number;

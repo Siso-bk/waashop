@@ -25,6 +25,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
     typeof plainParams.limit === "string" ? plainParams.limit : Array.isArray(plainParams.limit) ? plainParams.limit[0] : 25
   );
   const q = typeof plainParams.q === "string" ? plainParams.q.trim() : "";
+  const sort = typeof plainParams.sort === "string" ? plainParams.sort : "newest";
   await requireToken();
   const { user } = await getProfile();
   if (!user.roles.includes("admin")) {
@@ -35,6 +36,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
     page: Number.isFinite(page) && page > 0 ? page : 1,
     limit: Number.isFinite(limit) && limit > 0 ? limit : 25,
     q: q || undefined,
+    sort,
   });
   const safeTotal = Number.isFinite(total) ? total : 0;
   const safePageSize = pageSize || (Number.isFinite(limit) && limit > 0 ? limit : 25);
@@ -47,6 +49,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
     if (q) params.set("q", q);
     params.set("page", String(nextPage));
     params.set("limit", String(safePageSize));
+    if (sort) params.set("sort", sort);
     return `?${params.toString()}`;
   };
   const status = statusValue;
@@ -76,6 +79,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
             className="w-56 rounded-lg border border-slate-200 px-3 py-2 text-sm"
           />
           <input type="hidden" name="limit" value={safePageSize} />
+          <select name="sort" defaultValue={sort} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="status">Status</option>
+          </select>
           <button className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Search</button>
         </form>
         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
