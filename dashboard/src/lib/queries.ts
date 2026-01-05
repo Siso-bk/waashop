@@ -14,6 +14,7 @@ import {
   NotificationDto,
   ShopTabDto,
   OrderDto,
+  LedgerEntryDto,
 } from "@/types";
 
 export const getProfile = async (): Promise<ProfileResponse> => {
@@ -103,4 +104,23 @@ export const getNotificationsSummary = async () => {
 export const getAdminOrders = async (status?: string) => {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return backendFetch<{ orders: OrderDto[] }>(`/api/admin/orders${query}`);
+};
+
+export const getUserLedger = async (page = 1, limit = 50) => {
+  const query = `?page=${page}&limit=${limit}`;
+  return backendFetch<{
+    items: LedgerEntryDto[];
+    page: number;
+    total: number;
+    pageSize: number;
+    hasMore: boolean;
+  }>(`/api/ledger${query}`);
+};
+
+export const getUserTransfers = async () => {
+  return backendFetch<{ transfers: TransferRequestDto[] }>("/api/transfers");
+};
+
+export const getUserOrders = async () => {
+  return backendFetch<{ orders: OrderDto[] }>("/api/orders");
 };

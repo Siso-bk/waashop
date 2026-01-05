@@ -248,3 +248,11 @@ export interface NotificationDto {
   createdAt: string;
   readAt?: string;
 }
+
+export interface LedgerEntryDto {
+  id: string;
+  deltaMinis: number;
+  reason: string;
+  meta?: Record<string, unknown>;
+  createdAt: string;
+}
