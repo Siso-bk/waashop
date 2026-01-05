@@ -70,7 +70,7 @@ export function HeroCardsEditor({ initialCards }: Props) {
   const duplicateCard = (id: string) => {
     const source = cards.find((card) => card.id === id);
     if (!source) return;
-    const cloned = {
+    const cloned: HomeHeroCard = {
       ...source,
       id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `card_${Date.now()}`,
       status: "DRAFT",
