@@ -4,8 +4,6 @@ import { useState } from "react";
 import { LoginForm } from "@/components/LoginForm";
 import { RegisterForm } from "@/components/RegisterForm";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 type Phase = "email" | "login" | "verify" | "details";
 
 type CheckEmailResponse = {
@@ -49,10 +47,7 @@ const phaseCopy: Record<
 };
 
 const callWaashopAuth = async <T,>(path: string, payload: Record<string, unknown>): Promise<T> => {
-  if (!API_BASE_URL) {
-    throw new Error("Missing API base URL");
-  }
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

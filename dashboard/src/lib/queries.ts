@@ -29,13 +29,43 @@ export const getOptionalProfile = async (): Promise<ProfileResponse | null> => {
   }
 };
 
-export const getAdminVendors = async (status?: string) => {
-  const query = status ? `?status=${encodeURIComponent(status)}` : "";
-  return backendFetch<{ vendors: VendorProfile[] }>(`/api/admin/vendors${query}`);
+type AdminListParams = {
+  page?: number;
+  limit?: number;
+  q?: string;
+  status?: string;
 };
 
-export const getAdminProducts = async () => {
-  return backendFetch<{ products: ProductDto[] }>("/api/admin/products");
+export const getAdminVendors = async (params: AdminListParams = {}) => {
+  const search = new URLSearchParams();
+  if (params.status) search.set("status", params.status);
+  if (params.page) search.set("page", String(params.page));
+  if (params.limit) search.set("limit", String(params.limit));
+  if (params.q) search.set("q", params.q);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return backendFetch<{
+    vendors: VendorProfile[];
+    page: number;
+    total: number;
+    pageSize: number;
+    hasMore: boolean;
+  }>(`/api/admin/vendors${query}`);
+};
+
+export const getAdminProducts = async (params: AdminListParams = {}) => {
+  const search = new URLSearchParams();
+  if (params.status) search.set("status", params.status);
+  if (params.page) search.set("page", String(params.page));
+  if (params.limit) search.set("limit", String(params.limit));
+  if (params.q) search.set("q", params.q);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return backendFetch<{
+    products: ProductDto[];
+    page: number;
+    total: number;
+    pageSize: number;
+    hasMore: boolean;
+  }>(`/api/admin/products${query}`);
 };
 
 export const getVendorProducts = async () => {
@@ -58,8 +88,19 @@ export const getVendorOrders = async () => {
   return backendFetch<{ orders: OrderDto[] }>("/api/vendors/orders");
 };
 
-export const getAdminUsers = async () => {
-  return backendFetch<{ users: AdminUser[] }>("/api/admin/users");
+export const getAdminUsers = async (params: AdminListParams = {}) => {
+  const search = new URLSearchParams();
+  if (params.page) search.set("page", String(params.page));
+  if (params.limit) search.set("limit", String(params.limit));
+  if (params.q) search.set("q", params.q);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return backendFetch<{
+    users: AdminUser[];
+    page: number;
+    total: number;
+    pageSize: number;
+    hasMore: boolean;
+  }>(`/api/admin/users${query}`);
 };
 
 export const getAdminSettings = async () => {
@@ -101,9 +142,20 @@ export const getNotificationsSummary = async () => {
   return backendFetch<{ unread: number }>("/api/notifications/unread-count");
 };
 
-export const getAdminOrders = async (status?: string) => {
-  const query = status ? `?status=${encodeURIComponent(status)}` : "";
-  return backendFetch<{ orders: OrderDto[] }>(`/api/admin/orders${query}`);
+export const getAdminOrders = async (params: AdminListParams = {}) => {
+  const search = new URLSearchParams();
+  if (params.status) search.set("status", params.status);
+  if (params.page) search.set("page", String(params.page));
+  if (params.limit) search.set("limit", String(params.limit));
+  if (params.q) search.set("q", params.q);
+  const query = search.toString() ? `?${search.toString()}` : "";
+  return backendFetch<{
+    orders: OrderDto[];
+    page: number;
+    total: number;
+    pageSize: number;
+    hasMore: boolean;
+  }>(`/api/admin/orders${query}`);
 };
 
 export const getUserLedger = async (

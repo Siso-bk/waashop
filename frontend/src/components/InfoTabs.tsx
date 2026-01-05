@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { CustomerOrder, NotificationItem, UserProfile } from "@/types";
 import { OrdersClient } from "@/components/OrdersClient";
@@ -14,27 +14,33 @@ type InfoTabsProps = {
 export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) {
   const [activeTab, setActiveTab] = useState<"orders" | "notifications">("orders");
   const [items, setItems] = useState<NotificationItem[]>(notifications);
+  const markInFlightRef = useRef(false);
 
   useEffect(() => {
     setItems(notifications);
   }, [notifications]);
 
   useEffect(() => {
-    if (!user || activeTab !== "notifications") return;
+    if (!user) return;
     const hasUnread = items.some((item) => item.status === "UNREAD");
-    if (!hasUnread) return;
+    if (!hasUnread || markInFlightRef.current) return;
+    markInFlightRef.current = true;
     const markRead = async () => {
       const response = await fetch("/api/notifications/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
       });
-      if (!response.ok) return;
+      if (!response.ok) {
+        markInFlightRef.current = false;
+        return;
+      }
       const now = new Date().toISOString();
       setItems((prev) => prev.map((item) => ({ ...item, status: "READ", readAt: now })));
+      markInFlightRef.current = false;
     };
     void markRead();
-  }, [activeTab, items, user]);
+  }, [items, user]);
 
   const signInCard = (
     <div className="space-y-3 rounded-2xl border border-dashed border-black/20 bg-white p-6 text-center">

@@ -977,9 +977,25 @@ router.get(
   "/admin/users",
   authMiddleware,
   requireRole("admin"),
-  async (_req, res) => {
+  async (req, res) => {
+    const querySchema = z.object({
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(50),
+      q: z.string().max(120).optional(),
+    });
+    const params = querySchema.parse(req.query);
     await connectDB();
-    const users = await User.find().sort({ createdAt: -1 }).lean();
+    const skip = (params.page - 1) * params.limit;
+    const filter: Record<string, unknown> = {};
+    if (params.q) {
+      const escaped = params.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+      filter.$or = [{ email: regex }, { username: regex }, { firstName: regex }, { lastName: regex }];
+    }
+    const [users, total] = await Promise.all([
+      User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(params.limit).lean(),
+      User.countDocuments(filter),
+    ]);
     res.json({
       users: users.map((user) => ({
         id: user._id.toString(),
@@ -990,6 +1006,10 @@ router.get(
         roles: user.roles,
         minisBalance: user.minisBalance,
       })),
+      page: params.page,
+      total,
+      pageSize: params.limit,
+      hasMore: skip + users.length < total,
     });
   }
 );
@@ -2059,15 +2079,35 @@ router.get(
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {
-    const schema = z.object({ status: z.string().optional() });
+    const schema = z.object({
+      status: z.string().optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(20),
+      q: z.string().max(120).optional(),
+    });
     const params = schema.parse(req.query);
     await connectDB();
     const query: Record<string, unknown> = {};
     if (params.status) {
       query.status = params.status;
     }
-    const vendors = await Vendor.find(query).sort({ createdAt: -1 }).lean();
-    res.json({ vendors });
+    if (params.q) {
+      const escaped = params.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+      query.$or = [{ name: regex }, { description: regex }];
+    }
+    const skip = (params.page - 1) * params.limit;
+    const [vendors, total] = await Promise.all([
+      Vendor.find(query).sort({ createdAt: -1 }).skip(skip).limit(params.limit).lean(),
+      Vendor.countDocuments(query),
+    ]);
+    res.json({
+      vendors,
+      page: params.page,
+      total,
+      pageSize: params.limit,
+      hasMore: skip + vendors.length < total,
+    });
   }
 );
 
@@ -2296,9 +2336,43 @@ router.get(
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {
+    const schema = z.object({
+      status: z.string().optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(20),
+      q: z.string().max(120).optional(),
+    });
+    const params = schema.parse(req.query);
     await connectDB();
-    const products = await Product.find().sort({ createdAt: -1 }).lean();
-    res.json({ products: products.map((product) => normalizeProduct(product)) });
+    const query: Record<string, unknown> = {};
+    if (params.status) {
+      query.status = params.status;
+    }
+    if (params.q) {
+      const escaped = params.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+      const vendorMatches = await Vendor.find({ name: regex }).select("_id").lean();
+      const vendorIds = vendorMatches.map((vendor) => vendor._id);
+      query.$or = [
+        { name: regex },
+        { description: regex },
+        { type: regex },
+        { status: regex },
+        ...(vendorIds.length ? [{ vendorId: { $in: vendorIds } }] : []),
+      ];
+    }
+    const skip = (params.page - 1) * params.limit;
+    const [products, total] = await Promise.all([
+      Product.find(query).sort({ createdAt: -1 }).skip(skip).limit(params.limit).populate("vendorId", "name").lean(),
+      Product.countDocuments(query),
+    ]);
+    res.json({
+      products: products.map((product) => normalizeProduct(product)),
+      page: params.page,
+      total,
+      pageSize: params.limit,
+      hasMore: skip + products.length < total,
+    });
   }
 );
 
@@ -2775,11 +2849,51 @@ router.patch("/vendors/orders/:id", authMiddleware, loadVendor, requireApprovedV
 });
 
 router.get("/admin/orders", authMiddleware, requireRole("admin"), async (req, res) => {
+  const schema = z.object({
+    status: z.string().optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(25),
+    q: z.string().max(120).optional(),
+  });
+  const params = schema.parse(req.query);
   await connectDB();
-  const status = typeof req.query.status === "string" ? req.query.status : undefined;
-  const filter: Record<string, unknown> = status ? { status } : {};
-  const orders = await Order.find(filter).sort({ createdAt: -1 }).lean();
-  res.json({ orders: orders.map((order) => normalizeOrder(order as IOrder)) });
+  const filter: Record<string, unknown> = {};
+  if (params.status) {
+    filter.status = params.status;
+  }
+  if (params.q) {
+    const escaped = params.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "i");
+    const orFilters: Record<string, unknown>[] = [
+      { shippingName: regex },
+      { shippingPhone: regex },
+      { shippingAddress: regex },
+      { trackingCode: regex },
+    ];
+    if (Types.ObjectId.isValid(params.q)) {
+      const objectId = new Types.ObjectId(params.q);
+      orFilters.push(
+        { _id: objectId },
+        { buyerId: objectId },
+        { vendorId: objectId },
+        { vendorOwnerId: objectId },
+        { productId: objectId }
+      );
+    }
+    filter.$or = orFilters;
+  }
+  const skip = (params.page - 1) * params.limit;
+  const [orders, total] = await Promise.all([
+    Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(params.limit).lean(),
+    Order.countDocuments(filter),
+  ]);
+  res.json({
+    orders: orders.map((order) => normalizeOrder(order as IOrder)),
+    page: params.page,
+    total,
+    pageSize: params.limit,
+    hasMore: skip + orders.length < total,
+  });
 });
 
 router.post("/admin/orders/:id/resolve", authMiddleware, requireRole("admin"), async (req, res) => {

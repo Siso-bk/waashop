@@ -17,6 +17,9 @@ export default async function DashboardHome() {
       <Suspense fallback={<HeroSkeleton />}>
         <HeroSection />
       </Suspense>
+      <Suspense fallback={<HighlightsSkeleton />}>
+        <OverviewHighlights />
+      </Suspense>
       <div className="grid gap-6 md:grid-cols-2">
         <Suspense fallback={<AccountSkeleton />}>
           <AccountCard />
@@ -90,7 +93,7 @@ async function HeroSection() {
       <PageHeader
         eyebrow="Welcome"
         title={user.firstName ? `Hey, ${user.firstName}!` : "Waashop Portal"}
-        description="Manage vendors, approve products, and keep mystery boxes fair and profitable."
+        description="Track your balance, review vendor activity, and keep the storefront healthy."
         tone="light"
         actions={
           <div className="flex flex-wrap gap-3 text-sm">
@@ -104,8 +107,8 @@ async function HeroSection() {
                 Review Products
               </Link>
             )}
-            <Link href="/vendor" className="rounded-full bg-white/20 px-4 py-2">
-              Vendor Workspace
+            <Link href="/account" className="rounded-full bg-white/20 px-4 py-2">
+              Account
             </Link>
           </div>
         }
@@ -114,12 +117,43 @@ async function HeroSection() {
   );
 }
 
+async function OverviewHighlights() {
+  const [{ user, vendor }, { deposits }] = await Promise.all([getProfile(), getUserDeposits()]);
+  const pendingDeposits = deposits.filter((entry) => entry.status === "PENDING");
+  const pendingTotal = pendingDeposits.reduce((sum, entry) => sum + entry.amountMinis, 0);
+  const vendorStatus = vendor ? vendor.status : "Not submitted";
+  return (
+    <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <HighlightCard label="Current balance" value={`${user.minisBalance.toLocaleString()} MINIS`} href="/minis" />
+      <HighlightCard label="Roles" value={user.roles.join(", ")} href="/account" />
+      <HighlightCard label="Vendor status" value={vendorStatus} href="/vendor" />
+      <HighlightCard
+        label="Pending deposits"
+        value={pendingDeposits.length ? `${pendingDeposits.length} · ${pendingTotal.toLocaleString()} MINIS` : "None"}
+        href="/deposits"
+      />
+    </section>
+  );
+}
+
+function HighlightCard({ label, value, href }: { label: string; value: string; href: string }) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-indigo-200 hover:text-indigo-700"
+    >
+      <p className="text-xs uppercase tracking-[0.3em] text-slate-400 group-hover:text-indigo-400">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-slate-900 group-hover:text-indigo-700">{value}</p>
+    </Link>
+  );
+}
+
 async function AccountCard() {
   const { user } = await getProfile();
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-sm font-semibold text-slate-500">Account</h2>
-      <p className="mt-2 text-xl font-semibold text-slate-900">{user.username || user.telegramId}</p>
+      <p className="mt-2 text-xl font-semibold text-slate-900">{user.username || user.email || user.telegramId}</p>
       <p className="text-sm text-slate-500">Roles: {user.roles.join(", ")}</p>
       <div className="mt-4 text-sm">
         <div>
@@ -127,9 +161,14 @@ async function AccountCard() {
           <p className="text-2xl font-semibold text-indigo-600">{user.minisBalance.toLocaleString()}</p>
         </div>
       </div>
-      <Link href="/deposits" className="mt-4 inline-flex text-sm font-semibold text-indigo-600">
-        Submit deposit request →
-      </Link>
+      <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
+        <Link href="/account" className="text-indigo-600">
+          View profile →
+        </Link>
+        <Link href="/deposits" className="text-indigo-600">
+          Submit deposit →
+        </Link>
+      </div>
     </div>
   );
 }
@@ -252,5 +291,18 @@ function AdminActionsSkeleton() {
         </div>
       </div>
     </div>
+  );
+}
+
+function HighlightsSkeleton() {
+  return (
+    <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, idx) => (
+        <div key={idx} className="h-20 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="h-3 w-20 rounded bg-slate-200 animate-pulse" />
+          <div className="mt-3 h-5 w-32 rounded bg-slate-100 animate-pulse" />
+        </div>
+      ))}
+    </section>
   );
 }

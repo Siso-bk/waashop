@@ -3,32 +3,37 @@ import Link from "next/link";
 import "./globals.css";
 import { getNotificationsSummary, getOptionalProfile } from "@/lib/queries";
 import { PendingButton } from "@/components/PendingButton";
-import { PortalNav } from "@/components/PortalNav";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AdminNavMenu } from "@/components/AdminNavMenu";
 
 export const metadata: Metadata = {
   title: "Waashop Portal",
   description: "Admin and vendor operations for Waashop",
 };
 
-const navItems = [
-  { href: "/", label: "Overview" },
+const navItems = [{ href: "/", label: "Overview" }];
+
+const accountNavItems = [
+  { href: "/account", label: "Profile" },
   { href: "/minis", label: "Minis" },
   { href: "/deposits", label: "Deposits" },
   { href: "/notifications", label: "Notifications" },
-  { href: "/admin/vendors", label: "Vendors", roles: ["admin"] },
+  { href: "/vendor", label: "Vendor", roles: ["vendor", "admin"] },
+];
+
+const adminNavItems = [
+  { href: "/admin/users", label: "Users", roles: ["admin"] },
   { href: "/admin/products", label: "Products", roles: ["admin"] },
+  { href: "/admin/orders", label: "Orders", roles: ["admin"] },
+  { href: "/admin/vendors", label: "Vendors", roles: ["admin"] },
   { href: "/admin/home-hero", label: "Home hero", roles: ["admin"] },
   { href: "/admin/home-highlights", label: "Home highlights", roles: ["admin"] },
   { href: "/admin/shop-tabs", label: "Shop tabs", roles: ["admin"] },
-  { href: "/admin/orders", label: "Orders", roles: ["admin"] },
   { href: "/admin/promo-cards", label: "Promo cards", roles: ["admin"] },
   { href: "/admin/deposits", label: "Deposits", roles: ["admin"] },
-  { href: "/admin/users", label: "Users", roles: ["admin"] },
   { href: "/admin/winners", label: "Winners", roles: ["admin"] },
   { href: "/admin/settings", label: "Settings", roles: ["admin"] },
-  { href: "/vendor", label: "Vendor", roles: ["vendor", "admin"] },
 ];
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -45,12 +50,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       unread = 0;
     }
   }
-  const filteredNavItems = isSignedIn
-    ? navItems.filter((item) => {
+  const overviewNavItems = navItems;
+  const accountItems = isSignedIn
+    ? accountNavItems.filter((item) => {
         if (!item.roles || item.roles.length === 0) return true;
         return item.roles.some((role) => roles.includes(role));
       })
     : [];
+  const adminLinks = isSignedIn && roles.includes("admin") ? adminNavItems : [];
 
   return (
     <html lang="en">
@@ -74,7 +81,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 )}
               </div>
               <div className="flex flex-1 flex-col items-start gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-end">
-                <PortalNav items={filteredNavItems.map(({ href, label }) => ({ href, label }))} />
+                <div className="flex flex-wrap items-center gap-3">
+                  {overviewNavItems.length > 0 && (
+                    <AdminNavMenu label="Overview" items={overviewNavItems.map(({ href, label }) => ({ href, label }))} />
+                  )}
+                  {accountItems.length > 0 && (
+                    <AdminNavMenu label="Account" items={accountItems.map(({ href, label }) => ({ href, label }))} />
+                  )}
+                  {adminLinks.length > 0 && (
+                    <AdminNavMenu label="Admin" items={adminLinks.map(({ href, label }) => ({ href, label }))} />
+                  )}
+                </div>
                 <ThemeToggle />
                 {isSignedIn ? (
                   <div className="flex items-center gap-3">
