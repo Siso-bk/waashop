@@ -47,6 +47,10 @@ body {
   border-color: var(--surface-border) !important;
 }
 
+[class*="border-white"] {
+  border-color: var(--surface-border) !important;
+}
+
 :root[data-theme="dark"] .text-gray-400 {
   color: rgba(245, 245, 242, 0.55) !important;
 }
