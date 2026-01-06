@@ -53,7 +53,7 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
       <div className="min-h-[36px]" aria-live="polite">
         {result && (
           <div
-            className={`absolute left-0 right-0 -top-12 mx-auto w-full max-w-[360px] origin-center rounded-2xl border px-3 py-2 text-[11px] shadow-lg transition-all duration-300 ${
+            className={`absolute left-0 right-0 top-full mt-2 mx-auto w-full max-w-[360px] origin-center rounded-2xl border px-3 py-2 text-[11px] shadow-lg transition-all duration-300 ${
               result.won
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : "border-slate-200 bg-slate-50 text-slate-600"
