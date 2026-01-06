@@ -58,7 +58,7 @@ export function BalancePanel({ minis, tone = "auto" }: Props) {
       window.sessionStorage.setItem("waashop-minis-balance", String(current));
       return;
     }
-    const nextDirection: "up" | "down" = current > prevMinis.current ? "up" : "down";
+    const nextDirection: "up" | "down" = current > (from ?? current) ? "up" : "down";
     prevMinis.current = current;
     window.sessionStorage.setItem("waashop-minis-balance", String(current));
     const containerEl = containerRef.current;
