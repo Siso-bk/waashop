@@ -1885,8 +1885,8 @@ router.patch(
       jackpotSeedPercent: z.number().min(0).max(100).optional(),
       jackpotVendorPercent: z.number().min(0).max(100).optional(),
       platformPayoutHandle: z.string().max(120).optional(),
-      jackpotWinSoundUrl: z.string().max(2000).optional(),
-      jackpotLoseSoundUrl: z.string().max(2000).optional(),
+      jackpotWinSoundUrl: z.string().max(400000).optional(),
+      jackpotLoseSoundUrl: z.string().max(400000).optional(),
       transferLimitMinis: z.number().nonnegative().optional(),
       transferFeePercent: z.number().min(0).max(100).optional(),
     });
