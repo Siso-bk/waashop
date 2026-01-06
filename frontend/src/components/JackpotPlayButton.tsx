@@ -104,7 +104,7 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
       <div className="min-h-[36px]" aria-live="polite">
         {result && (
           <div
-            className={`jackpot-toast absolute left-0 right-0 top-full -mt-5 mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-[11px] shadow-lg transition-all duration-300 ${
+            className={`jackpot-toast absolute left-0 right-0 top-full -mt-8 mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-[11px] shadow-lg transition-all duration-300 ${
               result.won ? "jackpot-toast--win" : "jackpot-toast--lose"
             }`}
           >
