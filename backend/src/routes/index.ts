@@ -2760,7 +2760,12 @@ router.post("/jackpots/:id/try", authMiddleware, async (req, res) => {
         product.set({ jackpotPoolMinis: nextPool });
       }
 
-      const ledgerEntries = [
+      const ledgerEntries: Array<{
+        userId: Types.ObjectId;
+        deltaMinis: number;
+        reason: string;
+        meta: Record<string, unknown>;
+      }> = [
         {
           userId: userDoc._id,
           deltaMinis: -tryPrice,
