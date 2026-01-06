@@ -13,6 +13,8 @@ export interface IPlatformSettings extends Document {
   platformPayoutHandle?: string;
   jackpotWinSoundUrl?: string;
   jackpotLoseSoundUrl?: string;
+  mysteryBoxWinSoundUrl?: string;
+  mysteryBoxLoseSoundUrl?: string;
   transferLimitMinis: number;
   transferFeePercent: number;
   shopTabs?: {
@@ -58,6 +60,8 @@ const PlatformSettingsSchema = new Schema<IPlatformSettings>(
     platformPayoutHandle: { type: String },
     jackpotWinSoundUrl: { type: String },
     jackpotLoseSoundUrl: { type: String },
+    mysteryBoxWinSoundUrl: { type: String },
+    mysteryBoxLoseSoundUrl: { type: String },
     transferLimitMinis: { type: Number, default: 5000 },
     transferFeePercent: { type: Number, default: 2 },
     shopTabs: {

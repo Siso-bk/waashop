@@ -1862,6 +1862,8 @@ router.get(
         platformPayoutHandle: settings.platformPayoutHandle,
         jackpotWinSoundUrl: settings.jackpotWinSoundUrl,
         jackpotLoseSoundUrl: settings.jackpotLoseSoundUrl,
+        mysteryBoxWinSoundUrl: settings.mysteryBoxWinSoundUrl,
+        mysteryBoxLoseSoundUrl: settings.mysteryBoxLoseSoundUrl,
         transferLimitMinis: settings.transferLimitMinis,
         transferFeePercent: settings.transferFeePercent,
       },
@@ -1887,6 +1889,8 @@ router.patch(
       platformPayoutHandle: z.string().max(120).optional(),
       jackpotWinSoundUrl: z.string().max(400000).optional(),
       jackpotLoseSoundUrl: z.string().max(400000).optional(),
+      mysteryBoxWinSoundUrl: z.string().max(400000).optional(),
+      mysteryBoxLoseSoundUrl: z.string().max(400000).optional(),
       transferLimitMinis: z.number().nonnegative().optional(),
       transferFeePercent: z.number().min(0).max(100).optional(),
     });
@@ -1908,6 +1912,8 @@ router.patch(
           platformPayoutHandle: doc.platformPayoutHandle,
           jackpotWinSoundUrl: doc.jackpotWinSoundUrl,
           jackpotLoseSoundUrl: doc.jackpotLoseSoundUrl,
+          mysteryBoxWinSoundUrl: doc.mysteryBoxWinSoundUrl,
+          mysteryBoxLoseSoundUrl: doc.mysteryBoxLoseSoundUrl,
           transferLimitMinis: doc.transferLimitMinis,
           transferFeePercent: doc.transferFeePercent,
         },
@@ -2689,6 +2695,7 @@ router.patch(
 
 router.get("/boxes", async (_req, res) => {
   await connectDB();
+  const settings = await getPlatformSettings();
   const products = await Product.find({ type: "MYSTERY_BOX", status: "ACTIVE" })
     .populate("vendorId", "name")
     .lean();
@@ -2707,6 +2714,8 @@ router.get("/boxes", async (_req, res) => {
       totalTries: product.boxTotalTries ?? 0,
       triesSold: product.boxTriesSold ?? 0,
       vendor: product.vendorId,
+      winSoundUrl: settings?.mysteryBoxWinSoundUrl,
+      loseSoundUrl: settings?.mysteryBoxLoseSoundUrl,
       })),
   });
 });

@@ -192,6 +192,8 @@ export interface PlatformSettingsDto {
   platformPayoutHandle?: string;
   jackpotWinSoundUrl?: string;
   jackpotLoseSoundUrl?: string;
+  mysteryBoxWinSoundUrl?: string;
+  mysteryBoxLoseSoundUrl?: string;
   transferLimitMinis: number;
   transferFeePercent: number;
 }

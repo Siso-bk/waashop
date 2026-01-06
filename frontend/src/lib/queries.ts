@@ -48,6 +48,8 @@ const mapBox = (box: RawBox): MysteryBoxDto => ({
   rewardTiers: box.rewardTiers ?? [],
   totalTries: box.totalTries ?? 0,
   triesSold: box.triesSold ?? 0,
+  winSoundUrl: box.winSoundUrl,
+  loseSoundUrl: box.loseSoundUrl,
 });
 
 const mapJackpot = (jackpot: RawJackpot): JackpotPlayDto => ({

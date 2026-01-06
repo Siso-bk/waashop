@@ -59,6 +59,13 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
         tier: data.tier,
       });
       setShowResult(true);
+      const isTop = Boolean(data?.tier?.isTop);
+      const soundUrl = isTop ? box.winSoundUrl : box.loseSoundUrl;
+      if (soundUrl) {
+        const audio = new Audio(soundUrl);
+        audio.currentTime = 0;
+        void audio.play().catch(() => undefined);
+      }
       router.refresh();
     } catch {
       setError("Unexpected error. Please try again.");

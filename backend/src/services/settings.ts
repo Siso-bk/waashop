@@ -24,6 +24,8 @@ export const getPlatformSettings = async () => {
       jackpotVendorPercent: env.JACKPOT_VENDOR_PERCENT,
       jackpotWinSoundUrl: env.JACKPOT_WIN_SOUND_URL,
       jackpotLoseSoundUrl: env.JACKPOT_LOSE_SOUND_URL,
+      mysteryBoxWinSoundUrl: env.MYSTERY_BOX_WIN_SOUND_URL,
+      mysteryBoxLoseSoundUrl: env.MYSTERY_BOX_LOSE_SOUND_URL,
       transferLimitMinis: env.TRANSFER_LIMIT_MINIS,
       transferFeePercent: env.TRANSFER_FEE_PERCENT,
     });

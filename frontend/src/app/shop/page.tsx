@@ -67,7 +67,7 @@ export default async function ShopPage({
     <div
       className={
         isJackpotTab
-          ? "flex min-h-[100dvh] max-h-[100dvh] flex-col gap-1 overflow-hidden pb-2"
+          ? "flex h-[100dvh] flex-col gap-1 overflow-hidden pb-2"
           : "space-y-1 pb-5"
       }
     >

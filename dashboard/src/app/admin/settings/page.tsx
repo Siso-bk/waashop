@@ -6,6 +6,7 @@ import { getAdminSettings, getProfile } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
 import { JackpotSoundFields } from "./JackpotSoundFields";
+import { MysteryBoxSoundFields } from "./MysteryBoxSoundFields";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,8 @@ export default async function AdminSettingsPage() {
   const platformPayoutHandle = settings.platformPayoutHandle ?? "";
   const jackpotWinSoundUrl = settings.jackpotWinSoundUrl ?? "";
   const jackpotLoseSoundUrl = settings.jackpotLoseSoundUrl ?? "";
+  const mysteryBoxWinSoundUrl = settings.mysteryBoxWinSoundUrl ?? "";
+  const mysteryBoxLoseSoundUrl = settings.mysteryBoxLoseSoundUrl ?? "";
 
   return (
     <div className="space-y-6">
@@ -141,6 +144,7 @@ export default async function AdminSettingsPage() {
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
             />
           </label>
+          <MysteryBoxSoundFields winUrl={mysteryBoxWinSoundUrl} loseUrl={mysteryBoxLoseSoundUrl} />
           <JackpotSoundFields winUrl={jackpotWinSoundUrl} loseUrl={jackpotLoseSoundUrl} />
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm text-slate-600">
@@ -194,6 +198,8 @@ async function updateFees(formData: FormData) {
     platformPayoutHandle: String(formData.get("platformPayoutHandle") || "").trim() || undefined,
     jackpotWinSoundUrl: String(formData.get("jackpotWinSoundUrl") || "").trim() || undefined,
     jackpotLoseSoundUrl: String(formData.get("jackpotLoseSoundUrl") || "").trim() || undefined,
+    mysteryBoxWinSoundUrl: String(formData.get("mysteryBoxWinSoundUrl") || "").trim() || undefined,
+    mysteryBoxLoseSoundUrl: String(formData.get("mysteryBoxLoseSoundUrl") || "").trim() || undefined,
     transferLimitMinis: Number(formData.get("transferLimitMinis")),
     transferFeePercent: Number(formData.get("transferFeePercent")),
   };

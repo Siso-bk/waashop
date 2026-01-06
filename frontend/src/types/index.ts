@@ -13,6 +13,8 @@ export interface MysteryBoxDto {
   rewardTiers: RewardTier[];
   totalTries?: number;
   triesSold?: number;
+  winSoundUrl?: string;
+  loseSoundUrl?: string;
 }
 
 export interface JackpotPlayDto {
