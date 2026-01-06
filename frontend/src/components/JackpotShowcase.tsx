@@ -51,19 +51,19 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
   return (
     <div className="flex h-full flex-col gap-4 overflow-hidden">
       {activeJackpot && (
-        <article className="jackpot-hero relative flex-1 overflow-hidden rounded-[28px] border px-4 py-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:px-8 sm:py-8">
+        <article className="jackpot-hero relative flex-1 overflow-hidden rounded-[24px] border px-4 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:px-6 sm:py-6">
           <div className="jackpot-hero__glow jackpot-hero__glow--right" />
           <div className="jackpot-hero__glow jackpot-hero__glow--left" />
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-3">
-              <p className="jackpot-hero__eyebrow text-xs font-semibold uppercase tracking-[0.4em]">
+              <p className="jackpot-hero__eyebrow text-[10px] font-semibold uppercase tracking-[0.35em]">
                 Jackpots play
               </p>
-              <h3 className="text-2xl font-semibold sm:text-3xl">{activeJackpot.name}</h3>
-              <p className="jackpot-hero__muted hidden max-w-xl text-sm sm:block">
+              <h3 className="text-xl font-semibold sm:text-2xl">{activeJackpot.name}</h3>
+              <p className="jackpot-hero__muted hidden max-w-xl text-xs sm:block">
                 One try can ignite the pool. Every miss fuels the next winner.
               </p>
-              <div className="jackpot-hero__muted flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.3em] sm:text-xs">
+              <div className="jackpot-hero__muted flex flex-wrap items-center gap-2 text-[9px] uppercase tracking-[0.28em] sm:text-[10px]">
                 <span className="jackpot-hero__pill rounded-full border px-3 py-1">
                   Try price {formatMinis(activeJackpot.priceMinis)}
                 </span>
@@ -72,12 +72,12 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
                 </span>
               </div>
             </div>
-            <div className="jackpot-hero__panel rounded-[24px] border p-4 sm:p-5">
+            <div className="jackpot-hero__panel rounded-[20px] border p-3 sm:p-4">
               <p className="jackpot-hero__muted text-[10px] uppercase tracking-[0.3em] sm:text-xs">Live pool</p>
-              <p className="jackpot-hero__accent mt-2 text-3xl font-semibold sm:text-4xl">
+              <p className="jackpot-hero__accent mt-2 text-2xl font-semibold sm:text-3xl">
                 {formatMinis(activeJackpot.poolMinis)}
               </p>
-              <div className="mt-5">
+              <div className="mt-4">
                 <JackpotPlayButton jackpot={activeJackpot} disabled={!signedIn} />
               </div>
             </div>
