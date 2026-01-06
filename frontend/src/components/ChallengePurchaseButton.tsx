@@ -49,8 +49,10 @@ export function ChallengePurchaseButton({ challenge }: Props) {
       >
         {remaining <= 0 ? "Sold out" : isLoading ? "Processing..." : "Buy ticket"}
       </button>
-      {error && <p className="text-xs text-red-500">{error}</p>}
-      {success && <p className="text-xs text-emerald-600">{success}</p>}
+      <div className="min-h-[16px]" aria-live="polite">
+        {error && <p className="text-xs text-red-500">{error}</p>}
+        {success && <p className="text-xs text-emerald-600">{success}</p>}
+      </div>
     </div>
   );
 }
