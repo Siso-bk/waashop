@@ -15,6 +15,7 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
   const [activeTab, setActiveTab] = useState<"orders" | "notifications">("orders");
   const [items, setItems] = useState<NotificationItem[]>(notifications);
   const markInFlightRef = useRef(false);
+  const unreadCount = items.filter((item) => item.status === "UNREAD").length;
 
   useEffect(() => {
     setItems(notifications);
@@ -22,7 +23,8 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
 
   useEffect(() => {
     if (!user) return;
-    const hasUnread = items.some((item) => item.status === "UNREAD");
+    if (activeTab !== "notifications") return;
+    const hasUnread = unreadCount > 0;
     if (!hasUnread || markInFlightRef.current) return;
     markInFlightRef.current = true;
     const markRead = async () => {
@@ -43,7 +45,7 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
       markInFlightRef.current = false;
     };
     void markRead();
-  }, [items, user]);
+  }, [activeTab, items, unreadCount, user]);
 
   const signInCard = (
     <div className="space-y-3 rounded-2xl border border-dashed border-black/20 bg-white p-6 text-center">
@@ -95,6 +97,11 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
           }`}
         >
           Notifications
+          {unreadCount > 0 && (
+            <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-semibold text-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -110,9 +117,11 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
             {items.map((item, index) => (
               <article
                 key={item.id}
-                className={`rounded-2xl border border-black/10 p-4 ${
-                  index === 0 ? "bg-black text-white" : "bg-white text-black"
-                }`}
+                className={`rounded-2xl border p-4 ${
+                  item.status === "UNREAD"
+                    ? "border-amber-200 bg-amber-50 text-black"
+                    : "border-black/10 bg-white text-black"
+                } ${index === 0 ? "shadow-sm" : ""}`}
               >
                 <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-500">
                   <span>{item.title}</span>
@@ -121,6 +130,11 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
                   </span>
                 </div>
                 <p className="mt-3 text-sm text-black/80 dark:text-white/80">{item.body}</p>
+                {item.status === "UNREAD" && (
+                  <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-600">
+                    Unread
+                  </p>
+                )}
               </article>
             ))}
             {items.length === 0 && (
