@@ -31,7 +31,7 @@ const DEFAULT_SHOP_TABS = [
   { key: "mystery-boxes", label: "Mystery boxes", order: 0, enabled: true },
   { key: "products", label: "Products", order: 1, enabled: true },
   { key: "challenges", label: "Challenges", order: 2, enabled: true },
-  { key: "jackpot-plays", label: "Jackpot plays", order: 3, enabled: true },
+  { key: "jackpot-plays", label: "Jackpots play", order: 3, enabled: true },
   { key: "coming-soon", label: "Coming soon", order: 4, enabled: true },
 ];
 

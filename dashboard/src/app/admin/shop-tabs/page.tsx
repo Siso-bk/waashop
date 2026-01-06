@@ -9,6 +9,14 @@ import { ShopTabDto } from "@/types";
 
 export const dynamic = "force-dynamic";
 
+const SHOP_TAB_KEYS = [
+  "mystery-boxes",
+  "products",
+  "challenges",
+  "jackpot-plays",
+  "coming-soon",
+] as const;
+
 type PageProps = {
   searchParams?: Record<string, string | string[] | undefined> | Promise<Record<string, string | string[] | undefined>>;
 };
@@ -51,11 +59,17 @@ export default async function AdminShopTabsPage({ searchParams }: PageProps) {
                 <div className="grid gap-4 md:grid-cols-4">
                   <label className="space-y-1 text-xs uppercase tracking-[0.3em] text-slate-500">
                     Key
-                    <input
+                    <select
                       name={`tab-${index}-key`}
                       defaultValue={tab.key}
                       className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                    />
+                    >
+                      {SHOP_TAB_KEYS.map((key) => (
+                        <option key={key} value={key}>
+                          {key}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="space-y-1 text-xs uppercase tracking-[0.3em] text-slate-500 md:col-span-2">
                     Label
@@ -100,13 +114,22 @@ export default async function AdminShopTabsPage({ searchParams }: PageProps) {
       <section className="grid gap-6 md:grid-cols-2">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900">Add new tab</h2>
-          <p className="mt-1 text-sm text-slate-500">Keys use lowercase letters, numbers, and hyphens.</p>
+          <p className="mt-1 text-sm text-slate-500">Choose a key from the list to ensure it matches the shop routing.</p>
           <form action={addTab} className="mt-4 space-y-3 text-sm text-slate-700">
-            <input
+            <select
               name="key"
-              placeholder="key (e.g. mystery-boxes)"
               className="w-full rounded-xl border border-slate-200 px-3 py-2"
-            />
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select a key
+              </option>
+              {SHOP_TAB_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {key}
+                </option>
+              ))}
+            </select>
             <input
               name="label"
               placeholder="Label"

@@ -20,7 +20,7 @@ const FALLBACK_TABS = [
   { key: "mystery-boxes", label: "Mystery boxes", order: 0 },
   { key: "products", label: "Products", order: 1 },
   { key: "challenges", label: "Challenges", order: 2 },
-  { key: "jackpot-plays", label: "Jackpot plays", order: 3 },
+  { key: "jackpot-plays", label: "Jackpots play", order: 3 },
   { key: "coming-soon", label: "Coming soon", order: 4 },
 ];
 
