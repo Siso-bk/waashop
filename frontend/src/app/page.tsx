@@ -164,8 +164,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {jackpots.length > 0 && (
-        <section className="space-y-4">
+      <section className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Jackpots</p>
@@ -200,9 +199,13 @@ export default async function HomePage() {
                 </article>
               );
             })}
+            {!jackpots.length && (
+              <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
+                No jackpot plays live right now. Check back soon.
+              </div>
+            )}
           </div>
         </section>
-      )}
 
       {winners.length > 0 && (
         <section className="space-y-4">

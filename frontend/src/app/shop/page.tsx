@@ -167,30 +167,51 @@ export default async function ShopPage({
       )}
 
       {activeTab === "jackpot-plays" && (
-        <div className="flex gap-6 overflow-x-auto pb-3">
-          {filteredJackpots.map((jackpot) => {
-            const totalPercent = jackpot.platformPercent + jackpot.seedPercent + jackpot.vendorPercent;
-            const winnerPrize = Math.max(0, Math.floor(jackpot.poolMinis * (1 - totalPercent / 100)));
-            return (
-              <article
-                key={jackpot.id}
-                className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
-              >
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>TRY PRICE</span>
-                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                    {formatMinis(jackpot.priceMinis)}
-                  </span>
-                </div>
-                <h3 className="mt-3 text-xl font-semibold text-black">{jackpot.name}</h3>
-                <p className="text-xs text-gray-500">WINNER PRIZE {formatMinis(winnerPrize)}</p>
-                <div className="mt-6">
-                  <JackpotPlayButton jackpot={jackpot} disabled={!user} />
-                </div>
-              </article>
-            );
-          })}
-          {!filteredJackpots.length && (
+        <div className="pb-6">
+          {filteredJackpots.length > 0 ? (
+            (() => {
+              const jackpot = filteredJackpots[0];
+              const totalPercent = jackpot.platformPercent + jackpot.seedPercent + jackpot.vendorPercent;
+              const winnerPrize = Math.max(0, Math.floor(jackpot.poolMinis * (1 - totalPercent / 100)));
+              return (
+                <article
+                  key={jackpot.id}
+                  className="relative overflow-hidden rounded-[32px] border border-black/10 bg-gradient-to-br from-black via-slate-950 to-indigo-950 px-6 py-10 text-white shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:px-10 sm:py-12"
+                >
+                  <div className="absolute -right-16 top-0 h-64 w-64 rounded-full bg-emerald-400/20 blur-[120px]" />
+                  <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-indigo-500/20 blur-[140px]" />
+                  <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="space-y-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-200/80">
+                        Jackpots play
+                      </p>
+                      <h3 className="text-3xl font-semibold sm:text-4xl">{jackpot.name}</h3>
+                      <p className="max-w-xl text-sm text-white/70">
+                        One try can ignite the pool. Every miss fuels the next winner.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.3em] text-white/60">
+                        <span className="rounded-full border border-white/15 px-3 py-1">
+                          Try price {formatMinis(jackpot.priceMinis)}
+                        </span>
+                        <span className="rounded-full border border-white/15 px-3 py-1">
+                          Winner prize {formatMinis(winnerPrize)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur sm:p-6">
+                      <p className="text-xs uppercase tracking-[0.3em] text-white/60">Live pool</p>
+                      <p className="mt-2 text-4xl font-semibold text-emerald-200 sm:text-5xl">
+                        {formatMinis(jackpot.poolMinis)}
+                      </p>
+                      <div className="mt-5">
+                        <JackpotPlayButton jackpot={jackpot} disabled={!user} />
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })()
+          ) : (
             <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
               {jackpots.length === 0
                 ? "No jackpot plays live right now. Check back soon."
