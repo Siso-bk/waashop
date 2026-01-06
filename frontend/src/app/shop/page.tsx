@@ -61,17 +61,11 @@ export default async function ShopPage({
       ? jackpots.filter((jackpot) => jackpot.name.toLowerCase().includes(activeQuery))
       : jackpots;
 
-  const isJackpotTab = activeTab === "jackpot-plays";
-
   return (
     <div
-      className={
-        isJackpotTab
-          ? "flex h-[100dvh] flex-col gap-1 overflow-hidden pb-2"
-          : "space-y-1 pb-5"
-      }
+      className="space-y-1 pb-5"
     >
-      <header className={isJackpotTab ? "shrink-0 space-y-2" : "space-y-2"}>
+      <header className="space-y-2">
         <ShopHeader activeTab={activeTab} initialQuery={query} />
         {!user && (
           <div className="space-y-1">
@@ -85,7 +79,7 @@ export default async function ShopPage({
           </div>
         )}
       </header>
-      <nav className={isJackpotTab ? "shrink-0 flex gap-3 overflow-x-auto pb-2 hide-scrollbar" : "flex gap-3 overflow-x-auto pb-2 hide-scrollbar"}>
+      <nav className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
         {tabList.map((tab) => {
           const isActive = tab.key === activeTab;
           return (
@@ -102,40 +96,38 @@ export default async function ShopPage({
         })}
       </nav>
 
-      <div className={isJackpotTab ? "flex-1 min-h-0 overflow-hidden" : ""}>
-        {activeTab === "mystery-boxes" && (
-          <MysteryBoxShowcase boxes={filteredBoxes} signedIn={Boolean(user)} />
-        )}
+      {activeTab === "mystery-boxes" && (
+        <MysteryBoxShowcase boxes={filteredBoxes} signedIn={Boolean(user)} />
+      )}
 
-        {activeTab === "products" && (
-          <ShopProductsClient
-            products={standardProducts}
-            signedIn={Boolean(user)}
-            query={activeTab === "products" ? query : ""}
-          />
-        )}
+      {activeTab === "products" && (
+        <ShopProductsClient
+          products={standardProducts}
+          signedIn={Boolean(user)}
+          query={activeTab === "products" ? query : ""}
+        />
+      )}
 
-        {activeTab === "challenges" && (
-          <ChallengeShowcase challenges={filteredChallenges} />
-        )}
+      {activeTab === "challenges" && (
+        <ChallengeShowcase challenges={filteredChallenges} />
+      )}
 
-        {activeTab === "jackpot-plays" && (
-          <JackpotShowcase jackpots={filteredJackpots} signedIn={Boolean(user)} />
-        )}
+      {activeTab === "jackpot-plays" && (
+        <JackpotShowcase jackpots={filteredJackpots} signedIn={Boolean(user)} />
+      )}
 
-        {activeTab !== "mystery-boxes" &&
-          activeTab !== "products" &&
-          activeTab !== "challenges" &&
-          activeTab !== "jackpot-plays" && (
-          <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
-              {tabList.find((tab) => tab.key === activeTab)?.label}
-            </p>
-            <p className="mt-3 text-lg font-semibold text-black">Coming soon</p>
-            <p className="mt-2">We are preparing new drops for this tab. Check back soon.</p>
-          </div>
-        )}
-      </div>
+      {activeTab !== "mystery-boxes" &&
+        activeTab !== "products" &&
+        activeTab !== "challenges" &&
+        activeTab !== "jackpot-plays" && (
+        <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
+            {tabList.find((tab) => tab.key === activeTab)?.label}
+          </p>
+          <p className="mt-3 text-lg font-semibold text-black">Coming soon</p>
+          <p className="mt-2">We are preparing new drops for this tab. Check back soon.</p>
+        </div>
+      )}
     </div>
   );
 }

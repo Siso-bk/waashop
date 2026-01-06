@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { JackpotPlayDto } from "@/types";
 import { JackpotPlayButton } from "@/components/JackpotPlayButton";
 import { formatMinis } from "@/lib/minis";
@@ -11,24 +11,11 @@ type Props = {
 };
 
 export function JackpotShowcase({ jackpots, signedIn }: Props) {
-  const [activeId, setActiveId] = useState<string | null>(jackpots[0]?.id ?? null);
-
-  useEffect(() => {
-    if (!jackpots.length) {
-      setActiveId(null);
-      return;
-    }
-    setActiveId((current) => {
-      if (!current || !jackpots.some((jackpot) => jackpot.id === current)) {
-        return jackpots[0].id;
-      }
-      return current;
-    });
-  }, [jackpots]);
+  const [selectedId, setSelectedId] = useState<string | null>(jackpots[0]?.id ?? null);
 
   const activeJackpot = useMemo(
-    () => jackpots.find((jackpot) => jackpot.id === activeId) ?? jackpots[0],
-    [activeId, jackpots]
+    () => jackpots.find((jackpot) => jackpot.id === selectedId) ?? jackpots[0],
+    [selectedId, jackpots]
   );
 
   if (!jackpots.length) {
@@ -49,9 +36,9 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
+    <div className="space-y-4">
       {activeJackpot && (
-        <article className="jackpot-hero relative flex-1 min-h-0 max-h-[62vh] overflow-hidden rounded-[28px] border px-4 py-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:px-8 sm:py-6">
+        <article className="jackpot-hero relative overflow-hidden rounded-[28px] border px-4 py-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:px-8 sm:py-8">
           <div className="jackpot-hero__glow jackpot-hero__glow--right" />
           <div className="jackpot-hero__glow jackpot-hero__glow--left" />
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -96,7 +83,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setActiveId(item.id)}
+                onClick={() => setSelectedId(item.id)}
                 className={`min-w-[180px] flex-1 rounded-2xl border p-3 text-left transition ${
                   isActive
                     ? "border-emerald-300 bg-white shadow-sm shadow-emerald-500/10"
