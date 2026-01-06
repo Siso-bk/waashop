@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { JackpotPlayDto } from "@/types";
 import { formatMinis } from "@/lib/minis";
@@ -15,6 +15,12 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ won: boolean; payoutMinis: number } | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!result) return;
+    const timer = window.setTimeout(() => setResult(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [result]);
 
   const handleTry = async () => {
     setIsLoading(true);
@@ -53,10 +59,8 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
       <div className="min-h-[36px]" aria-live="polite">
         {result && (
           <div
-            className={`absolute left-0 right-0 top-full mt-0.5 mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-[11px] shadow-lg transition-all duration-300 ${
-              result.won
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-slate-200 bg-slate-50 text-slate-600"
+            className={`jackpot-toast absolute left-0 right-0 top-full mt-0.5 mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-[11px] shadow-lg transition-all duration-300 ${
+              result.won ? "jackpot-toast--win" : "jackpot-toast--lose"
             }`}
           >
             <div className="flex items-center gap-2 font-semibold uppercase tracking-[0.28em]">
