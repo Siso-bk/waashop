@@ -7,7 +7,6 @@ import {
   getStandardProducts,
 } from "@/lib/queries";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
-import { RewardTable } from "@/components/RewardTable";
 import { formatMinis } from "@/lib/minis";
 import { ShopProductsClient } from "@/components/ShopProductsClient";
 import { ShopHeader } from "@/components/ShopHeader";
@@ -101,9 +100,6 @@ export default async function ShopPage({
                 </span>
               </div>
               <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
-              <div className="mt-4">
-                <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />
-              </div>
               <div className="mt-6">
                 <BoxPurchaseButton box={box} disabled={!user} />
               </div>
@@ -129,28 +125,22 @@ export default async function ShopPage({
 
       {activeTab === "challenges" && (
         <div className="flex gap-4 overflow-x-auto pb-3">
-          {filteredChallenges.map((challenge) => {
-            const remaining = Math.max(challenge.ticketCount - challenge.ticketsSold, 0);
-            return (
-              <article
-                key={challenge.id}
-                className="flex min-w-[260px] flex-col gap-3 rounded-3xl border border-black/10 bg-white p-6 shadow-sm"
-              >
-                <header>
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Challenge</p>
-                  <h3 className="mt-2 text-xl font-semibold text-black">{challenge.name}</h3>
-                  {challenge.description && (
-                    <p className="text-sm text-gray-600">{challenge.description}</p>
-                  )}
-                </header>
-                <p className="text-xs text-gray-500">
-                  {remaining} of {challenge.ticketCount} tickets remain ·{" "}
-                  {formatMinis(challenge.ticketPriceMinis ?? 0)} each
-                </p>
-                <ChallengePurchaseButton challenge={challenge} />
-              </article>
-            );
-          })}
+          {filteredChallenges.map((challenge) => (
+            <article
+              key={challenge.id}
+              className="flex min-w-[260px] flex-col gap-3 rounded-3xl border border-black/10 bg-white p-6 shadow-sm"
+            >
+              <header>
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Challenge</p>
+                <h3 className="mt-2 text-xl font-semibold text-black">{challenge.name}</h3>
+                {challenge.description && (
+                  <p className="text-sm text-gray-600">{challenge.description}</p>
+                )}
+              </header>
+              <p className="text-xs text-gray-500">{formatMinis(challenge.ticketPriceMinis ?? 0)} each</p>
+              <ChallengePurchaseButton challenge={challenge} />
+            </article>
+          ))}
           {!filteredChallenges.length && (
             <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
               {challenges.length === 0

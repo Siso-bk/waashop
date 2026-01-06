@@ -12,7 +12,6 @@ import {
 } from "@/lib/queries";
 import type { WinnerSpotlightDto } from "@/types";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
-import { RewardTable } from "@/components/RewardTable";
 import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
 import { HeroCards } from "@/components/HeroCards";
 import { formatMinis } from "@/lib/minis";
@@ -147,22 +146,17 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="mt-6 flex gap-4 overflow-x-auto pb-3">
-            {challenges.map((challenge) => {
-              const remaining = Math.max(challenge.ticketCount - challenge.ticketsSold, 0);
-              return (
-                <article key={challenge.id} className="flex min-w-[240px] flex-col gap-3 rounded-2xl border border-black/10 p-4">
+            {challenges.map((challenge) => (
+              <article key={challenge.id} className="flex min-w-[240px] flex-col gap-3 rounded-2xl border border-black/10 p-4">
                   <header>
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Challenge</p>
                     <h3 className="text-xl font-semibold text-black">{challenge.name}</h3>
                     {challenge.description && <p className="text-sm text-gray-600">{challenge.description}</p>}
                   </header>
-                  <p className="text-xs text-gray-500">
-                    {remaining} of {challenge.ticketCount} tickets remain · {formatMinis(challenge.ticketPriceMinis ?? 0)} each
-                  </p>
+                  <p className="text-xs text-gray-500">{formatMinis(challenge.ticketPriceMinis ?? 0)} each</p>
                   <ChallengePurchaseButton challenge={challenge} />
                 </article>
-              );
-            })}
+            ))}
           </div>
         </section>
       )}
@@ -252,12 +246,6 @@ export default async function HomePage() {
                 </span>
               </div>
               <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
-              <p className="text-sm text-gray-600">
-                Guaranteed {formatMinis(box.guaranteedMinMinis)}
-              </p>
-              <div className="mt-4">
-                <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />
-              </div>
               <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
                 <span>TYR AND SEE IT NOW</span>
               </div>
