@@ -16,8 +16,10 @@ export function HeroCards({ cards, prefersLightText }: Props) {
     [cards]
   );
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
   const listRef = useRef<HTMLDivElement | null>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const pauseUntilRef = useRef<number>(0);
   const activeCard = visibleCards[activeIndex];
 
   const cardClasses = prefersLightText
@@ -38,20 +40,37 @@ export function HeroCards({ cards, prefersLightText }: Props) {
   }, [visibleCards.length]);
 
   useEffect(() => {
+    const target = listRef.current;
+    if (!target || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setIsVisible(entries.some((entry) => entry.isIntersecting));
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (visibleCards.length < 2) return;
     if (typeof window === "undefined") return;
+    if (!isVisible) return;
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
     const interval = window.setInterval(() => {
+      if (pauseUntilRef.current > Date.now()) return;
       setActiveIndex((current) => (current + 1) % visibleCards.length);
-    }, 5200);
+    }, 8000);
     return () => window.clearInterval(interval);
-  }, [visibleCards.length]);
+  }, [visibleCards.length, isVisible]);
 
   useEffect(() => {
     const button = buttonRefs.current[activeIndex];
-    if (!button) return;
-    button.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    const container = listRef.current;
+    if (!button || !container) return;
+    const left = button.offsetLeft - 12;
+    container.scrollTo({ left, behavior: "smooth" });
   }, [activeIndex]);
 
   return (
@@ -91,7 +110,10 @@ export function HeroCards({ cards, prefersLightText }: Props) {
             ref={(node) => {
               buttonRefs.current[index] = node;
             }}
-            onClick={() => setActiveIndex(index)}
+            onClick={() => {
+              pauseUntilRef.current = Date.now() + 12000;
+              setActiveIndex(index);
+            }}
             className={`relative min-w-[180px] max-w-[220px] flex-1 overflow-hidden rounded-2xl border p-3 text-left transition ${
               activeIndex === index
                 ? prefersLightText

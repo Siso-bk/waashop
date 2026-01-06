@@ -194,9 +194,6 @@ export default async function HomePage() {
                   <p className="text-xs text-gray-500">
                     WINNER PRIZE {formatMinis(winnerPrize)}
                   </p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Win odds {(jackpot.winOdds * 100).toFixed(2)}%
-                  </p>
                   <div className="mt-6">
                     <JackpotPlayButton jackpot={jackpot} disabled={!user} />
                   </div>
