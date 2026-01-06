@@ -1851,6 +1851,7 @@ router.get(
         jackpotPlatformPercent: settings.jackpotPlatformPercent,
         jackpotSeedPercent: settings.jackpotSeedPercent,
         jackpotVendorPercent: settings.jackpotVendorPercent,
+        platformPayoutHandle: settings.platformPayoutHandle,
         transferLimitMinis: settings.transferLimitMinis,
         transferFeePercent: settings.transferFeePercent,
       },
@@ -1873,6 +1874,7 @@ router.patch(
       jackpotPlatformPercent: z.number().min(0).max(100).optional(),
       jackpotSeedPercent: z.number().min(0).max(100).optional(),
       jackpotVendorPercent: z.number().min(0).max(100).optional(),
+      platformPayoutHandle: z.string().max(120).optional(),
       transferLimitMinis: z.number().nonnegative().optional(),
       transferFeePercent: z.number().min(0).max(100).optional(),
     });
@@ -1891,6 +1893,7 @@ router.patch(
           jackpotPlatformPercent: doc.jackpotPlatformPercent,
           jackpotSeedPercent: doc.jackpotSeedPercent,
           jackpotVendorPercent: doc.jackpotVendorPercent,
+          platformPayoutHandle: doc.platformPayoutHandle,
           transferLimitMinis: doc.transferLimitMinis,
           transferFeePercent: doc.transferFeePercent,
         },
@@ -2723,11 +2726,11 @@ router.post("/jackpots/:id/try", authMiddleware, async (req, res) => {
       const isWin = Math.random() <= winOdds;
 
       const platformPercent =
-        (product as any).jackpotPlatformPercent ?? settings.jackpotPlatformPercent ?? 0;
+        (product as any).jackpotPlatformPercent ?? settings.jackpotPlatformPercent ?? 5;
       const seedPercent =
-        (product as any).jackpotSeedPercent ?? settings.jackpotSeedPercent ?? 0;
+        (product as any).jackpotSeedPercent ?? settings.jackpotSeedPercent ?? 10;
       const vendorPercent =
-        (product as any).jackpotVendorPercent ?? settings.jackpotVendorPercent ?? 0;
+        (product as any).jackpotVendorPercent ?? settings.jackpotVendorPercent ?? 5;
 
       const platformFee = Math.floor((nextPool * platformPercent) / 100);
       const seedMinis = Math.floor((nextPool * seedPercent) / 100);
@@ -2737,6 +2740,7 @@ router.post("/jackpots/:id/try", authMiddleware, async (req, res) => {
       userDoc.minisBalance -= tryPrice;
 
       let vendorOwner: IUser | null = null;
+      let platformUser: IUser | null = null;
       if (isWin && vendorShare > 0) {
         const vendorDoc = await Vendor.findById(product.vendorId).exec();
         if (vendorDoc?.ownerUserId) {
@@ -2747,6 +2751,23 @@ router.post("/jackpots/:id/try", authMiddleware, async (req, res) => {
             ensureMinisBalance(vendorOwner);
             vendorOwner.minisBalance += vendorShare;
           }
+        }
+      }
+      if (isWin && platformFee > 0 && settings.platformPayoutHandle) {
+        const normalized = settings.platformPayoutHandle.trim().toLowerCase();
+        const handle = normalized.endsWith("@pai") ? normalized.replace(/@pai$/, "") : normalized;
+        const platformQuery = User.findOne({
+          $or: [
+            { username: handle },
+            { username: normalized },
+            { email: normalized },
+          ],
+        });
+        if (session) platformQuery.session(session);
+        platformUser = await platformQuery;
+        if (platformUser) {
+          ensureMinisBalance(platformUser);
+          platformUser.minisBalance += platformFee;
         }
       }
 
@@ -2794,16 +2815,26 @@ router.post("/jackpots/:id/try", authMiddleware, async (req, res) => {
             meta: { productId: product._id },
           });
         }
+        if (platformUser && platformFee > 0) {
+          ledgerEntries.push({
+            userId: platformUser._id,
+            deltaMinis: platformFee,
+            reason: "JACKPOT_PLATFORM_FEE",
+            meta: { productId: product._id },
+          });
+        }
       }
 
       if (session) {
         await userDoc.save({ session });
         if (vendorOwner) await vendorOwner.save({ session });
+        if (platformUser) await platformUser.save({ session });
         await product.save({ session });
         await Ledger.insertMany(ledgerEntries, { session });
       } else {
         await userDoc.save();
         if (vendorOwner) await vendorOwner.save();
+        if (platformUser) await platformUser.save();
         await product.save();
         await Ledger.insertMany(ledgerEntries);
       }

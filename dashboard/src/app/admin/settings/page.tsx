@@ -19,6 +19,7 @@ export default async function AdminSettingsPage() {
   const jackpotPlatformPercent = settings.jackpotPlatformPercent ?? 5;
   const jackpotSeedPercent = settings.jackpotSeedPercent ?? 10;
   const jackpotVendorPercent = settings.jackpotVendorPercent ?? 5;
+  const platformPayoutHandle = settings.platformPayoutHandle ?? "";
 
   return (
     <div className="space-y-6">
@@ -127,6 +128,16 @@ export default async function AdminSettingsPage() {
               />
             </label>
           </div>
+          <label className="block text-sm text-slate-600">
+            Platform payout handle (username@pai)
+            <input
+              name="platformPayoutHandle"
+              type="text"
+              defaultValue={platformPayoutHandle}
+              placeholder="platform@pai"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+            />
+          </label>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm text-slate-600">
               Transfer auto-approve limit (MINIS)
@@ -176,6 +187,7 @@ async function updateFees(formData: FormData) {
     jackpotPlatformPercent: Number(formData.get("jackpotPlatformPercent")),
     jackpotSeedPercent: Number(formData.get("jackpotSeedPercent")),
     jackpotVendorPercent: Number(formData.get("jackpotVendorPercent")),
+    platformPayoutHandle: String(formData.get("platformPayoutHandle") || "").trim() || undefined,
     transferLimitMinis: Number(formData.get("transferLimitMinis")),
     transferFeePercent: Number(formData.get("transferFeePercent")),
   };

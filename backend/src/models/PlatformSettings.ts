@@ -10,6 +10,7 @@ export interface IPlatformSettings extends Document {
   jackpotPlatformPercent: number;
   jackpotSeedPercent: number;
   jackpotVendorPercent: number;
+  platformPayoutHandle?: string;
   transferLimitMinis: number;
   transferFeePercent: number;
   shopTabs?: {
@@ -52,6 +53,7 @@ const PlatformSettingsSchema = new Schema<IPlatformSettings>(
     jackpotPlatformPercent: { type: Number, default: 5 },
     jackpotSeedPercent: { type: Number, default: 10 },
     jackpotVendorPercent: { type: Number, default: 5 },
+    platformPayoutHandle: { type: String },
     transferLimitMinis: { type: Number, default: 5000 },
     transferFeePercent: { type: Number, default: 2 },
     shopTabs: {

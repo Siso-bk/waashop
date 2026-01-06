@@ -179,6 +179,7 @@ export interface PlatformSettingsDto {
   jackpotPlatformPercent: number;
   jackpotSeedPercent: number;
   jackpotVendorPercent: number;
+  platformPayoutHandle?: string;
   transferLimitMinis: number;
   transferFeePercent: number;
 }
