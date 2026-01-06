@@ -118,6 +118,26 @@ export interface ChallengeProduct {
   ticketsSold: number;
   vendor?: { _id: string; name: string } | string;
   winnerUserId?: string;
+  winnerUsername?: string;
+  winnerTicketNumber?: number;
+  prizeConfirmedAt?: string;
+  prizeDeliveredAt?: string;
+}
+
+export interface ChallengeWin {
+  id: string;
+  name: string;
+  description?: string;
+  ticketPriceMinis: number;
+  winnerTicketNumber?: number;
+  prizeConfirmedAt?: string;
+  prizeDeliveredAt?: string;
+  prizeClaimedAt?: string;
+  prizeRecipientName?: string;
+  prizeRecipientPhone?: string;
+  prizeRecipientAddress?: string;
+  prizeClaimNote?: string;
+  updatedAt?: string;
 }
 
 export interface ShopTab {

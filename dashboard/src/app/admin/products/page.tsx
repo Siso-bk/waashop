@@ -183,6 +183,43 @@ async function ProductsTable({
               <td className="px-4 py-3">
                 <div className="space-y-2">
                   <ProductStatusForm product={product} />
+                  {product.type === "CHALLENGE" && product.challengeWinnerUserId && (
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-xs text-slate-600">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-emerald-700">
+                        Winner
+                      </p>
+                      <p className="mt-1 font-semibold text-slate-900">
+                        {product.challengeWinnerUserId} · Ticket #{product.challengeWinnerTicketNumber ?? "—"}
+                      </p>
+                      <p className="mt-1 text-[10px] text-slate-500">
+                        {product.challengePrizeDeliveredAt ? "Delivered" : "Awaiting delivery"}
+                        {product.challengeWinnerConfirmedAt ? " · Confirmed" : ""}
+                        {product.challengePrizeClaimedAt ? " · Claimed" : ""}
+                      </p>
+                      {product.challengePrizeClaimedAt && (
+                        <div className="mt-2 text-[11px] text-slate-600">
+                          <p className="font-semibold text-slate-800">Delivery details</p>
+                          <p>{product.challengePrizeRecipientName || "—"}</p>
+                          <p>{product.challengePrizeRecipientPhone || "—"}</p>
+                          <p className="whitespace-pre-line">{product.challengePrizeRecipientAddress || "—"}</p>
+                          {product.challengePrizeClaimNote && (
+                            <p className="mt-1 text-[10px] text-slate-500">{product.challengePrizeClaimNote}</p>
+                          )}
+                        </div>
+                      )}
+                      {!product.challengePrizeDeliveredAt && (
+                        <form action={markChallengeDelivered} className="mt-2">
+                          <input type="hidden" name="challengeId" value={product._id} />
+                          <PendingButton
+                            pendingLabel="Marking..."
+                            className="rounded-full border border-emerald-200 bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700"
+                          >
+                            Mark delivered
+                          </PendingButton>
+                        </form>
+                      )}
+                    </div>
+                  )}
                   {product.type === "MYSTERY_BOX" && (
                     <details className="rounded-xl border border-slate-100 p-3">
                       <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit</summary>
@@ -377,6 +414,18 @@ async function updateProductStatus(formData: FormData) {
   await backendFetch(`/api/admin/products/${productId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+  revalidatePath("/admin/products");
+}
+
+async function markChallengeDelivered(formData: FormData) {
+  "use server";
+  const challengeId = formData.get("challengeId");
+  if (!challengeId || typeof challengeId !== "string") {
+    return;
+  }
+  await backendFetch(`/api/admin/challenges/${challengeId}/mark-delivered`, {
+    method: "POST",
   });
   revalidatePath("/admin/products");
 }

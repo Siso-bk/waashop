@@ -50,6 +50,16 @@ export interface ProductDto {
   ticketPriceMinis?: number;
   ticketCount?: number;
   ticketsSold?: number;
+  challengeWinnerUserId?: string;
+  challengeWinnerUsername?: string;
+  challengeWinnerTicketNumber?: number;
+  challengeWinnerConfirmedAt?: string;
+  challengePrizeDeliveredAt?: string;
+  challengePrizeRecipientName?: string;
+  challengePrizeRecipientPhone?: string;
+  challengePrizeRecipientAddress?: string;
+  challengePrizeClaimNote?: string;
+  challengePrizeClaimedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

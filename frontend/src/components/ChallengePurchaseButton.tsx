@@ -13,6 +13,9 @@ export function ChallengePurchaseButton({ challenge }: Props) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const remaining = Math.max(challenge.ticketCount - challenge.ticketsSold, 0);
+  const hasWinner = Boolean(challenge.winnerUserId);
+  const winnerLabel = challenge.winnerUsername ? `@${challenge.winnerUsername}` : "Winner";
+  const ticketLabel = challenge.winnerTicketNumber ? `Ticket #${challenge.winnerTicketNumber}` : "Winning ticket";
 
   const handleBuy = async () => {
     setIsLoading(true);
@@ -44,11 +47,33 @@ export function ChallengePurchaseButton({ challenge }: Props) {
     <div className="space-y-2">
       <button
         onClick={handleBuy}
-        disabled={isLoading || remaining <= 0}
+        disabled={isLoading || remaining <= 0 || hasWinner}
         className="w-full rounded-full border border-white/15 bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        {remaining <= 0 ? "Sold out" : isLoading ? "Processing..." : "Buy ticket"}
+        {hasWinner
+          ? "Winner selected"
+          : remaining <= 0
+            ? "Sold out"
+            : isLoading
+              ? "Processing..."
+              : "Buy ticket"}
       </button>
+      {hasWinner && (
+        <div className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-[11px] text-gray-600">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Winner</p>
+          <p className="mt-1 font-semibold text-black">
+            {winnerLabel} · {ticketLabel}
+          </p>
+          <p className="mt-1 text-[10px] text-gray-500">
+            {challenge.prizeDeliveredAt ? "Prize delivered." : "Awaiting prize delivery."}
+          </p>
+          {!challenge.prizeConfirmedAt && (
+            <p className="mt-1 text-[10px] text-gray-400">
+              This will show until the winner confirms the prize delivered.
+            </p>
+          )}
+        </div>
+      )}
       <div className="min-h-[16px]" aria-live="polite">
         {error && <p className="text-xs text-red-500">{error}</p>}
         {success && <p className="text-xs text-emerald-600">{success}</p>}

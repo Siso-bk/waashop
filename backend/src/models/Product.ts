@@ -34,6 +34,14 @@ export interface IProduct extends Document {
   ticketCount?: number;
   ticketsSold?: number;
   challengeWinnerUserId?: Types.ObjectId | null;
+  challengeWinnerTicketNumber?: number;
+  challengeWinnerConfirmedAt?: Date;
+  challengePrizeDeliveredAt?: Date;
+  challengePrizeRecipientName?: string;
+  challengePrizeRecipientPhone?: string;
+  challengePrizeRecipientAddress?: string;
+  challengePrizeClaimNote?: string;
+  challengePrizeClaimedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +81,14 @@ const ProductSchema = new Schema<IProduct>(
     ticketCount: { type: Number },
     ticketsSold: { type: Number, default: 0 },
     challengeWinnerUserId: { type: Schema.Types.ObjectId, ref: "User" },
+    challengeWinnerTicketNumber: { type: Number },
+    challengeWinnerConfirmedAt: { type: Date },
+    challengePrizeDeliveredAt: { type: Date },
+    challengePrizeRecipientName: { type: String },
+    challengePrizeRecipientPhone: { type: String },
+    challengePrizeRecipientAddress: { type: String },
+    challengePrizeClaimNote: { type: String },
+    challengePrizeClaimedAt: { type: Date },
   },
   { timestamps: true }
 );

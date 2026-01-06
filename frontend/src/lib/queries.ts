@@ -7,6 +7,7 @@ import {
   HomeHighlightCard,
   PromoCard,
   ChallengeProduct,
+  ChallengeWin,
   WinnerSpotlightDto,
   ShopTab,
   StandardProduct,
@@ -205,6 +206,15 @@ export const getChallenges = async (): Promise<ChallengeProduct[]> => {
   try {
     const data = await backendFetch<{ challenges: ChallengeProduct[] }>("/api/challenges", { auth: false });
     return data.challenges;
+  } catch {
+    return [];
+  }
+};
+
+export const getChallengeWins = async (): Promise<ChallengeWin[]> => {
+  try {
+    const data = await backendFetch<{ wins: ChallengeWin[] }>("/api/challenges/wins");
+    return data.wins;
   } catch {
     return [];
   }

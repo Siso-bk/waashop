@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCustomerOrders, getSessionUser } from "@/lib/queries";
+import { getChallengeWins, getCustomerOrders, getSessionUser } from "@/lib/queries";
 import { OrdersClient } from "@/components/OrdersClient";
 
 export default async function OrdersPage() {
@@ -19,7 +19,7 @@ export default async function OrdersPage() {
     );
   }
 
-  const orders = await getCustomerOrders();
+  const [orders, challengeWins] = await Promise.all([getCustomerOrders(), getChallengeWins()]);
 
   return (
     <div className="space-y-6 pb-20">
@@ -28,7 +28,7 @@ export default async function OrdersPage() {
         <h1 className="text-2xl font-semibold text-black">Your orders</h1>
         <p className="text-sm text-gray-600">Track delivery status and report issues.</p>
       </header>
-      <OrdersClient initialOrders={orders} />
+      <OrdersClient initialOrders={orders} initialChallengeWins={challengeWins} />
     </div>
   );
 }

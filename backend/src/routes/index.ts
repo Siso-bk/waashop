@@ -150,6 +150,14 @@ const normalizeProduct = (product: any) => ({
   ticketCount: product.ticketCount,
   ticketsSold: product.ticketsSold,
   challengeWinnerUserId: product.challengeWinnerUserId,
+  challengeWinnerTicketNumber: product.challengeWinnerTicketNumber,
+  challengeWinnerConfirmedAt: product.challengeWinnerConfirmedAt,
+  challengePrizeDeliveredAt: product.challengePrizeDeliveredAt,
+  challengePrizeRecipientName: product.challengePrizeRecipientName,
+  challengePrizeRecipientPhone: product.challengePrizeRecipientPhone,
+  challengePrizeRecipientAddress: product.challengePrizeRecipientAddress,
+  challengePrizeClaimNote: product.challengePrizeClaimNote,
+  challengePrizeClaimedAt: product.challengePrizeClaimedAt,
   createdAt: product.createdAt,
   updatedAt: product.updatedAt,
 });
@@ -2500,7 +2508,23 @@ router.get(
   requireApprovedVendor,
   async (req, res) => {
     const products = await Product.find({ vendorId: req.vendorDoc!._id }).sort({ createdAt: -1 }).lean();
-    res.json({ products: products.map((product) => normalizeProduct(product)) });
+    const winnerIds = products
+      .map((product) => product.challengeWinnerUserId?.toString())
+      .filter(Boolean) as string[];
+    const winners = winnerIds.length
+      ? await User.find({ _id: { $in: winnerIds } }, "username email").lean()
+      : [];
+    const winnerMap = new Map(
+      winners.map((winner) => [winner._id.toString(), winner.username || winner.email || "winner"])
+    );
+    res.json({
+      products: products.map((product) => ({
+        ...normalizeProduct(product),
+        challengeWinnerUsername: product.challengeWinnerUserId
+          ? winnerMap.get(product.challengeWinnerUserId.toString())
+          : undefined,
+      })),
+    });
   }
 );
 
@@ -2546,7 +2570,14 @@ router.get(
       Product.countDocuments(query),
     ]);
     res.json({
-      products: products.map((product) => normalizeProduct(product)),
+      products: products.map((product) => ({
+        ...normalizeProduct(product),
+        challengePrizeRecipientName: product.challengePrizeRecipientName,
+        challengePrizeRecipientPhone: product.challengePrizeRecipientPhone,
+        challengePrizeRecipientAddress: product.challengePrizeRecipientAddress,
+        challengePrizeClaimNote: product.challengePrizeClaimNote,
+        challengePrizeClaimedAt: product.challengePrizeClaimedAt,
+      })),
       page: params.page,
       total,
       pageSize: params.limit,
@@ -2874,6 +2905,15 @@ router.get("/challenges", async (_req, res) => {
   const challenges = await Product.find({ type: "CHALLENGE", status: "ACTIVE" })
     .populate("vendorId", "name")
     .lean();
+  const winnerIds = challenges
+    .map((challenge) => challenge.challengeWinnerUserId?.toString())
+    .filter(Boolean) as string[];
+  const winners = winnerIds.length
+    ? await User.find({ _id: { $in: winnerIds } }, "username email").lean()
+    : [];
+  const winnerMap = new Map(
+    winners.map((winner) => [winner._id.toString(), winner.username || winner.email || "winner"])
+  );
   res.json({
     challenges: challenges.map((challenge) => ({
       id: challenge._id.toString(),
@@ -2883,7 +2923,13 @@ router.get("/challenges", async (_req, res) => {
       ticketCount: challenge.ticketCount,
       ticketsSold: challenge.ticketsSold,
       vendor: challenge.vendorId,
-      winnerUserId: challenge.challengeWinnerUserId,
+      winnerUserId: challenge.challengeWinnerUserId?.toString(),
+      winnerUsername: challenge.challengeWinnerUserId
+        ? winnerMap.get(challenge.challengeWinnerUserId.toString())
+        : undefined,
+      winnerTicketNumber: challenge.challengeWinnerTicketNumber,
+      prizeConfirmedAt: challenge.challengeWinnerConfirmedAt,
+      prizeDeliveredAt: challenge.challengePrizeDeliveredAt,
     })),
   });
 });
@@ -3714,7 +3760,7 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
         if (winnerEntry) {
           winnerUserId = winnerEntry.userId;
           product.challengeWinnerUserId = winnerEntry.userId;
-          product.status = "INACTIVE";
+          product.challengeWinnerTicketNumber = winningNumber;
           if (session) await product.save({ session });
           else await product.save();
         }
@@ -3741,6 +3787,130 @@ router.post("/challenges/:id/buy", authMiddleware, async (req, res) => {
     res.status(400).json({ error: "Unable to process ticket purchase" });
   }
 });
+
+router.get("/challenges/wins", authMiddleware, async (req, res) => {
+  await connectDB();
+  const userId = req.userId;
+  const challenges = await Product.find({
+    type: "CHALLENGE",
+    challengeWinnerUserId: userId,
+  })
+    .sort({ updatedAt: -1 })
+    .lean();
+  res.json({
+    wins: challenges.map((challenge) => ({
+      id: challenge._id.toString(),
+      name: challenge.name,
+      description: challenge.description,
+      ticketPriceMinis: (challenge as any).ticketPriceMinis ?? 0,
+      winnerTicketNumber: challenge.challengeWinnerTicketNumber,
+      prizeConfirmedAt: challenge.challengeWinnerConfirmedAt,
+      prizeDeliveredAt: challenge.challengePrizeDeliveredAt,
+      prizeClaimedAt: challenge.challengePrizeClaimedAt,
+      prizeRecipientName: challenge.challengePrizeRecipientName,
+      prizeRecipientPhone: challenge.challengePrizeRecipientPhone,
+      prizeRecipientAddress: challenge.challengePrizeRecipientAddress,
+      prizeClaimNote: challenge.challengePrizeClaimNote,
+      updatedAt: challenge.updatedAt,
+    })),
+  });
+});
+
+router.post("/challenges/:id/claim-prize", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    recipientName: z.string().min(1).max(120),
+    recipientPhone: z.string().min(3).max(40),
+    recipientAddress: z.string().min(5).max(500),
+    note: z.string().max(500).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    await connectDB();
+    const product = await Product.findOne({ _id: req.params.id, type: "CHALLENGE" }).exec();
+    if (!product) {
+      return res.status(404).json({ error: "Challenge not found" });
+    }
+    if (!product.challengeWinnerUserId || product.challengeWinnerUserId.toString() !== req.userId) {
+      return res.status(403).json({ error: "Not authorized to claim this prize" });
+    }
+    product.challengePrizeRecipientName = payload.recipientName;
+    product.challengePrizeRecipientPhone = payload.recipientPhone;
+    product.challengePrizeRecipientAddress = payload.recipientAddress;
+    product.challengePrizeClaimNote = payload.note;
+    product.challengePrizeClaimedAt = new Date();
+    await product.save();
+
+    const vendorDoc = await Vendor.findById(product.vendorId).exec();
+    if (vendorDoc?.ownerUserId) {
+      await createNotification(vendorDoc.ownerUserId, {
+        type: "CHALLENGE_PRIZE_CLAIMED",
+        title: "Winner submitted delivery details",
+        body: product.name,
+        meta: { productId: product._id.toString() },
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Claim challenge prize error", error);
+    res.status(400).json({ error: "Unable to submit delivery details" });
+  }
+});
+
+router.post("/challenges/:id/confirm-prize", authMiddleware, async (req, res) => {
+  await connectDB();
+  const product = await Product.findOne({ _id: req.params.id, type: "CHALLENGE" }).exec();
+  if (!product) {
+    return res.status(404).json({ error: "Challenge not found" });
+  }
+  if (!product.challengeWinnerUserId || product.challengeWinnerUserId.toString() !== req.userId) {
+    return res.status(403).json({ error: "Not authorized to confirm this prize" });
+  }
+  product.challengeWinnerConfirmedAt = new Date();
+  if (!product.challengePrizeDeliveredAt) {
+    product.challengePrizeDeliveredAt = new Date();
+  }
+  product.status = "INACTIVE";
+  await product.save();
+  const vendorDoc = await Vendor.findById(product.vendorId).exec();
+  if (vendorDoc?.ownerUserId) {
+    await createNotification(vendorDoc.ownerUserId, {
+      type: "CHALLENGE_PRIZE_CONFIRMED",
+      title: "Winner confirmed prize",
+      body: product.name,
+      meta: { productId: product._id.toString() },
+    });
+  }
+  res.json({ success: true });
+});
+
+router.post(
+  "/admin/challenges/:id/mark-delivered",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    await connectDB();
+    const product = await Product.findOne({ _id: req.params.id, type: "CHALLENGE" }).exec();
+    if (!product) {
+      return res.status(404).json({ error: "Challenge not found" });
+    }
+    product.challengePrizeDeliveredAt = new Date();
+    if (!product.challengeWinnerConfirmedAt) {
+      product.challengeWinnerConfirmedAt = new Date();
+    }
+    product.status = "INACTIVE";
+    await product.save();
+    if (product.challengeWinnerUserId) {
+      await createNotification(product.challengeWinnerUserId, {
+        type: "CHALLENGE_PRIZE_DELIVERED",
+        title: "Prize delivered",
+        body: product.name,
+        meta: { productId: product._id.toString() },
+      });
+    }
+    res.json({ success: true });
+  }
+);
 
 router.get("/ledger", authMiddleware, async (req, res) => {
   const querySchema = z.object({

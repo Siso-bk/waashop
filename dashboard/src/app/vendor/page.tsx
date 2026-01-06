@@ -415,6 +415,31 @@ function ProductCard({ product }: { product: ProductDto }) {
           Jackpot play · Win odds {((product.jackpotWinOdds || 0) * 100).toFixed(2)}% · {product.priceMinis.toLocaleString()} MINIS
         </p>
       ) : null}
+      {product.type === "CHALLENGE" && product.challengeWinnerUserId && (
+        <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-xs text-slate-600">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-emerald-700">Winner</p>
+          <p className="mt-1 font-semibold text-slate-900">
+            {product.challengeWinnerUsername ? `@${product.challengeWinnerUsername}` : product.challengeWinnerUserId} · Ticket #
+            {product.challengeWinnerTicketNumber ?? "—"}
+          </p>
+          <p className="mt-1 text-[10px] text-slate-500">
+            {product.challengePrizeDeliveredAt ? "Delivered" : "Awaiting delivery"}
+            {product.challengeWinnerConfirmedAt ? " · Confirmed" : ""}
+            {product.challengePrizeClaimedAt ? " · Claimed" : ""}
+          </p>
+          {product.challengePrizeClaimedAt && (
+            <div className="mt-2 text-[11px] text-slate-600">
+              <p className="font-semibold text-slate-800">Delivery details</p>
+              <p>{product.challengePrizeRecipientName || "—"}</p>
+              <p>{product.challengePrizeRecipientPhone || "—"}</p>
+              <p className="whitespace-pre-line">{product.challengePrizeRecipientAddress || "—"}</p>
+              {product.challengePrizeClaimNote && (
+                <p className="mt-1 text-[10px] text-slate-500">{product.challengePrizeClaimNote}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {product.status === "PENDING" && product.type === "MYSTERY_BOX" && (
         <div className="mt-3 space-y-3">
           <details className="rounded-xl border border-slate-200 p-3">

@@ -2,12 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { CustomerOrder } from "@/types";
+import type { ChallengeWin, CustomerOrder } from "@/types";
 import { formatMinis } from "@/lib/minis";
 
-export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[] }) {
+export function OrdersClient({
+  initialOrders,
+  initialChallengeWins = [],
+}: {
+  initialOrders: CustomerOrder[];
+  initialChallengeWins?: ChallengeWin[];
+}) {
   const [orders, setOrders] = useState<CustomerOrder[]>(initialOrders);
+  const [challengeWins, setChallengeWins] = useState<ChallengeWin[]>(initialChallengeWins);
   const [message, setMessage] = useState<string | null>(null);
+  const [pendingChallengeId, setPendingChallengeId] = useState<string | null>(null);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [claimDrafts, setClaimDrafts] = useState<Record<string, ClaimDraft>>({});
 
   const refreshOrders = async () => {
     const response = await fetch("/api/orders", { credentials: "include" });
@@ -15,6 +25,15 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
     const data = await response.json().catch(() => ({}));
     if (data?.orders) {
       setOrders(data.orders);
+    }
+  };
+
+  const refreshChallengeWins = async () => {
+    const response = await fetch("/api/challenges/wins", { credentials: "include" });
+    if (!response.ok) return;
+    const data = await response.json().catch(() => ({}));
+    if (data?.wins) {
+      setChallengeWins(data.wins);
     }
   };
 
@@ -34,9 +53,176 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
     await refreshOrders();
   };
 
+  const confirmChallengePrize = async (challengeId: string) => {
+    setMessage(null);
+    setPendingChallengeId(challengeId);
+    const response = await fetch(`/api/challenges/${challengeId}/confirm-prize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(data?.error || "Unable to confirm prize.");
+      setPendingChallengeId(null);
+      return;
+    }
+    await refreshChallengeWins();
+    setPendingChallengeId(null);
+  };
+
+  const submitClaim = async (challengeId: string) => {
+    const draft = claimDrafts[challengeId];
+    if (!draft?.recipientName || !draft.recipientPhone || !draft.recipientAddress) {
+      setMessage("Add a name, phone, and address to claim your prize.");
+      return;
+    }
+    setMessage(null);
+    setClaimingId(challengeId);
+    const response = await fetch(`/api/challenges/${challengeId}/claim-prize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        recipientName: draft.recipientName,
+        recipientPhone: draft.recipientPhone,
+        recipientAddress: draft.recipientAddress,
+        note: draft.note || undefined,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(data?.error || "Unable to submit delivery details.");
+      setClaimingId(null);
+      return;
+    }
+    await refreshChallengeWins();
+    setClaimingId(null);
+  };
+
+  const updateDraft = (challengeId: string, patch: Partial<ClaimDraft>) => {
+    setClaimDrafts((prev) => ({
+      ...prev,
+      [challengeId]: { ...prev[challengeId], ...patch },
+    }));
+  };
+
   return (
     <div className="space-y-4">
       {message && <p className="text-sm text-red-500">{message}</p>}
+      {challengeWins.length > 0 && (
+        <section className="space-y-3 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Challenge wins</p>
+            <h2 className="mt-1 text-base font-semibold text-black">Your prize queue</h2>
+            <p className="text-xs text-gray-500">
+              Confirm your prize so the admin can close the delivery loop.
+            </p>
+          </div>
+          <div className="space-y-3">
+            {challengeWins.map((win) => {
+              const hasConfirmed = Boolean(win.prizeConfirmedAt);
+              const hasDelivered = Boolean(win.prizeDeliveredAt);
+              const hasClaimed = Boolean(win.prizeClaimedAt);
+              const draft = claimDrafts[win.id] || {
+                recipientName: win.prizeRecipientName || "",
+                recipientPhone: win.prizeRecipientPhone || "",
+                recipientAddress: win.prizeRecipientAddress || "",
+                note: win.prizeClaimNote || "",
+              };
+              return (
+                <div key={win.id} className="rounded-2xl border border-black/10 bg-white p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-black">{win.name}</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Ticket #{win.winnerTicketNumber ?? "—"} · {formatMinis(win.ticketPriceMinis)} each
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-gray-500">
+                      {hasConfirmed ? (
+                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">
+                          Confirmed
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 font-semibold text-amber-700">
+                          Awaiting your confirmation
+                        </span>
+                      )}
+                      {hasDelivered && (
+                        <span className="rounded-full border border-black/10 bg-gray-100 px-2 py-1 font-semibold text-gray-600">
+                          Delivered
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                    {hasDelivered && !hasConfirmed && (
+                      <span>Admin marked delivered. Please confirm to close the challenge.</span>
+                    )}
+                    {!hasDelivered && hasConfirmed && <span>Waiting on admin delivery confirmation.</span>}
+                    {hasDelivered && hasConfirmed && <span>Prize delivered. Enjoy!</span>}
+                    {!hasClaimed && <span>Submit delivery details to claim your prize.</span>}
+                    {hasClaimed && !hasDelivered && <span>Delivery details submitted.</span>}
+                  </div>
+                  {!hasClaimed && (
+                    <div className="mt-4 grid gap-2 text-xs text-gray-600">
+                      <input
+                        type="text"
+                        value={draft.recipientName}
+                        onChange={(event) => updateDraft(win.id, { recipientName: event.target.value })}
+                        placeholder="Recipient name"
+                        className="w-full rounded-xl border border-black/10 px-3 py-2"
+                      />
+                      <input
+                        type="text"
+                        value={draft.recipientPhone}
+                        onChange={(event) => updateDraft(win.id, { recipientPhone: event.target.value })}
+                        placeholder="Phone number"
+                        className="w-full rounded-xl border border-black/10 px-3 py-2"
+                      />
+                      <textarea
+                        rows={2}
+                        value={draft.recipientAddress}
+                        onChange={(event) => updateDraft(win.id, { recipientAddress: event.target.value })}
+                        placeholder="Delivery address"
+                        className="w-full rounded-xl border border-black/10 px-3 py-2"
+                      />
+                      <textarea
+                        rows={2}
+                        value={draft.note}
+                        onChange={(event) => updateDraft(win.id, { note: event.target.value })}
+                        placeholder="Delivery note (optional)"
+                        className="w-full rounded-xl border border-black/10 px-3 py-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => submitClaim(win.id)}
+                        disabled={claimingId === win.id}
+                        className="w-fit rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 font-semibold text-indigo-700 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {claimingId === win.id ? "Submitting..." : "Submit delivery details"}
+                      </button>
+                    </div>
+                  )}
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                    {!hasConfirmed && (
+                      <button
+                        type="button"
+                        onClick={() => confirmChallengePrize(win.id)}
+                        disabled={pendingChallengeId === win.id}
+                        className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {pendingChallengeId === win.id ? "Confirming..." : "Confirm prize"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
       {orders.map((order) => (
         <div key={order.id} className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -140,10 +326,19 @@ export function OrdersClient({ initialOrders }: { initialOrders: CustomerOrder[]
           </div>
         </div>
       ))}
-      {orders.length === 0 && <p className="text-sm text-gray-500">No orders yet.</p>}
+      {orders.length === 0 && challengeWins.length === 0 && (
+        <p className="text-sm text-gray-500">No orders yet.</p>
+      )}
     </div>
   );
 }
+
+type ClaimDraft = {
+  recipientName?: string;
+  recipientPhone?: string;
+  recipientAddress?: string;
+  note?: string;
+};
 
 const STATUS_LABELS: Record<CustomerOrder["status"], string> = {
   PLACED: "Order placed",
