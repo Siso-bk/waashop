@@ -687,10 +687,12 @@ router.get("/profile/handle/check", async (req, res) => {
   }
   try {
     const response = await fetch(
-      `${env.PAI_BASE_URL}/api/profile/handle/check?handle=${encodeURIComponent(normalized)}`,
-      { cache: "no-store" }
+      `${env.PAI_BASE_URL}/api/profile/handle/check?handle=${encodeURIComponent(normalized)}`
     );
-    const data = await response.json().catch(() => ({}));
+    const data = (await response.json().catch(() => ({}))) as {
+      valid?: boolean;
+      available?: boolean;
+    };
     if (!response.ok) {
       return res.json({ valid: true, available: true, reserved: false });
     }
