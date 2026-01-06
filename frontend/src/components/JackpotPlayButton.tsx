@@ -51,9 +51,21 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
       </button>
       {error && <p className="text-xs text-red-500">{error}</p>}
       {result && (
-        <p className={`text-xs ${result.won ? "text-emerald-600" : "text-slate-500"}`}>
-          {result.won ? `You won ${formatMinis(result.payoutMinis)}!` : "No win this time. Pool increased."}
-        </p>
+        <div
+          className={`rounded-2xl border px-3 py-2 text-xs ${
+            result.won
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-slate-200 bg-slate-50 text-slate-600"
+          }`}
+        >
+          <div className="flex items-center gap-2 font-semibold uppercase tracking-[0.3em]">
+            <span aria-hidden>{result.won ? "◎" : "•"}</span>
+            {result.won ? "Jackpot win" : "Try complete"}
+          </div>
+          <p className="mt-1">
+            {result.won ? `You won ${formatMinis(result.payoutMinis)}.` : "No win this time. The pool just grew."}
+          </p>
+        </div>
       )}
     </div>
   );
