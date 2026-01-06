@@ -87,7 +87,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
 
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">All jackpots</p>
-        <div className="max-h-[360px] space-y-3 overflow-y-auto pr-2">
+        <div className="flex gap-3 overflow-x-auto pb-2">
           {jackpots.map((item) => {
             const total = item.platformPercent + item.seedPercent + item.vendorPercent;
             const prize = Math.max(0, Math.floor(item.poolMinis * (1 - total / 100)));
@@ -97,7 +97,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
                 key={item.id}
                 type="button"
                 onClick={() => setActiveId(item.id)}
-                className={`w-full rounded-2xl border p-4 text-left transition ${
+                className={`min-w-[220px] flex-1 rounded-2xl border p-4 text-left transition ${
                   isActive
                     ? "border-emerald-300 bg-white shadow-sm shadow-emerald-500/10"
                     : "border-black/10 bg-white hover:border-emerald-200"
