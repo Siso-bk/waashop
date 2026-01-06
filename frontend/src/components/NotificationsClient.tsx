@@ -51,10 +51,8 @@ export function NotificationsClient({ initialNotifications }: Props) {
       {items.map((item) => (
         <article
           key={item.id}
-          className={`rounded-2xl border p-4 transition ${
-            item.status === "UNREAD"
-              ? "border-amber-200/60 bg-amber-50/40"
-              : "border-black/10 bg-white"
+          className={`notification-surface rounded-2xl border p-4 transition ${
+            item.status === "UNREAD" ? "notification-unread" : ""
           }`}
         >
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-500">

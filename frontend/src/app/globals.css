@@ -108,6 +108,18 @@ body {
   border-color: var(--surface-border) !important;
 }
 
+.notification-surface {
+  background: var(--surface-bg);
+  border-color: var(--surface-border);
+  color: var(--app-text);
+}
+
+.notification-unread {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(251, 191, 36, 0.04)),
+    var(--surface-bg);
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
 .jackpot-hero {
   background: linear-gradient(135deg, #ffffff, #ecfdf5, #ccfbf1);
   border-color: var(--surface-border);

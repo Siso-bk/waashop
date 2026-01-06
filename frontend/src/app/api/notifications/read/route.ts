@@ -8,7 +8,12 @@ const handleError = (error: unknown, status = 400) => {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json();
+    let payload: unknown = {};
+    try {
+      payload = await request.json();
+    } catch {
+      payload = {};
+    }
     const data = await backendFetch<{ updated: number }>("/api/notifications/read", {
       method: "POST",
       body: JSON.stringify(payload),
