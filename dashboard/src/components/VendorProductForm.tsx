@@ -20,6 +20,8 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [fundingMinis, setFundingMinis] = useState("");
   const [ticketPriceMinis, setTicketPriceMinis] = useState("");
   const [ticketCount, setTicketCount] = useState("");
+  const [submitCount, setSubmitCount] = useState(0);
+  const [noticeHidden, setNoticeHidden] = useState(false);
   const [tiers, setTiers] = useState([
     { minis: "600", probability: "0.55", isTop: false },
     { minis: "800", probability: "0.25", isTop: false },
@@ -74,8 +76,40 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
     setTiers((prev) => prev.filter((_, idx) => idx !== index));
   };
 
+  const normalizeTiers = () => {
+    const numeric = tiers.map((tier) => Number(tier.probability));
+    const total = numeric.reduce((sum, value) => sum + (Number.isFinite(value) ? value : 0), 0);
+    if (!Number.isFinite(total) || total <= 0) {
+      window.alert("Add tier probabilities before normalizing.");
+      return;
+    }
+    const normalized = numeric.map((value) => (Number.isFinite(value) ? value / total : 0));
+    if (normalized.length === 0) return;
+    const lastIndex = normalized.length - 1;
+    const rounded = normalized.map((value, index) => (index === lastIndex ? value : Number(value.toFixed(4))));
+    const sumRounded = rounded.slice(0, lastIndex).reduce((sum, value) => sum + value, 0);
+    const lastValue = Math.max(0, 1 - sumRounded);
+    const finalValues = rounded.map((value, index) => (index === lastIndex ? lastValue : value));
+    setTiers((prev) =>
+      prev.map((tier, index) => ({
+        ...tier,
+        probability: finalValues[index]?.toFixed(4) ?? tier.probability,
+      }))
+    );
+  };
+
+  const showSuccess = submitCount > 0 && !pending && !state.error && !noticeHidden;
+  const showError = Boolean(state.error) && !noticeHidden;
+
   return (
-    <form action={action} className="space-y-4">
+    <form
+      action={action}
+      onSubmit={() => {
+        setSubmitCount((count) => count + 1);
+        setNoticeHidden(false);
+      }}
+      className="space-y-4"
+    >
       <div>
         <label className="text-sm font-medium text-slate-600" htmlFor="productType">
           Product type
@@ -293,14 +327,24 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
                   )}
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={addTier}
-                disabled={isLocked}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
-              >
-                + Add tier
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={addTier}
+                  disabled={isLocked}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+                >
+                  + Add tier
+                </button>
+                <button
+                  type="button"
+                  onClick={normalizeTiers}
+                  disabled={isLocked}
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-50"
+                >
+                  Auto-normalize
+                </button>
+              </div>
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
                 <p className="text-xs font-semibold text-slate-500">Preview JSON</p>
                 <pre className="mt-2 overflow-x-auto text-xs text-slate-700">{rewardTiersJson}</pre>
@@ -380,7 +424,36 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           </div>
         </div>
       </div>
-      {state.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {showSuccess && (
+        <div className="flex items-start justify-between gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div>
+            <p className="font-semibold">Product submitted</p>
+            <p className="text-xs text-emerald-700/80">We&apos;re reviewing your listing. You&apos;ll see updates here.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNoticeHidden(true)}
+            className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700/70 hover:text-emerald-700"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      {showError && (
+        <div className="flex items-start justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div>
+            <p className="font-semibold">Submission failed</p>
+            <p className="text-xs text-rose-700/80">{state.error}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNoticeHidden(true)}
+            className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-700/70 hover:text-rose-700"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       <PendingButton
         pendingLabel="Submitting..."
         disabled={isLocked}

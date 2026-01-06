@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { HomeHeroCard } from "@/types";
@@ -15,8 +15,10 @@ export function HeroCards({ cards, prefersLightText }: Props) {
     () => cards.filter((card) => card.status !== "DRAFT"),
     [cards]
   );
-  const [activeId, setActiveId] = useState<string | null>(visibleCards[0]?.id ?? null);
-  const activeCard = activeId ? visibleCards.find((card) => card.id === activeId) : undefined;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const activeCard = visibleCards[activeIndex];
 
   const cardClasses = prefersLightText
     ? "border-white/20 text-white"
@@ -26,6 +28,31 @@ export function HeroCards({ cards, prefersLightText }: Props) {
   const buttonClass = prefersLightText
     ? "border border-white/40 text-white hover:bg-white/10"
     : "border border-black/30 text-black hover:bg-black/5";
+
+  useEffect(() => {
+    if (visibleCards.length === 0) {
+      setActiveIndex(0);
+      return;
+    }
+    setActiveIndex((current) => Math.min(current, visibleCards.length - 1));
+  }, [visibleCards.length]);
+
+  useEffect(() => {
+    if (visibleCards.length < 2) return;
+    if (typeof window === "undefined") return;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+    const interval = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % visibleCards.length);
+    }, 5200);
+    return () => window.clearInterval(interval);
+  }, [visibleCards.length]);
+
+  useEffect(() => {
+    const button = buttonRefs.current[activeIndex];
+    if (!button) return;
+    button.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeIndex]);
 
   return (
     <div className="space-y-4">
@@ -56,14 +83,17 @@ export function HeroCards({ cards, prefersLightText }: Props) {
           <p className={`mt-3 text-sm leading-relaxed ${bodyText}`}>{activeCard.body}</p>
         </div>
       )}
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {visibleCards.map((card) => (
+      <div ref={listRef} className="flex gap-3 overflow-x-auto pb-2">
+        {visibleCards.map((card, index) => (
           <button
             key={card.id}
             type="button"
-            onClick={() => setActiveId(card.id)}
+            ref={(node) => {
+              buttonRefs.current[index] = node;
+            }}
+            onClick={() => setActiveIndex(index)}
             className={`relative min-w-[180px] max-w-[220px] flex-1 overflow-hidden rounded-2xl border p-3 text-left transition ${
-              activeId === card.id
+              activeIndex === index
                 ? prefersLightText
                   ? "ring-2 ring-white/70 border-white/40"
                   : "ring-2 ring-black/60 border-black/40"
@@ -71,7 +101,7 @@ export function HeroCards({ cards, prefersLightText }: Props) {
                   ? "hover:border-white/40"
                   : "hover:border-black/30"
             } ${cardClasses}`}
-            aria-pressed={activeId === card.id}
+            aria-pressed={activeIndex === index}
             aria-label={card.title}
           >
             {card.imageUrl && (
