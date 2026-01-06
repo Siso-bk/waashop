@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { JackpotPlayDto } from "@/types";
 import { formatMinis } from "@/lib/minis";
@@ -14,6 +14,8 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ won: boolean; payoutMinis: number } | null>(null);
+  const [animatedPayout, setAnimatedPayout] = useState(0);
+  const animationRef = useRef<number | null>(null);
   const router = useRouter();
   const winSound = useMemo(() => (jackpot.winSoundUrl ? new Audio(jackpot.winSoundUrl) : null), [jackpot.winSoundUrl]);
   const loseSound = useMemo(() => (jackpot.loseSoundUrl ? new Audio(jackpot.loseSoundUrl) : null), [jackpot.loseSoundUrl]);
@@ -22,6 +24,41 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
     if (!result) return;
     const timer = window.setTimeout(() => setResult(null), 3500);
     return () => window.clearTimeout(timer);
+  }, [result]);
+
+  useEffect(() => {
+    if (!result || !result.won) {
+      setAnimatedPayout(0);
+      return;
+    }
+    if (typeof window === "undefined") return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (reduceMotion) {
+      setAnimatedPayout(result.payoutMinis);
+      return;
+    }
+    if (animationRef.current !== null) {
+      window.cancelAnimationFrame(animationRef.current);
+    }
+    const start = window.performance.now();
+    const duration = 900;
+    const step = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setAnimatedPayout(result.payoutMinis * eased);
+      if (progress < 1) {
+        animationRef.current = window.requestAnimationFrame(step);
+      } else {
+        animationRef.current = null;
+        setAnimatedPayout(result.payoutMinis);
+      }
+    };
+    animationRef.current = window.requestAnimationFrame(step);
+    return () => {
+      if (animationRef.current !== null) {
+        window.cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, [result]);
 
   const handleTry = async () => {
@@ -71,12 +108,19 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
               result.won ? "jackpot-toast--win" : "jackpot-toast--lose"
             }`}
           >
-            <div className="flex items-center gap-2 font-semibold uppercase tracking-[0.28em]">
-              <span aria-hidden>{result.won ? "★" : "•"}</span>
-              {result.won ? "Winner" : "Try"}
+            <div className="flex flex-1 flex-col gap-1">
+              <div className="flex items-center gap-2 font-semibold uppercase tracking-[0.28em]">
+                <span aria-hidden>{result.won ? "★" : "•"}</span>
+                {result.won ? "Winner" : "Try"}
+              </div>
+              {result.won && (
+                <p className="text-2xl font-semibold text-emerald-500">
+                  +{formatMinis(animatedPayout)}
+                </p>
+              )}
             </div>
             <p className="text-right">
-              {result.won ? `+${formatMinis(result.payoutMinis)}` : "Missed · Pool up"}
+              {result.won ? "Payout locked" : "Missed · Pool up"}
             </p>
           </div>
         )}

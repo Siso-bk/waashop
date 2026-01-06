@@ -37,6 +37,9 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
       }
       const now = new Date().toISOString();
       setItems((prev) => prev.map((item) => ({ ...item, status: "READ", readAt: now })));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("notifications:refresh"));
+      }
       markInFlightRef.current = false;
     };
     void markRead();

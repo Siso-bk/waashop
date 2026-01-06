@@ -12,6 +12,7 @@ export function BalancePanel({ minis, tone = "auto" }: Props) {
   const prevMinis = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const valueRef = useRef<HTMLParagraphElement | null>(null);
+  const animationRef = useRef<number | null>(null);
   const themeTone = useSyncExternalStore(
     (callback) => {
       if (typeof document === "undefined") return () => {};
@@ -42,30 +43,25 @@ export function BalancePanel({ minis, tone = "auto" }: Props) {
   } as React.CSSProperties;
 
   useEffect(() => {
-    if (typeof window === "undefined" || prevMinis.current !== null) return;
-    const stored = window.sessionStorage.getItem("waashop-minis-balance");
-    const parsed = stored ? Number(stored) : NaN;
-    if (Number.isFinite(parsed)) {
-      prevMinis.current = parsed;
+    if (typeof window === "undefined") return;
+    const valueEl = valueRef.current;
+    if (!valueEl) return;
+    let from = prevMinis.current;
+    if (from === null) {
+      const stored = window.sessionStorage.getItem("waashop-minis-balance");
+      const parsed = stored ? Number(stored) : NaN;
+      from = Number.isFinite(parsed) ? parsed : current;
+      prevMinis.current = from;
     }
-  }, []);
-
-  useEffect(() => {
-    if (prevMinis.current === null) {
-      prevMinis.current = current;
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("waashop-minis-balance", String(current));
-      }
+    if (current === from) {
+      valueEl.textContent = formatMinis(current);
+      window.sessionStorage.setItem("waashop-minis-balance", String(current));
       return;
     }
-    if (current === prevMinis.current) return;
     const nextDirection: "up" | "down" = current > prevMinis.current ? "up" : "down";
     prevMinis.current = current;
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem("waashop-minis-balance", String(current));
-    }
+    window.sessionStorage.setItem("waashop-minis-balance", String(current));
     const containerEl = containerRef.current;
-    const valueEl = valueRef.current;
     if (!containerEl || !valueEl) return;
     const containerClass = nextDirection === "up" ? "balance-flash-up" : "balance-flash-down";
     const valueClass = nextDirection === "up" ? "balance-flash-up-text" : "balance-flash-down-text";
@@ -75,6 +71,31 @@ export function BalancePanel({ minis, tone = "auto" }: Props) {
     void containerEl.offsetWidth;
     containerEl.classList.add(containerClass);
     valueEl.classList.add(valueClass);
+
+    if (animationRef.current !== null) {
+      window.cancelAnimationFrame(animationRef.current);
+    }
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (reduceMotion) {
+      valueEl.textContent = formatMinis(current);
+      return;
+    }
+    const startValue = from ?? current;
+    const duration = 900;
+    const start = window.performance.now();
+    const step = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const nextValue = startValue + (current - startValue) * eased;
+      valueEl.textContent = formatMinis(nextValue);
+      if (progress < 1) {
+        animationRef.current = window.requestAnimationFrame(step);
+      } else {
+        animationRef.current = null;
+        valueEl.textContent = formatMinis(current);
+      }
+    };
+    animationRef.current = window.requestAnimationFrame(step);
   }, [current]);
 
   return (

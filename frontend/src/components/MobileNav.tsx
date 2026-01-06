@@ -47,13 +47,22 @@ export function MobileNav() {
         // Ignore unread fetch failures for guests.
       }
     };
+    const handleRefresh = () => {
+      if (pathname.startsWith("/info")) {
+        setUnreadCount(0);
+        return;
+      }
+      void loadUnread();
+    };
     if (pathname.startsWith("/info")) {
       setUnreadCount(0);
     } else {
       void loadUnread();
     }
+    window.addEventListener("notifications:refresh", handleRefresh);
     return () => {
       active = false;
+      window.removeEventListener("notifications:refresh", handleRefresh);
     };
   }, [pathname]);
 
