@@ -53,7 +53,7 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
       <div className="min-h-[36px]" aria-live="polite">
         {result && (
           <div
-            className={`absolute left-0 right-0 top-full mt-1 mx-auto w-full max-w-[360px] origin-center rounded-2xl border px-3 py-2 text-[11px] shadow-lg transition-all duration-300 ${
+            className={`absolute left-0 right-0 top-full mt-0.5 mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-[11px] shadow-lg transition-all duration-300 ${
               result.won
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : "border-slate-200 bg-slate-50 text-slate-600"
@@ -63,8 +63,8 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
               <span aria-hidden>{result.won ? "★" : "•"}</span>
               {result.won ? "Winner" : "Try"}
             </div>
-            <p className="mt-1">
-              {result.won ? `Won ${formatMinis(result.payoutMinis)}.` : "Missed. Pool up."}
+            <p className="text-right">
+              {result.won ? `+${formatMinis(result.payoutMinis)}` : "Missed · Pool up"}
             </p>
           </div>
         )}
