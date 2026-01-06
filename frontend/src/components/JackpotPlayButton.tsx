@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { JackpotPlayDto } from "@/types";
 import { formatMinis } from "@/lib/minis";
@@ -15,6 +15,8 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ won: boolean; payoutMinis: number } | null>(null);
   const router = useRouter();
+  const winSound = useMemo(() => (jackpot.winSoundUrl ? new Audio(jackpot.winSoundUrl) : null), [jackpot.winSoundUrl]);
+  const loseSound = useMemo(() => (jackpot.loseSoundUrl ? new Audio(jackpot.loseSoundUrl) : null), [jackpot.loseSoundUrl]);
 
   useEffect(() => {
     if (!result) return;
@@ -37,6 +39,12 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
         throw new Error(data.error || "Unable to try jackpot");
       }
       setResult({ won: data.won, payoutMinis: data.payoutMinis ?? 0 });
+      if (data.won && winSound) {
+        void winSound.play().catch(() => undefined);
+      }
+      if (!data.won && loseSound) {
+        void loseSound.play().catch(() => undefined);
+      }
       router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error";

@@ -26,6 +26,8 @@ export interface JackpotPlayDto {
   platformPercent: number;
   seedPercent: number;
   vendorPercent: number;
+  winSoundUrl?: string;
+  loseSoundUrl?: string;
   vendor?: { _id: string; name: string } | string;
 }
 

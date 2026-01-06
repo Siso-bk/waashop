@@ -20,6 +20,8 @@ export default async function AdminSettingsPage() {
   const jackpotSeedPercent = settings.jackpotSeedPercent ?? 10;
   const jackpotVendorPercent = settings.jackpotVendorPercent ?? 5;
   const platformPayoutHandle = settings.platformPayoutHandle ?? "";
+  const jackpotWinSoundUrl = settings.jackpotWinSoundUrl ?? "";
+  const jackpotLoseSoundUrl = settings.jackpotLoseSoundUrl ?? "";
 
   return (
     <div className="space-y-6">
@@ -140,6 +142,28 @@ export default async function AdminSettingsPage() {
           </label>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm text-slate-600">
+              Jackpot win sound URL
+              <input
+                name="jackpotWinSoundUrl"
+                type="text"
+                defaultValue={jackpotWinSoundUrl}
+                placeholder="https://..."
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              />
+            </label>
+            <label className="block text-sm text-slate-600">
+              Jackpot lose sound URL
+              <input
+                name="jackpotLoseSoundUrl"
+                type="text"
+                defaultValue={jackpotLoseSoundUrl}
+                placeholder="https://..."
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              />
+            </label>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block text-sm text-slate-600">
               Transfer auto-approve limit (MINIS)
               <input
                 name="transferLimitMinis"
@@ -188,6 +212,8 @@ async function updateFees(formData: FormData) {
     jackpotSeedPercent: Number(formData.get("jackpotSeedPercent")),
     jackpotVendorPercent: Number(formData.get("jackpotVendorPercent")),
     platformPayoutHandle: String(formData.get("platformPayoutHandle") || "").trim() || undefined,
+    jackpotWinSoundUrl: String(formData.get("jackpotWinSoundUrl") || "").trim() || undefined,
+    jackpotLoseSoundUrl: String(formData.get("jackpotLoseSoundUrl") || "").trim() || undefined,
     transferLimitMinis: Number(formData.get("transferLimitMinis")),
     transferFeePercent: Number(formData.get("transferFeePercent")),
   };

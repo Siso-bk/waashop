@@ -1852,6 +1852,8 @@ router.get(
         jackpotSeedPercent: settings.jackpotSeedPercent,
         jackpotVendorPercent: settings.jackpotVendorPercent,
         platformPayoutHandle: settings.platformPayoutHandle,
+        jackpotWinSoundUrl: settings.jackpotWinSoundUrl,
+        jackpotLoseSoundUrl: settings.jackpotLoseSoundUrl,
         transferLimitMinis: settings.transferLimitMinis,
         transferFeePercent: settings.transferFeePercent,
       },
@@ -1875,6 +1877,8 @@ router.patch(
       jackpotSeedPercent: z.number().min(0).max(100).optional(),
       jackpotVendorPercent: z.number().min(0).max(100).optional(),
       platformPayoutHandle: z.string().max(120).optional(),
+      jackpotWinSoundUrl: z.string().max(2000).optional(),
+      jackpotLoseSoundUrl: z.string().max(2000).optional(),
       transferLimitMinis: z.number().nonnegative().optional(),
       transferFeePercent: z.number().min(0).max(100).optional(),
     });
@@ -1894,6 +1898,8 @@ router.patch(
           jackpotSeedPercent: doc.jackpotSeedPercent,
           jackpotVendorPercent: doc.jackpotVendorPercent,
           platformPayoutHandle: doc.platformPayoutHandle,
+          jackpotWinSoundUrl: doc.jackpotWinSoundUrl,
+          jackpotLoseSoundUrl: doc.jackpotLoseSoundUrl,
           transferLimitMinis: doc.transferLimitMinis,
           transferFeePercent: doc.transferFeePercent,
         },
@@ -2676,6 +2682,7 @@ router.get("/boxes", async (_req, res) => {
 
 router.get("/jackpots", async (_req, res) => {
   await connectDB();
+  const settings = await getPlatformSettings();
   const products = await Product.find({ type: "JACKPOT_PLAY", status: "ACTIVE" })
     .populate("vendorId", "name")
     .lean();
@@ -2691,6 +2698,8 @@ router.get("/jackpots", async (_req, res) => {
       platformPercent: (product as any).jackpotPlatformPercent ?? 0,
       seedPercent: (product as any).jackpotSeedPercent ?? 0,
       vendorPercent: (product as any).jackpotVendorPercent ?? 0,
+      winSoundUrl: settings.jackpotWinSoundUrl,
+      loseSoundUrl: settings.jackpotLoseSoundUrl,
       vendor: product.vendorId,
     })),
   });

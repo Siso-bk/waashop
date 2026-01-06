@@ -180,6 +180,8 @@ export interface PlatformSettingsDto {
   jackpotSeedPercent: number;
   jackpotVendorPercent: number;
   platformPayoutHandle?: string;
+  jackpotWinSoundUrl?: string;
+  jackpotLoseSoundUrl?: string;
   transferLimitMinis: number;
   transferFeePercent: number;
 }

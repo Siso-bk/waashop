@@ -60,6 +60,8 @@ const mapJackpot = (jackpot: RawJackpot): JackpotPlayDto => ({
   platformPercent: jackpot.platformPercent ?? 0,
   seedPercent: jackpot.seedPercent ?? 0,
   vendorPercent: jackpot.vendorPercent ?? 0,
+  winSoundUrl: jackpot.winSoundUrl,
+  loseSoundUrl: jackpot.loseSoundUrl,
   vendor: jackpot.vendor,
 });
 
