@@ -7,12 +7,12 @@ import {
   getShopTabs,
   getStandardProducts,
 } from "@/lib/queries";
-import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { formatMinis } from "@/lib/minis";
 import { ShopProductsClient } from "@/components/ShopProductsClient";
 import { ShopHeader } from "@/components/ShopHeader";
-import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
 import { JackpotShowcase } from "@/components/JackpotShowcase";
+import { MysteryBoxShowcase } from "@/components/MysteryBoxShowcase";
+import { ChallengeShowcase } from "@/components/ChallengeShowcase";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -95,39 +95,7 @@ export default async function ShopPage({
       </nav>
 
       {activeTab === "mystery-boxes" && (
-        <div className="flex gap-6 overflow-x-auto pb-3">
-          {filteredBoxes.map((box) => {
-            const topPrize = Math.max(
-              0,
-              ...box.rewardTiers.filter((tier) => tier.isTop).map((tier) => tier.minis || 0)
-            );
-            return (
-              <article
-                key={box.boxId}
-                className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
-              >
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>BOX PER PRICE</span>
-                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                    {formatMinis(box.priceMinis ?? 0)}
-                  </span>
-                </div>
-                <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
-                <p className="mt-1 text-xs text-gray-500">Top winner {formatMinis(topPrize)}</p>
-                <div className="mt-6">
-                  <BoxPurchaseButton box={box} disabled={!user} />
-                </div>
-              </article>
-            );
-          })}
-          {!filteredBoxes.length && (
-            <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
-              {boxes.length === 0
-                ? "No boxes available right now. Follow Waashop announcements for the next drop."
-                : "No boxes match your search."}
-            </div>
-          )}
-        </div>
+        <MysteryBoxShowcase boxes={filteredBoxes} signedIn={Boolean(user)} />
       )}
 
       {activeTab === "products" && (
@@ -139,31 +107,7 @@ export default async function ShopPage({
       )}
 
       {activeTab === "challenges" && (
-        <div className="flex gap-4 overflow-x-auto pb-3">
-          {filteredChallenges.map((challenge) => (
-            <article
-              key={challenge.id}
-              className="flex min-w-[260px] flex-col gap-3 rounded-3xl border border-black/10 bg-white p-6 shadow-sm"
-            >
-              <header>
-                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Challenge</p>
-                <h3 className="mt-2 text-xl font-semibold text-black">{challenge.name}</h3>
-                {challenge.description && (
-                  <p className="text-sm text-gray-600">{challenge.description}</p>
-                )}
-              </header>
-              <p className="text-xs text-gray-500">{formatMinis(challenge.ticketPriceMinis ?? 0)} each</p>
-              <ChallengePurchaseButton challenge={challenge} />
-            </article>
-          ))}
-          {!filteredChallenges.length && (
-            <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
-              {challenges.length === 0
-                ? "No challenges available right now. Check back soon."
-                : "No challenges match your search."}
-            </div>
-          )}
-        </div>
+        <ChallengeShowcase challenges={filteredChallenges} />
       )}
 
       {activeTab === "jackpot-plays" && (
