@@ -102,7 +102,7 @@ export default async function ShopPage({
         })}
       </nav>
 
-      <div className={isJackpotTab ? "flex-1 min-h-0" : ""}>
+      <div className={isJackpotTab ? "flex-1 min-h-0 overflow-hidden" : ""}>
         {activeTab === "mystery-boxes" && (
           <MysteryBoxShowcase boxes={filteredBoxes} signedIn={Boolean(user)} />
         )}
