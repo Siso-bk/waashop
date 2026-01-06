@@ -5,6 +5,7 @@ import { PendingButton } from "@/components/PendingButton";
 import { getAdminSettings, getProfile } from "@/lib/queries";
 import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
+import { JackpotSoundFields } from "./JackpotSoundFields";
 
 export const dynamic = "force-dynamic";
 
@@ -140,28 +141,7 @@ export default async function AdminSettingsPage() {
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
             />
           </label>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm text-slate-600">
-              Jackpot win sound URL
-              <input
-                name="jackpotWinSoundUrl"
-                type="text"
-                defaultValue={jackpotWinSoundUrl}
-                placeholder="https://..."
-                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
-              />
-            </label>
-            <label className="block text-sm text-slate-600">
-              Jackpot lose sound URL
-              <input
-                name="jackpotLoseSoundUrl"
-                type="text"
-                defaultValue={jackpotLoseSoundUrl}
-                placeholder="https://..."
-                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
-              />
-            </label>
-          </div>
+          <JackpotSoundFields winUrl={jackpotWinSoundUrl} loseUrl={jackpotLoseSoundUrl} />
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm text-slate-600">
               Transfer auto-approve limit (MINIS)
