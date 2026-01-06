@@ -4,6 +4,15 @@ import { env } from "../config/env";
 let cachedSettings: IPlatformSettings | null = null;
 let cachedAt = 0;
 const CACHE_TTL = 60 * 1000;
+const DEFAULT_RESERVED_HANDLES = [
+  "admin",
+  "support",
+  "help",
+  "waashop",
+  "wallet",
+  "info",
+  "notifications",
+];
 
 export const getPlatformSettings = async () => {
   const now = Date.now();
@@ -26,6 +35,7 @@ export const getPlatformSettings = async () => {
       jackpotLoseSoundUrl: env.JACKPOT_LOSE_SOUND_URL,
       mysteryBoxWinSoundUrl: env.MYSTERY_BOX_WIN_SOUND_URL,
       mysteryBoxLoseSoundUrl: env.MYSTERY_BOX_LOSE_SOUND_URL,
+      reservedHandles: DEFAULT_RESERVED_HANDLES,
       transferLimitMinis: env.TRANSFER_LIMIT_MINIS,
       transferFeePercent: env.TRANSFER_FEE_PERCENT,
     });

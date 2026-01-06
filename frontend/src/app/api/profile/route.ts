@@ -13,16 +13,11 @@ export async function GET(request: NextRequest) {
   const check = request.nextUrl.searchParams.get("check");
   if (check && handle) {
     try {
-      const token = request.cookies.get(SESSION_COOKIE)?.value;
-      const response = await fetch(
-        `${env.PAI_BASE_URL}/api/profile/handle/check?handle=${encodeURIComponent(handle)}`,
-        {
-          cache: "no-store",
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
-      const data = await response.json().catch(() => ({}));
-      return NextResponse.json(data, { status: response.status });
+      const data = await backendFetch(`/api/profile/handle/check?handle=${encodeURIComponent(handle)}`, {
+        auth: false,
+        cache: "no-store",
+      });
+      return NextResponse.json(data);
     } catch (error) {
       return handleError(error);
     }

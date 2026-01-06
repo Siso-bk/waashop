@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { Request } from "express";
 import { Types } from "mongoose";
 import { z } from "zod";
 import { authMiddleware, loadVendor, requireApprovedVendor, requireRole } from "../middleware/auth";
@@ -444,6 +445,30 @@ const normalizeHandle = (raw: string) => {
   return trimmed;
 };
 
+const handleCheckRate = new Map<string, { count: number; resetAt: number }>();
+const HANDLE_RATE_LIMIT = 30;
+const HANDLE_RATE_WINDOW = 60 * 1000;
+
+const getClientKey = (req: Request) => {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.length > 0) {
+    return forwarded.split(",")[0].trim();
+  }
+  return req.ip || "unknown";
+};
+
+const buildHandleSuggestions = (base: string) => {
+  const clean = normalizeHandle(base).replace(/[^a-z0-9_]/g, "");
+  if (!clean) return [];
+  return [
+    `${clean}1`,
+    `${clean}2`,
+    `${clean}3`,
+    `${clean}_shop`,
+    `${clean}_pai`,
+  ].slice(0, 5);
+};
+
 const ensureMinisBalance = (user: IUser) => {
   if (!Number.isFinite(user.minisBalance)) {
     user.minisBalance = 0;
@@ -615,6 +640,71 @@ router.get("/profile", authMiddleware, async (req, res) => {
   res.json({ profile: serializeUser(req.userDoc!) });
 });
 
+router.get("/profile/handle/check", async (req, res) => {
+  const rawHandle = typeof req.query.handle === "string" ? req.query.handle : "";
+  if (!rawHandle.trim()) {
+    return res.status(400).json({ valid: false, available: false, error: "Handle required" });
+  }
+  const clientKey = getClientKey(req);
+  const now = Date.now();
+  const current = handleCheckRate.get(clientKey);
+  if (current && now > current.resetAt) {
+    handleCheckRate.delete(clientKey);
+  }
+  const updated = handleCheckRate.get(clientKey) || { count: 0, resetAt: now + HANDLE_RATE_WINDOW };
+  updated.count += 1;
+  handleCheckRate.set(clientKey, updated);
+  if (updated.count > HANDLE_RATE_LIMIT) {
+    return res.status(429).json({ valid: false, available: false, error: "Too many requests. Slow down." });
+  }
+  const normalized = normalizeHandle(rawHandle);
+  const settings = await getPlatformSettings();
+  const reserved = new Set(
+    (settings?.reservedHandles || [])
+      .map((entry) => normalizeHandle(entry))
+      .filter(Boolean)
+  );
+  if (reserved.has(normalized)) {
+    return res.json({
+      valid: true,
+      available: false,
+      reserved: true,
+      suggestions: buildHandleSuggestions(normalized),
+    });
+  }
+  await connectDB();
+  const existing = await User.findOne({ username: normalized }).lean();
+  if (existing) {
+    return res.json({
+      valid: true,
+      available: false,
+      reserved: false,
+      suggestions: buildHandleSuggestions(normalized),
+    });
+  }
+  if (!env.PAI_BASE_URL) {
+    return res.json({ valid: true, available: true, reserved: false });
+  }
+  try {
+    const response = await fetch(
+      `${env.PAI_BASE_URL}/api/profile/handle/check?handle=${encodeURIComponent(normalized)}`,
+      { cache: "no-store" }
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return res.json({ valid: true, available: true, reserved: false });
+    }
+    return res.json({
+      valid: typeof data.valid === "boolean" ? data.valid : true,
+      available: typeof data.available === "boolean" ? data.available : true,
+      reserved: false,
+      suggestions: buildHandleSuggestions(normalized),
+    });
+  } catch {
+    return res.json({ valid: true, available: true, reserved: false });
+  }
+});
+
 router.patch("/profile", authMiddleware, async (req, res) => {
   const schema = z.object({
     firstName: z.string().max(100).optional(),
@@ -631,6 +721,10 @@ router.patch("/profile", authMiddleware, async (req, res) => {
         return res.status(400).json({ error: "Username cannot be empty" });
       }
       const normalized = normalizeHandle(trimmed);
+      const existing = await User.findOne({ username: normalized, _id: { $ne: user._id } }).lean();
+      if (existing) {
+        return res.status(409).json({ error: "Username already taken" });
+      }
       if (env.PAI_BASE_URL && req.headers.authorization) {
         try {
           const response = await fetch(`${env.PAI_BASE_URL}/api/profile`, {
@@ -1864,6 +1958,7 @@ router.get(
         jackpotLoseSoundUrl: settings.jackpotLoseSoundUrl,
         mysteryBoxWinSoundUrl: settings.mysteryBoxWinSoundUrl,
         mysteryBoxLoseSoundUrl: settings.mysteryBoxLoseSoundUrl,
+        reservedHandles: settings.reservedHandles,
         transferLimitMinis: settings.transferLimitMinis,
         transferFeePercent: settings.transferFeePercent,
       },
@@ -1891,6 +1986,7 @@ router.patch(
       jackpotLoseSoundUrl: z.string().max(400000).optional(),
       mysteryBoxWinSoundUrl: z.string().max(400000).optional(),
       mysteryBoxLoseSoundUrl: z.string().max(400000).optional(),
+      reservedHandles: z.array(z.string().max(64)).optional(),
       transferLimitMinis: z.number().nonnegative().optional(),
       transferFeePercent: z.number().min(0).max(100).optional(),
     });
@@ -1914,6 +2010,7 @@ router.patch(
           jackpotLoseSoundUrl: doc.jackpotLoseSoundUrl,
           mysteryBoxWinSoundUrl: doc.mysteryBoxWinSoundUrl,
           mysteryBoxLoseSoundUrl: doc.mysteryBoxLoseSoundUrl,
+          reservedHandles: doc.reservedHandles,
           transferLimitMinis: doc.transferLimitMinis,
           transferFeePercent: doc.transferFeePercent,
         },

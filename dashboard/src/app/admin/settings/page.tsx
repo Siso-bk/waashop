@@ -26,6 +26,7 @@ export default async function AdminSettingsPage() {
   const jackpotLoseSoundUrl = settings.jackpotLoseSoundUrl ?? "";
   const mysteryBoxWinSoundUrl = settings.mysteryBoxWinSoundUrl ?? "";
   const mysteryBoxLoseSoundUrl = settings.mysteryBoxLoseSoundUrl ?? "";
+  const reservedHandles = settings.reservedHandles ?? [];
 
   return (
     <div className="space-y-6">
@@ -144,6 +145,16 @@ export default async function AdminSettingsPage() {
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
             />
           </label>
+          <label className="block text-sm text-slate-600">
+            Reserved usernames (comma separated)
+            <textarea
+              name="reservedHandles"
+              defaultValue={reservedHandles.join(", ")}
+              rows={2}
+              placeholder="admin, support, waashop"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+            />
+          </label>
           <MysteryBoxSoundFields winUrl={mysteryBoxWinSoundUrl} loseUrl={mysteryBoxLoseSoundUrl} />
           <JackpotSoundFields winUrl={jackpotWinSoundUrl} loseUrl={jackpotLoseSoundUrl} />
           <div className="grid gap-4 md:grid-cols-2">
@@ -200,6 +211,10 @@ async function updateFees(formData: FormData) {
     jackpotLoseSoundUrl: String(formData.get("jackpotLoseSoundUrl") || "").trim() || undefined,
     mysteryBoxWinSoundUrl: String(formData.get("mysteryBoxWinSoundUrl") || "").trim() || undefined,
     mysteryBoxLoseSoundUrl: String(formData.get("mysteryBoxLoseSoundUrl") || "").trim() || undefined,
+    reservedHandles: String(formData.get("reservedHandles") || "")
+      .split(",")
+      .map((handle) => handle.trim())
+      .filter(Boolean),
     transferLimitMinis: Number(formData.get("transferLimitMinis")),
     transferFeePercent: Number(formData.get("transferFeePercent")),
   };

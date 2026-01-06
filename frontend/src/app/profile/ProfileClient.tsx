@@ -24,7 +24,8 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken" | "reserved" | "invalid">("idle");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const normalizeHandleInput = (value: string) => {
     const trimmed = value.trim();
@@ -50,7 +51,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
       setFeedback(null);
       return;
     }
-    if (profile.username && (handleStatus === "taken" || handleStatus === "invalid")) {
+    if (profile.username && (handleStatus === "taken" || handleStatus === "reserved" || handleStatus === "invalid")) {
       setFeedback({ type: "error", message: "Choose an available username before saving." });
       return;
     }
@@ -88,16 +89,19 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
   useEffect(() => {
     if (!editing) {
       setHandleStatus("idle");
+      setSuggestions([]);
       return;
     }
     const candidate = profile.username?.trim() || "";
     const initialHandle = initialProfile.username || "";
     if (!candidate) {
       setHandleStatus("idle");
+      setSuggestions([]);
       return;
     }
     if (candidate === initialHandle) {
       setHandleStatus("available");
+      setSuggestions([]);
       return;
     }
     setHandleStatus("checking");
@@ -109,11 +113,18 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data?.valid) {
           setHandleStatus("invalid");
+          setSuggestions([]);
           return;
         }
-        setHandleStatus(data.available ? "available" : "taken");
+        if (data.reserved) {
+          setHandleStatus("reserved");
+        } else {
+          setHandleStatus(data.available ? "available" : "taken");
+        }
+        setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
       } catch {
         setHandleStatus("invalid");
+        setSuggestions([]);
       }
     }, 400);
     return () => clearTimeout(timer);
@@ -187,7 +198,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
                 className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${
                   handleStatus === "available"
                     ? "text-emerald-600"
-                    : handleStatus === "taken" || handleStatus === "invalid"
+                    : handleStatus === "taken" || handleStatus === "reserved" || handleStatus === "invalid"
                     ? "text-red-500"
                     : "text-gray-400"
                 }`}
@@ -199,6 +210,8 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
                   ? "✓"
                   : handleStatus === "taken"
                   ? "✕"
+                  : handleStatus === "reserved"
+                  ? "!"
                   : handleStatus === "invalid"
                   ? "!"
                   : ""}
@@ -210,7 +223,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
                 className={`text-xs ${
                   handleStatus === "available"
                     ? "text-emerald-600"
-                    : handleStatus === "taken" || handleStatus === "invalid"
+                    : handleStatus === "taken" || handleStatus === "reserved" || handleStatus === "invalid"
                     ? "text-red-500"
                     : "text-gray-500"
                 }`}
@@ -218,13 +231,29 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
                 {handleStatus === "checking"
                   ? "Checking availability…"
                   : handleStatus === "available"
-                  ? "Username is available."
+                  ? "Username is available. It will be reserved when you save."
                   : handleStatus === "taken"
                   ? "That username is already taken."
+                  : handleStatus === "reserved"
+                  ? "That username is reserved."
                   : handleStatus === "invalid"
                   ? "Username is invalid."
                   : ""}
               </p>
+            )}
+            {editing && suggestions.length > 0 && (handleStatus === "taken" || handleStatus === "reserved") && (
+              <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-gray-500">
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setProfile({ ...profile, username: suggestion })}
+                    className="rounded-full border border-gray-200 px-2 py-1 text-[10px] font-semibold text-gray-600 hover:border-black hover:text-black"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
             )}
           </label>
           <label className="space-y-1 sm:col-span-2">

@@ -75,6 +75,9 @@ export function AuthFlow() {
   const [preToken, setPreToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [signupMessage, setSignupMessage] = useState<string | null>(null);
+  const [signupEmail, setSignupEmail] = useState<string | null>(null);
+  const [signupRedirectMessage, setSignupRedirectMessage] = useState<string | null>(null);
   const [devCode, setDevCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -88,6 +91,9 @@ export function AuthFlow() {
     setPreToken(null);
     setError(null);
     setStatus(null);
+    setSignupMessage(null);
+    setSignupEmail(null);
+    setSignupRedirectMessage(null);
     setDevCode(null);
     setResendMessage(null);
   };
@@ -117,6 +123,9 @@ export function AuthFlow() {
       setLoading(true);
       setError(null);
       setStatus(null);
+      setSignupMessage(null);
+      setSignupEmail(null);
+      setSignupRedirectMessage(null);
       if (isEmail) {
         const data = await callWaashopAuth<CheckEmailResponse>("/api/pai/auth/check-email", { email: normalized });
         setEmail(normalized);
@@ -124,30 +133,41 @@ export function AuthFlow() {
         if (data.exists && data.emailVerified) {
           setPhase("login");
           setStatus("Welcome back! Enter your password to continue.");
-        } else {
-          await requestPreSignup(normalized);
+          return;
         }
+        setPhase("email");
+        if (data.exists && !data.emailVerified) {
+          setStatus("Account found but email not verified.");
+          setSignupMessage("Verify your email to finish sign up.");
+        } else {
+          setStatus("No account found.");
+          setSignupMessage("Create a new account with this email.");
+        }
+        setSignupEmail(normalized);
       } else {
         const handle = normalized.replace(/^@/, "").replace(/@pai$/, "").replace(/\.pai$/, "");
         const response = await fetch(`/api/profile?check=1&handle=${encodeURIComponent(handle)}`, {
           cache: "no-store",
         });
         const body = await response.json().catch(() => ({}));
-        let statusMessage = "Welcome back! Enter your password to continue.";
         if (response.ok && body?.valid) {
           if (body.available) {
-            router.push(
-              `/signup?message=${encodeURIComponent("No account found for that username. Create an account with your email.")}`
-            );
+            setStatus("No account found.");
+            setSignupMessage(`No account found for @${handle}. Sign up with your email.`);
+            setSignupRedirectMessage("No account found for that username. Create an account with your email.");
             return;
           }
+          setEmail("");
+          setIdentifier(`${handle}@pai`);
+          setPhase("login");
+          setStatus("Welcome back! Enter your password to continue.");
+          return;
         } else {
-          statusMessage = "We couldn't verify your handle. Try your password.";
+          setStatus("We couldn't verify your handle. Try your password.");
         }
         setEmail("");
         setIdentifier(`${handle}@pai`);
         setPhase("login");
-        setStatus(statusMessage);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unable to check email";
@@ -244,6 +264,30 @@ export function AuthFlow() {
             <p className="text-sm text-red-500" role="alert">
               {error}
             </p>
+          )}
+          {signupMessage && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+              <p className="font-semibold text-amber-800">{signupMessage}</p>
+              {signupEmail ? (
+                <button
+                  type="button"
+                  onClick={() => requestPreSignup(signupEmail)}
+                  className="mt-2 inline-flex items-center justify-center rounded-full border border-amber-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-amber-700 hover:bg-amber-100"
+                >
+                  Send verification code
+                </button>
+              ) : signupRedirectMessage ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(`/signup?message=${encodeURIComponent(signupRedirectMessage)}`)
+                  }
+                  className="mt-2 inline-flex items-center justify-center rounded-full border border-amber-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-amber-700 hover:bg-amber-100"
+                >
+                  Create account
+                </button>
+              ) : null}
+            </div>
           )}
           <button
             type="submit"

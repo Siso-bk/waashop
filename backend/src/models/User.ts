@@ -28,5 +28,6 @@ const UserSchema = new Schema<IUser>(
 );
 
 UserSchema.index({ email: 1 }, { unique: true, sparse: true });
+UserSchema.index({ username: 1 }, { unique: true, sparse: true });
 
 export default models.User || model<IUser>("User", UserSchema);
