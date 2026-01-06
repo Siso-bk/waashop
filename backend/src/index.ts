@@ -20,7 +20,7 @@ app.use(
   })
 );
 app.use(helmet());
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 app.use(morgan("tiny"));
 
 app.use("/api", router);
