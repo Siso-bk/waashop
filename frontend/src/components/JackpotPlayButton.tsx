@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { JackpotPlayDto } from "@/types";
 import { formatMinis } from "@/lib/minis";
@@ -17,9 +17,6 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
   const [animatedPayout, setAnimatedPayout] = useState(0);
   const animationRef = useRef<number | null>(null);
   const router = useRouter();
-  const winSound = useMemo(() => (jackpot.winSoundUrl ? new Audio(jackpot.winSoundUrl) : null), [jackpot.winSoundUrl]);
-  const loseSound = useMemo(() => (jackpot.loseSoundUrl ? new Audio(jackpot.loseSoundUrl) : null), [jackpot.loseSoundUrl]);
-
   useEffect(() => {
     if (!result) return;
     const timer = window.setTimeout(() => setResult(null), 3500);
@@ -75,12 +72,15 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
       if (!response.ok) {
         throw new Error(data.error || "Unable to try jackpot");
       }
-      setResult({ won: data.won, payoutMinis: data.payoutMinis ?? 0 });
-      if (data.won && winSound) {
-        void winSound.play().catch(() => undefined);
-      }
-      if (!data.won && loseSound) {
-        void loseSound.play().catch(() => undefined);
+      const won = Boolean(data.won);
+      setResult({ won, payoutMinis: data.payoutMinis ?? 0 });
+      if (typeof window !== "undefined") {
+        const soundUrl = won ? jackpot.winSoundUrl : jackpot.loseSoundUrl;
+        if (soundUrl) {
+          const audio = new Audio(soundUrl);
+          audio.currentTime = 0;
+          void audio.play().catch(() => undefined);
+        }
       }
       router.refresh();
     } catch (err) {
