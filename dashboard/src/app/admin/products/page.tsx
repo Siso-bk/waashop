@@ -158,6 +158,10 @@ async function ProductsTable({
                   <p className="text-xs text-slate-500">
                     Challenge · {product.ticketsSold || 0}/{product.ticketCount || 0} tickets · {product.ticketPriceMinis?.toLocaleString() || "0"} MINIS
                   </p>
+                ) : product.type === "JACKPOT_PLAY" ? (
+                  <p className="text-xs text-slate-500">
+                    Jackpot play · Win odds {((product.jackpotWinOdds || 0) * 100).toFixed(2)}% · {product.priceMinis.toLocaleString()} MINIS
+                  </p>
                 ) : (
                   <p className="text-xs text-slate-500">
                     {product.rewardTiers?.length || 0} reward tiers · {product.priceMinis.toLocaleString()} MINIS
@@ -184,6 +188,7 @@ async function ProductsTable({
                       <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit</summary>
                       <form action={adminUpdateProduct} className="mt-2 space-y-2 text-xs">
                         <input type="hidden" name="productId" value={product._id} />
+                        <input type="hidden" name="type" value={product.type} />
                         <input
                           name="productName"
                           defaultValue={product.name}
@@ -215,6 +220,46 @@ async function ProductsTable({
                           defaultValue={JSON.stringify(product.rewardTiers || [], null, 2)}
                           className="w-full rounded-lg border border-slate-200 px-2 py-1"
                         />
+                        <PendingButton pendingLabel="Saving..." className="rounded-lg bg-slate-900 px-3 py-1 text-white">
+                          Save
+                        </PendingButton>
+                      </form>
+                    </details>
+                  )}
+                  {product.type === "JACKPOT_PLAY" && (
+                    <details className="rounded-xl border border-slate-100 p-3">
+                      <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit</summary>
+                      <form action={adminUpdateProduct} className="mt-2 space-y-2 text-xs">
+                        <input type="hidden" name="productId" value={product._id} />
+                        <input type="hidden" name="type" value={product.type} />
+                        <input
+                          name="productName"
+                          defaultValue={product.name}
+                          className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                        />
+                        <textarea
+                          name="productDescription"
+                          defaultValue={product.description || ""}
+                          rows={2}
+                          className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <input
+                            type="number"
+                            name="priceMinis"
+                            defaultValue={product.priceMinis}
+                            className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                          />
+                          <input
+                            type="number"
+                            name="winOdds"
+                            step="0.001"
+                            min="0.001"
+                            max="1"
+                            defaultValue={product.jackpotWinOdds}
+                            className="w-full rounded-lg border border-slate-200 px-2 py-1"
+                          />
+                        </div>
                         <PendingButton pendingLabel="Saving..." className="rounded-lg bg-slate-900 px-3 py-1 text-white">
                           Save
                         </PendingButton>

@@ -140,6 +140,12 @@ const normalizeProduct = (product: any) => ({
   boxTriesSold: product.boxTriesSold ?? 0,
   boxFundingMinis: product.boxFundingMinis ?? undefined,
   boxPoolRemaining: product.boxPoolRemaining ?? undefined,
+  jackpotWinOdds: product.jackpotWinOdds ?? undefined,
+  jackpotPoolMinis: product.jackpotPoolMinis ?? 0,
+  jackpotSeedPercent: product.jackpotSeedPercent ?? undefined,
+  jackpotPlatformPercent: product.jackpotPlatformPercent ?? undefined,
+  jackpotVendorPercent: product.jackpotVendorPercent ?? undefined,
+  jackpotLastWinAt: product.jackpotLastWinAt ?? undefined,
   ticketPriceMinis: product.ticketPriceMinis ?? undefined,
   ticketCount: product.ticketCount,
   ticketsSold: product.ticketsSold,
@@ -1839,8 +1845,12 @@ router.get(
         feeMysteryBox: settings.feeMysteryBox,
         feeMysteryBoxPercent: settings.feeMysteryBoxPercent,
         feeChallenge: settings.feeChallenge,
+        feeJackpotPlay: settings.feeJackpotPlay,
         feePromoCard: settings.feePromoCard,
         feeTopWinnerPercent: settings.feeTopWinnerPercent,
+        jackpotPlatformPercent: settings.jackpotPlatformPercent,
+        jackpotSeedPercent: settings.jackpotSeedPercent,
+        jackpotVendorPercent: settings.jackpotVendorPercent,
         transferLimitMinis: settings.transferLimitMinis,
         transferFeePercent: settings.transferFeePercent,
       },
@@ -1857,8 +1867,12 @@ router.patch(
       feeMysteryBox: z.number().nonnegative().optional(),
       feeMysteryBoxPercent: z.number().min(0).max(100).optional(),
       feeChallenge: z.number().nonnegative().optional(),
+      feeJackpotPlay: z.number().nonnegative().optional(),
       feePromoCard: z.number().nonnegative().optional(),
       feeTopWinnerPercent: z.number().min(0).max(100).optional(),
+      jackpotPlatformPercent: z.number().min(0).max(100).optional(),
+      jackpotSeedPercent: z.number().min(0).max(100).optional(),
+      jackpotVendorPercent: z.number().min(0).max(100).optional(),
       transferLimitMinis: z.number().nonnegative().optional(),
       transferFeePercent: z.number().min(0).max(100).optional(),
     });
@@ -1871,8 +1885,12 @@ router.patch(
           feeMysteryBox: doc.feeMysteryBox,
           feeMysteryBoxPercent: doc.feeMysteryBoxPercent,
           feeChallenge: doc.feeChallenge,
+          feeJackpotPlay: doc.feeJackpotPlay,
           feePromoCard: doc.feePromoCard,
           feeTopWinnerPercent: doc.feeTopWinnerPercent,
+          jackpotPlatformPercent: doc.jackpotPlatformPercent,
+          jackpotSeedPercent: doc.jackpotSeedPercent,
+          jackpotVendorPercent: doc.jackpotVendorPercent,
           transferLimitMinis: doc.transferLimitMinis,
           transferFeePercent: doc.transferFeePercent,
         },
@@ -2236,6 +2254,14 @@ const challengeSchema = z.object({
   ticketCount: z.number().int().positive(),
 });
 
+const jackpotPlaySchema = z.object({
+  name: z.string().min(2),
+  description: z.string().max(500).optional(),
+  imageUrl: z.string().max(2000000).optional(),
+  priceMinis: z.number().int().positive(),
+  winOdds: z.number().min(0.001).max(1),
+});
+
 router.post(
   "/vendors/products",
   authMiddleware,
@@ -2282,6 +2308,28 @@ router.post(
           ticketCount: payload.ticketCount,
           ticketsSold: 0,
           priceMinis: payload.ticketPriceMinis,
+        });
+        await product.save();
+        return res.json({ product: normalizeProduct(product) });
+      }
+      if (type === "JACKPOT_PLAY") {
+        const payload = jackpotPlaySchema.parse(req.body);
+        await chargeSubmissionFee(submitter, settings.feeJackpotPlay || 0, "JACKPOT_SUBMISSION_FEE", {
+          name: payload.name,
+        });
+        const product = new Product({
+          vendorId: req.vendorDoc!._id,
+          name: payload.name,
+          description: payload.description,
+          imageUrl: payload.imageUrl,
+          type: "JACKPOT_PLAY",
+          status: "PENDING",
+          priceMinis: payload.priceMinis,
+          jackpotWinOdds: payload.winOdds,
+          jackpotPoolMinis: 0,
+          jackpotPlatformPercent: settings.jackpotPlatformPercent,
+          jackpotSeedPercent: settings.jackpotSeedPercent,
+          jackpotVendorPercent: settings.jackpotVendorPercent,
         });
         await product.save();
         return res.json({ product: normalizeProduct(product) });
@@ -2375,6 +2423,20 @@ router.patch(
           priceMinis: payload.ticketPriceMinis,
           guaranteedMinMinis: undefined,
           rewardTiers: undefined,
+        });
+      } else if (type === "JACKPOT_PLAY") {
+        const payload = jackpotPlaySchema.parse(req.body);
+        Object.assign(product, {
+          name: payload.name,
+          description: payload.description,
+          imageUrl: payload.imageUrl,
+          type: "JACKPOT_PLAY",
+          priceMinis: payload.priceMinis,
+          jackpotWinOdds: payload.winOdds,
+          guaranteedMinMinis: undefined,
+          rewardTiers: undefined,
+          ticketPriceMinis: undefined,
+          ticketCount: undefined,
         });
       } else {
         const payload = mysteryBoxSchema.parse(req.body);
@@ -2490,20 +2552,54 @@ router.patch(
   requireRole("admin"),
   async (req, res) => {
     try {
-      const payload = mysteryBoxSchema.parse(req.body);
       await connectDB();
       const product = await Product.findById(req.params.id).exec();
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
-      Object.assign(product, {
-        name: payload.name,
-        description: payload.description,
-        imageUrl: payload.imageUrl,
-        priceMinis: payload.priceMinis,
-        guaranteedMinMinis: payload.guaranteedMinMinis,
-        rewardTiers: payload.rewardTiers,
-      });
+      const type = typeof req.body?.type === "string" ? req.body.type : product.type;
+      if (type === "STANDARD") {
+        const payload = standardProductSchema.parse(req.body);
+        Object.assign(product, {
+          name: payload.name,
+          description: payload.description,
+          imageUrl: payload.imageUrl,
+          priceMinis: payload.priceMinis,
+          type: "STANDARD",
+        });
+      } else if (type === "CHALLENGE") {
+        const payload = challengeSchema.parse(req.body);
+        Object.assign(product, {
+          name: payload.name,
+          description: payload.description,
+          imageUrl: payload.imageUrl,
+          type: "CHALLENGE",
+          ticketPriceMinis: payload.ticketPriceMinis,
+          ticketCount: payload.ticketCount,
+          priceMinis: payload.ticketPriceMinis,
+        });
+      } else if (type === "JACKPOT_PLAY") {
+        const payload = jackpotPlaySchema.parse(req.body);
+        Object.assign(product, {
+          name: payload.name,
+          description: payload.description,
+          imageUrl: payload.imageUrl,
+          type: "JACKPOT_PLAY",
+          priceMinis: payload.priceMinis,
+          jackpotWinOdds: payload.winOdds,
+        });
+      } else {
+        const payload = mysteryBoxSchema.parse(req.body);
+        Object.assign(product, {
+          name: payload.name,
+          description: payload.description,
+          imageUrl: payload.imageUrl,
+          priceMinis: payload.priceMinis,
+          guaranteedMinMinis: payload.guaranteedMinMinis,
+          rewardTiers: payload.rewardTiers,
+          type: "MYSTERY_BOX",
+        });
+      }
       await product.save();
       res.json({ product: normalizeProduct(product) });
     } catch (error) {
@@ -2571,8 +2667,161 @@ router.get("/boxes", async (_req, res) => {
       totalTries: product.boxTotalTries ?? 0,
       triesSold: product.boxTriesSold ?? 0,
       vendor: product.vendorId,
+      })),
+  });
+});
+
+router.get("/jackpots", async (_req, res) => {
+  await connectDB();
+  const products = await Product.find({ type: "JACKPOT_PLAY", status: "ACTIVE" })
+    .populate("vendorId", "name")
+    .lean();
+  res.json({
+    jackpots: products.map((product) => ({
+      id: product._id.toString(),
+      name: product.name,
+      description: product.description,
+      imageUrl: product.imageUrl,
+      priceMinis: (product as any).priceMinis ?? 0,
+      winOdds: (product as any).jackpotWinOdds ?? 0,
+      poolMinis: (product as any).jackpotPoolMinis ?? 0,
+      platformPercent: (product as any).jackpotPlatformPercent ?? 0,
+      seedPercent: (product as any).jackpotSeedPercent ?? 0,
+      vendorPercent: (product as any).jackpotVendorPercent ?? 0,
+      vendor: product.vendorId,
     })),
   });
+});
+
+router.post("/jackpots/:id/try", authMiddleware, async (req, res) => {
+  try {
+    await connectDB();
+    const settings = await getPlatformSettings();
+    const result = await withMongoSession(async (session) => {
+      const productQuery = Product.findOne({ _id: req.params.id, status: "ACTIVE", type: "JACKPOT_PLAY" });
+      const userQuery = User.findById(req.userId);
+      if (session) {
+        productQuery.session(session);
+        userQuery.session(session);
+      }
+      const [product, userDoc] = await Promise.all([productQuery, userQuery]);
+      if (!product) return { error: "Jackpot play not found" } as const;
+      if (!userDoc) throw new Error("User not found");
+      ensureMinisBalance(userDoc);
+
+      const tryPrice = (product as any).priceMinis ?? 0;
+      const winOdds = (product as any).jackpotWinOdds ?? 0;
+      if (!tryPrice || winOdds <= 0) {
+        return { error: "Jackpot settings not configured" } as const;
+      }
+      if (userDoc.minisBalance < tryPrice) {
+        return { error: "Insufficient balance" } as const;
+      }
+
+      const currentPool = (product as any).jackpotPoolMinis ?? 0;
+      const nextPool = currentPool + tryPrice;
+      const isWin = Math.random() <= winOdds;
+
+      const platformPercent =
+        (product as any).jackpotPlatformPercent ?? settings.jackpotPlatformPercent ?? 0;
+      const seedPercent =
+        (product as any).jackpotSeedPercent ?? settings.jackpotSeedPercent ?? 0;
+      const vendorPercent =
+        (product as any).jackpotVendorPercent ?? settings.jackpotVendorPercent ?? 0;
+
+      const platformFee = Math.floor((nextPool * platformPercent) / 100);
+      const seedMinis = Math.floor((nextPool * seedPercent) / 100);
+      const vendorShare = Math.floor((nextPool * vendorPercent) / 100);
+      const payoutMinis = Math.max(0, nextPool - platformFee - seedMinis - vendorShare);
+
+      userDoc.minisBalance -= tryPrice;
+
+      let vendorOwner: IUser | null = null;
+      if (isWin && vendorShare > 0) {
+        const vendorDoc = await Vendor.findById(product.vendorId).exec();
+        if (vendorDoc?.ownerUserId) {
+          const ownerQuery = User.findById(vendorDoc.ownerUserId);
+          if (session) ownerQuery.session(session);
+          vendorOwner = await ownerQuery;
+          if (vendorOwner) {
+            ensureMinisBalance(vendorOwner);
+            vendorOwner.minisBalance += vendorShare;
+          }
+        }
+      }
+
+      if (isWin) {
+        userDoc.minisBalance += payoutMinis;
+        product.set({
+          jackpotPoolMinis: seedMinis,
+          jackpotLastWinAt: new Date(),
+        });
+      } else {
+        product.set({ jackpotPoolMinis: nextPool });
+      }
+
+      const ledgerEntries = [
+        {
+          userId: userDoc._id,
+          deltaMinis: -tryPrice,
+          reason: "JACKPOT_TRY_DEBIT",
+          meta: { productId: product._id },
+        },
+      ];
+      if (isWin) {
+        ledgerEntries.push({
+          userId: userDoc._id,
+          deltaMinis: payoutMinis,
+          reason: "JACKPOT_WIN_CREDIT",
+          meta: {
+            productId: product._id,
+            poolMinis: nextPool,
+            platformFee,
+            seedMinis,
+            vendorShare,
+          },
+        });
+        if (vendorOwner && vendorShare > 0) {
+          ledgerEntries.push({
+            userId: vendorOwner._id,
+            deltaMinis: vendorShare,
+            reason: "JACKPOT_VENDOR_SHARE",
+            meta: { productId: product._id },
+          });
+        }
+      }
+
+      if (session) {
+        await userDoc.save({ session });
+        if (vendorOwner) await vendorOwner.save({ session });
+        await product.save({ session });
+        await Ledger.insertMany(ledgerEntries, { session });
+      } else {
+        await userDoc.save();
+        if (vendorOwner) await vendorOwner.save();
+        await product.save();
+        await Ledger.insertMany(ledgerEntries);
+      }
+
+      return {
+        won: isWin,
+        payoutMinis: isWin ? payoutMinis : 0,
+        poolMinis: product.jackpotPoolMinis ?? 0,
+        platformFee,
+        seedMinis,
+        vendorShare,
+        winOdds,
+      } as const;
+    });
+
+    if ("error" in result) {
+      return res.status(400).json({ error: result.error });
+    }
+    res.json(result);
+  } catch (error) {
+    console.error("Jackpot try error", error);
+    res.status(400).json({ error: "Unable to process jackpot try" });
+  }
 });
 
 router.get("/challenges", async (_req, res) => {

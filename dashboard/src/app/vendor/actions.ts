@@ -178,6 +178,26 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
       },
     };
   }
+  if (type === "JACKPOT_PLAY") {
+    const priceMinis = Number(formData.get("priceMinis"));
+    const winOdds = Number(formData.get("winOdds"));
+    if (!Number.isFinite(priceMinis) || priceMinis <= 0) {
+      return { error: "Try price must be a positive number" };
+    }
+    if (!Number.isFinite(winOdds) || winOdds <= 0 || winOdds > 1) {
+      return { error: "Win odds must be between 0 and 1" };
+    }
+    return {
+      data: {
+        type: "JACKPOT_PLAY",
+        name,
+        description: typeof description === "string" ? description : undefined,
+        imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
+        priceMinis,
+        winOdds,
+      },
+    };
+  }
 
   const priceMinis = Number(formData.get("priceMinis"));
   const guaranteedMinMinis = Number(formData.get("guaranteedMinMinis"));

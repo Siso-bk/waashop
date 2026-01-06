@@ -28,8 +28,12 @@ export const env = {
   FEE_MYSTERY_BOX: Number(process.env.FEE_MYSTERY_BOX || 0),
   FEE_MYSTERY_BOX_PERCENT: Number(process.env.FEE_MYSTERY_BOX_PERCENT || 0),
   FEE_CHALLENGE: Number(process.env.FEE_CHALLENGE || 0),
+  FEE_JACKPOT_PLAY: Number(process.env.FEE_JACKPOT_PLAY || 0),
   FEE_PROMO_CARD: Number(process.env.FEE_PROMO_CARD || 0),
   FEE_TOP_WINNER_PERCENT: Number(process.env.FEE_TOP_WINNER_PERCENT || 10),
+  JACKPOT_PLATFORM_PERCENT: Number(process.env.JACKPOT_PLATFORM_PERCENT || 5),
+  JACKPOT_SEED_PERCENT: Number(process.env.JACKPOT_SEED_PERCENT || 10),
+  JACKPOT_VENDOR_PERCENT: Number(process.env.JACKPOT_VENDOR_PERCENT || 5),
   TRANSFER_LIMIT_MINIS: Number(process.env.TRANSFER_LIMIT_MINIS || 5000),
   TRANSFER_FEE_PERCENT: Number(process.env.TRANSFER_FEE_PERCENT || 2),
 };

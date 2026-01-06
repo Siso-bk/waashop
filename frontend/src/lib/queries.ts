@@ -10,6 +10,7 @@ import {
   WinnerSpotlightDto,
   ShopTab,
   StandardProduct,
+  JackpotPlayDto,
   CustomerOrder,
   NotificationItem,
 } from "@/types";
@@ -27,6 +28,16 @@ type RawLedger = LedgerEntryDto & {
   _id?: { toString: () => string } | string;
 };
 
+type RawJackpot = Partial<JackpotPlayDto> & {
+  _id?: { toString: () => string } | string;
+  priceMinis?: number;
+  winOdds?: number;
+  poolMinis?: number;
+  platformPercent?: number;
+  seedPercent?: number;
+  vendorPercent?: number;
+};
+
 const mapBox = (box: RawBox): MysteryBoxDto => ({
   id: typeof box._id === "string" ? box._id : box._id?.toString?.() ?? box.id ?? "",
   boxId: box.boxId ?? "",
@@ -38,9 +49,28 @@ const mapBox = (box: RawBox): MysteryBoxDto => ({
   triesSold: box.triesSold ?? 0,
 });
 
+const mapJackpot = (jackpot: RawJackpot): JackpotPlayDto => ({
+  id: typeof jackpot._id === "string" ? jackpot._id : jackpot._id?.toString?.() ?? jackpot.id ?? "",
+  name: jackpot.name ?? "",
+  description: jackpot.description,
+  imageUrl: jackpot.imageUrl,
+  priceMinis: jackpot.priceMinis ?? 0,
+  winOdds: jackpot.winOdds ?? 0,
+  poolMinis: jackpot.poolMinis ?? 0,
+  platformPercent: jackpot.platformPercent ?? 0,
+  seedPercent: jackpot.seedPercent ?? 0,
+  vendorPercent: jackpot.vendorPercent ?? 0,
+  vendor: jackpot.vendor,
+});
+
 export const getActiveBoxes = async (): Promise<MysteryBoxDto[]> => {
   const data = await backendFetch<{ boxes: RawBox[] }>("/api/boxes", { auth: false });
   return data.boxes.map(mapBox);
+};
+
+export const getActiveJackpots = async (): Promise<JackpotPlayDto[]> => {
+  const data = await backendFetch<{ jackpots: RawJackpot[] }>("/api/jackpots", { auth: false });
+  return data.jackpots.map(mapJackpot);
 };
 
 export const getBoxByBoxId = async (boxId: string): Promise<MysteryBoxDto | null> => {

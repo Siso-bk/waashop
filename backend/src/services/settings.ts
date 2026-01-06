@@ -16,8 +16,12 @@ export const getPlatformSettings = async () => {
       feeMysteryBox: env.FEE_MYSTERY_BOX,
       feeMysteryBoxPercent: env.FEE_MYSTERY_BOX_PERCENT,
       feeChallenge: env.FEE_CHALLENGE,
+      feeJackpotPlay: env.FEE_JACKPOT_PLAY,
       feePromoCard: env.FEE_PROMO_CARD,
       feeTopWinnerPercent: env.FEE_TOP_WINNER_PERCENT,
+      jackpotPlatformPercent: env.JACKPOT_PLATFORM_PERCENT,
+      jackpotSeedPercent: env.JACKPOT_SEED_PERCENT,
+      jackpotVendorPercent: env.JACKPOT_VENDOR_PERCENT,
       transferLimitMinis: env.TRANSFER_LIMIT_MINIS,
       transferFeePercent: env.TRANSFER_FEE_PERCENT,
     });

@@ -15,6 +15,20 @@ export interface MysteryBoxDto {
   triesSold?: number;
 }
 
+export interface JackpotPlayDto {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  priceMinis: number;
+  winOdds: number;
+  poolMinis: number;
+  platformPercent: number;
+  seedPercent: number;
+  vendorPercent: number;
+  vendor?: { _id: string; name: string } | string;
+}
+
 export interface LedgerEntryDto {
   id: string;
   deltaMinis: number;

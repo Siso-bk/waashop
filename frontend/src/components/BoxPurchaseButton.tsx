@@ -74,7 +74,7 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
         disabled={disabled || isLoading || isSoldOut}
         className="w-full rounded-full border border-white/15 bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        {isSoldOut ? "Sold out" : isLoading ? "Processing..." : `Join for ${formatMinis(box.priceMinis ?? 0)}`}
+        {isSoldOut ? "Sold out" : isLoading ? "Processing..." : `A BOX FOR ${formatMinis(box.priceMinis ?? 0)}`}
       </button>
       {error && <p className="text-sm text-red-500">{error}</p>}
       {result && showResult && (

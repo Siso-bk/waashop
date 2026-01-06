@@ -32,7 +32,7 @@ export interface ProductDto {
   name: string;
   description?: string;
   imageUrl?: string;
-  type: "MYSTERY_BOX" | "STANDARD" | "CHALLENGE";
+  type: "MYSTERY_BOX" | "STANDARD" | "CHALLENGE" | "JACKPOT_PLAY";
   status: "DRAFT" | "PENDING" | "ACTIVE" | "INACTIVE";
   priceMinis: number;
   guaranteedMinMinis?: number;
@@ -41,6 +41,12 @@ export interface ProductDto {
   boxTriesSold?: number;
   boxFundingMinis?: number;
   boxPoolRemaining?: number;
+  jackpotWinOdds?: number;
+  jackpotPoolMinis?: number;
+  jackpotSeedPercent?: number;
+  jackpotPlatformPercent?: number;
+  jackpotVendorPercent?: number;
+  jackpotLastWinAt?: string;
   ticketPriceMinis?: number;
   ticketCount?: number;
   ticketsSold?: number;
@@ -167,8 +173,12 @@ export interface PlatformSettingsDto {
   feeMysteryBox: number;
   feeMysteryBoxPercent: number;
   feeChallenge: number;
+  feeJackpotPlay: number;
   feePromoCard: number;
   feeTopWinnerPercent: number;
+  jackpotPlatformPercent: number;
+  jackpotSeedPercent: number;
+  jackpotVendorPercent: number;
   transferLimitMinis: number;
   transferFeePercent: number;
 }

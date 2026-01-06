@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   getActiveBoxes,
   getChallenges,
+  getActiveJackpots,
   getSessionUser,
   getShopTabs,
   getStandardProducts,
@@ -11,6 +12,7 @@ import { formatMinis } from "@/lib/minis";
 import { ShopProductsClient } from "@/components/ShopProductsClient";
 import { ShopHeader } from "@/components/ShopHeader";
 import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
+import { JackpotPlayButton } from "@/components/JackpotPlayButton";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -18,7 +20,8 @@ const FALLBACK_TABS = [
   { key: "mystery-boxes", label: "Mystery boxes", order: 0 },
   { key: "products", label: "Products", order: 1 },
   { key: "challenges", label: "Challenges", order: 2 },
-  { key: "coming-soon", label: "Coming soon", order: 3 },
+  { key: "jackpot-plays", label: "Jackpot plays", order: 3 },
+  { key: "coming-soon", label: "Coming soon", order: 4 },
 ];
 
 export default async function ShopPage({
@@ -28,8 +31,9 @@ export default async function ShopPage({
 }) {
   const resolvedParams = searchParams ? await searchParams : undefined;
   const query = typeof resolvedParams?.q === "string" ? resolvedParams.q.trim() : "";
-  const [boxes, user, tabs, standardProducts, challenges] = await Promise.all([
+  const [boxes, jackpots, user, tabs, standardProducts, challenges] = await Promise.all([
     getActiveBoxes(),
+    getActiveJackpots(),
     getSessionUser(),
     getShopTabs(),
     getStandardProducts(),
@@ -52,6 +56,10 @@ export default async function ShopPage({
           `${challenge.name} ${challenge.description ?? ""}`.toLowerCase().includes(activeQuery)
         )
       : challenges;
+  const filteredJackpots =
+    activeTab === "jackpot-plays" && activeQuery
+      ? jackpots.filter((jackpot) => jackpot.name.toLowerCase().includes(activeQuery))
+      : jackpots;
 
   return (
     <div className="space-y-1 pb-5">
@@ -88,23 +96,30 @@ export default async function ShopPage({
 
       {activeTab === "mystery-boxes" && (
         <div className="flex gap-6 overflow-x-auto pb-3">
-          {filteredBoxes.map((box) => (
-            <article
-              key={box.boxId}
-              className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
-            >
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>BOX PER PRICE</span>
-                <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                  {formatMinis(box.priceMinis ?? 0)}
-                </span>
-              </div>
-              <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
-              <div className="mt-6">
-                <BoxPurchaseButton box={box} disabled={!user} />
-              </div>
-            </article>
-          ))}
+          {filteredBoxes.map((box) => {
+            const topPrize = Math.max(
+              0,
+              ...box.rewardTiers.filter((tier) => tier.isTop).map((tier) => tier.minis || 0)
+            );
+            return (
+              <article
+                key={box.boxId}
+                className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
+              >
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>BOX PER PRICE</span>
+                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+                    {formatMinis(box.priceMinis ?? 0)}
+                  </span>
+                </div>
+                <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
+                <p className="mt-1 text-xs text-gray-500">Top winner {formatMinis(topPrize)}</p>
+                <div className="mt-6">
+                  <BoxPurchaseButton box={box} disabled={!user} />
+                </div>
+              </article>
+            );
+          })}
           {!filteredBoxes.length && (
             <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
               {boxes.length === 0
@@ -146,6 +161,41 @@ export default async function ShopPage({
               {challenges.length === 0
                 ? "No challenges available right now. Check back soon."
                 : "No challenges match your search."}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "jackpot-plays" && (
+        <div className="flex gap-6 overflow-x-auto pb-3">
+          {filteredJackpots.map((jackpot) => {
+            const totalPercent = jackpot.platformPercent + jackpot.seedPercent + jackpot.vendorPercent;
+            const winnerPrize = Math.max(0, Math.floor(jackpot.poolMinis * (1 - totalPercent / 100)));
+            return (
+              <article
+                key={jackpot.id}
+                className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
+              >
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>TRY PRICE</span>
+                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+                    {formatMinis(jackpot.priceMinis)}
+                  </span>
+                </div>
+                <h3 className="mt-3 text-xl font-semibold text-black">{jackpot.name}</h3>
+                <p className="text-xs text-gray-500">WINNER PRIZE {formatMinis(winnerPrize)}</p>
+                <p className="mt-1 text-xs text-gray-400">Win odds {(jackpot.winOdds * 100).toFixed(2)}%</p>
+                <div className="mt-6">
+                  <JackpotPlayButton jackpot={jackpot} disabled={!user} />
+                </div>
+              </article>
+            );
+          })}
+          {!filteredJackpots.length && (
+            <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
+              {jackpots.length === 0
+                ? "No jackpot plays live right now. Check back soon."
+                : "No jackpot plays match your search."}
             </div>
           )}
         </div>

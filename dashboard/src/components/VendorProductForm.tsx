@@ -10,7 +10,7 @@ const initialState = { error: "" };
 export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [state, action] = useActionState(createVendorProductAction, initialState);
   const { pending } = useFormStatus();
-  const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE" | "STANDARD">("MYSTERY_BOX");
+  const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE" | "STANDARD" | "JACKPOT_PLAY">("MYSTERY_BOX");
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -20,6 +20,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [fundingMinis, setFundingMinis] = useState("");
   const [ticketPriceMinis, setTicketPriceMinis] = useState("");
   const [ticketCount, setTicketCount] = useState("");
+  const [jackpotWinOdds, setJackpotWinOdds] = useState("0.02");
   const [submitCount, setSubmitCount] = useState(0);
   const [noticeHidden, setNoticeHidden] = useState(false);
   const [tiers, setTiers] = useState([
@@ -49,14 +50,20 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
       ? ticketPriceMinis
         ? `${ticketPriceMinis} MINIS`
         : "Ticket price"
-      : priceMinis
-        ? `${priceMinis} MINIS`
-        : "Price";
+      : productType === "JACKPOT_PLAY"
+        ? priceMinis
+          ? `${priceMinis} MINIS`
+          : "Try price"
+        : priceMinis
+          ? `${priceMinis} MINIS`
+          : "Price";
   const previewMeta =
     productType === "MYSTERY_BOX"
       ? `Guaranteed minimum: ${guaranteedMinMinis || "—"} MINI · Tries: ${totalTries || "—"}`
       : productType === "CHALLENGE"
         ? `Tickets: ${ticketCount || "—"}`
+        : productType === "JACKPOT_PLAY"
+          ? `Win odds: ${jackpotWinOdds ? `${(Number(jackpotWinOdds) * 100).toFixed(2)}%` : "—"}`
         : "";
 
   const updateTier = (index: number, key: "minis" | "probability" | "isTop", value: string | boolean) => {
@@ -119,10 +126,13 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
           name="type"
           value={productType}
           disabled={isLocked}
-          onChange={(event) => setProductType(event.target.value as "MYSTERY_BOX" | "CHALLENGE" | "STANDARD")}
+          onChange={(event) =>
+            setProductType(event.target.value as "MYSTERY_BOX" | "CHALLENGE" | "STANDARD" | "JACKPOT_PLAY")
+          }
           className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         >
           <option value="MYSTERY_BOX">Mystery box</option>
+          <option value="JACKPOT_PLAY">Jackpot play</option>
           <option value="STANDARD">Standard product</option>
           <option value="CHALLENGE">Challenge</option>
         </select>
@@ -353,6 +363,44 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
             </div>
           </div>
         </>
+      ) : productType === "JACKPOT_PLAY" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="text-sm font-medium text-slate-600" htmlFor="priceMinisJackpot">
+              Try price (MINI)
+            </label>
+            <input
+              id="priceMinisJackpot"
+              name="priceMinis"
+              type="number"
+              min={1}
+              required
+              disabled={isLocked}
+              value={priceMinis}
+              onChange={(event) => setPriceMinis(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-600" htmlFor="winOdds">
+              Win odds (0-1)
+            </label>
+            <input
+              id="winOdds"
+              name="winOdds"
+              type="number"
+              min={0.001}
+              max={1}
+              step={0.001}
+              required
+              disabled={isLocked}
+              value={jackpotWinOdds}
+              onChange={(event) => setJackpotWinOdds(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+            />
+            <p className="mt-1 text-xs text-slate-500">Example: 0.02 = 2% chance per try.</p>
+          </div>
+        </div>
       ) : productType === "STANDARD" ? (
         <div>
           <label className="text-sm font-medium text-slate-600" htmlFor="priceMinisStandard">

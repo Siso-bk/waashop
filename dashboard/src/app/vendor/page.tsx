@@ -410,6 +410,10 @@ function ProductCard({ product }: { product: ProductDto }) {
         </p>
       ) : product.type === "STANDARD" ? (
         <p className="mt-2 text-xs text-slate-500">Standard product · {product.priceMinis.toLocaleString()} MINIS</p>
+      ) : product.type === "JACKPOT_PLAY" ? (
+        <p className="mt-2 text-xs text-slate-500">
+          Jackpot play · Win odds {((product.jackpotWinOdds || 0) * 100).toFixed(2)}% · {product.priceMinis.toLocaleString()} MINIS
+        </p>
       ) : null}
       {product.status === "PENDING" && product.type === "MYSTERY_BOX" && (
         <div className="mt-3 space-y-3">
@@ -488,6 +492,55 @@ function ProductCard({ product }: { product: ProductDto }) {
                 defaultValue={product.priceMinis}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
               />
+              <PendingButton pendingLabel="Saving..." className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
+                Save changes
+              </PendingButton>
+            </form>
+          </details>
+          <form action={vendorDeleteProduct}>
+            <input type="hidden" name="productId" value={product._id} />
+            <PendingButton pendingLabel="Deleting..." className="text-sm font-semibold text-red-500">
+              Delete product
+            </PendingButton>
+          </form>
+        </div>
+      )}
+      {product.status === "PENDING" && product.type === "JACKPOT_PLAY" && (
+        <div className="mt-3 space-y-3">
+          <details className="rounded-xl border border-slate-200 p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit product</summary>
+            <form action={vendorUpdateProduct} className="mt-3 space-y-3">
+              <input type="hidden" name="productId" value={product._id} />
+              <input type="hidden" name="type" value={product.type} />
+              <input
+                type="text"
+                name="productName"
+                defaultValue={product.name}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+              <textarea
+                name="productDescription"
+                defaultValue={product.description || ""}
+                rows={2}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input
+                  type="number"
+                  name="priceMinis"
+                  defaultValue={product.priceMinis}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+                <input
+                  type="number"
+                  name="winOdds"
+                  step="0.001"
+                  min="0.001"
+                  max="1"
+                  defaultValue={product.jackpotWinOdds}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
               <PendingButton pendingLabel="Saving..." className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
                 Save changes
               </PendingButton>

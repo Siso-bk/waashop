@@ -6,7 +6,7 @@ export interface IRewardTier {
   isTop?: boolean;
 }
 
-export type ProductType = "MYSTERY_BOX" | "STANDARD" | "CHALLENGE";
+export type ProductType = "MYSTERY_BOX" | "STANDARD" | "CHALLENGE" | "JACKPOT_PLAY";
 export type ProductStatus = "DRAFT" | "PENDING" | "ACTIVE" | "INACTIVE";
 
 export interface IProduct extends Document {
@@ -24,6 +24,12 @@ export interface IProduct extends Document {
   boxTriesSold?: number;
   boxFundingMinis?: number;
   boxPoolRemaining?: number;
+  jackpotWinOdds?: number;
+  jackpotPoolMinis?: number;
+  jackpotSeedPercent?: number;
+  jackpotPlatformPercent?: number;
+  jackpotVendorPercent?: number;
+  jackpotLastWinAt?: Date;
   ticketPriceMinis?: number;
   ticketCount?: number;
   ticketsSold?: number;
@@ -47,7 +53,7 @@ const ProductSchema = new Schema<IProduct>(
   name: { type: String, required: true },
   description: { type: String },
   imageUrl: { type: String },
-  type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE"], default: "MYSTERY_BOX" },
+  type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE", "JACKPOT_PLAY"], default: "MYSTERY_BOX" },
     status: { type: String, enum: ["DRAFT", "PENDING", "ACTIVE", "INACTIVE"], default: "DRAFT" },
     categories: { type: [String], default: [] },
     priceMinis: { type: Number, required: true },
@@ -57,6 +63,12 @@ const ProductSchema = new Schema<IProduct>(
     boxTriesSold: { type: Number, default: 0 },
     boxFundingMinis: { type: Number },
     boxPoolRemaining: { type: Number },
+    jackpotWinOdds: { type: Number },
+    jackpotPoolMinis: { type: Number, default: 0 },
+    jackpotSeedPercent: { type: Number },
+    jackpotPlatformPercent: { type: Number },
+    jackpotVendorPercent: { type: Number },
+    jackpotLastWinAt: { type: Date },
     ticketPriceMinis: { type: Number },
     ticketCount: { type: Number },
     ticketsSold: { type: Number, default: 0 },

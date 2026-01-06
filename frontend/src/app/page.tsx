@@ -7,19 +7,22 @@ import {
   getHomeHighlights,
   getPromoCards,
   getChallenges,
+  getActiveJackpots,
   getWinners,
   getStandardProducts,
 } from "@/lib/queries";
 import type { WinnerSpotlightDto } from "@/types";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
+import { JackpotPlayButton } from "@/components/JackpotPlayButton";
 import { HeroCards } from "@/components/HeroCards";
 import { formatMinis } from "@/lib/minis";
 
 export default async function HomePage() {
-  const [user, boxes, hero, highlights, promoCards, challenges, winners, products] = await Promise.all([
+  const [user, boxes, jackpots, hero, highlights, promoCards, challenges, winners, products] = await Promise.all([
     getSessionUser(),
     getActiveBoxes(),
+    getActiveJackpots(),
     getHomeHero(),
     getHomeHighlights(),
     getPromoCards(),
@@ -161,6 +164,49 @@ export default async function HomePage() {
         </section>
       )}
 
+      {jackpots.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Jackpots</p>
+              <h2 className="text-2xl font-semibold text-black">Always-on jackpot plays</h2>
+            </div>
+            <Link href="/shop?tab=jackpot-plays" className="text-sm text-gray-500 hover:text-gray-700">
+              View more
+            </Link>
+          </div>
+          <div className="flex gap-6 overflow-x-auto pb-3">
+            {jackpots.map((jackpot) => {
+              const totalPercent = jackpot.platformPercent + jackpot.seedPercent + jackpot.vendorPercent;
+              const winnerPrize = Math.max(0, Math.floor(jackpot.poolMinis * (1 - totalPercent / 100)));
+              return (
+                <article
+                  key={jackpot.id}
+                  className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
+                >
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>TRY PRICE</span>
+                    <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+                      {formatMinis(jackpot.priceMinis)}
+                    </span>
+                  </div>
+                  <h3 className="mt-3 text-xl font-semibold text-black">{jackpot.name}</h3>
+                  <p className="text-xs text-gray-500">
+                    WINNER PRIZE {formatMinis(winnerPrize)}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Win odds {(jackpot.winOdds * 100).toFixed(2)}%
+                  </p>
+                  <div className="mt-6">
+                    <JackpotPlayButton jackpot={jackpot} disabled={!user} />
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {winners.length > 0 && (
         <section className="space-y-4">
           <WinnerRow title="Challenge winners" entries={winners.filter((w) => w.winnerType === "CHALLENGE")} />
@@ -234,26 +280,35 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="flex gap-6 overflow-x-auto pb-3">
-          {boxes.map((box) => (
-            <article
-              key={box.boxId}
-              className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
-            >
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>PRICE PER BOX</span>
-                <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                  {formatMinis(box.priceMinis ?? 0)}
-                </span>
-              </div>
-              <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
-                <span>TYR AND SEE IT NOW</span>
-              </div>
-              <div className="mt-6">
-                <BoxPurchaseButton box={box} disabled={!user} />
-              </div>
-            </article>
-          ))}
+          {boxes.map((box) => {
+            const topPrize = Math.max(
+              0,
+              ...box.rewardTiers.filter((tier) => tier.isTop).map((tier) => tier.minis || 0)
+            );
+            return (
+              <article
+                key={box.boxId}
+                className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
+              >
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>PRICE PER BOX</span>
+                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+                    {formatMinis(box.priceMinis ?? 0)}
+                  </span>
+                </div>
+                <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  Top winner {formatMinis(topPrize)}
+                </p>
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+                  <span>TRY AND SEE IT NOW</span>
+                </div>
+                <div className="mt-6">
+                  <BoxPurchaseButton box={box} disabled={!user} />
+                </div>
+              </article>
+            );
+          })}
           {!boxes.length && (
             <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
               No boxes available right now. Follow Waashop announcements for the next drop.

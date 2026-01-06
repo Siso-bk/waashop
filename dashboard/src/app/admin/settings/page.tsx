@@ -15,6 +15,10 @@ export default async function AdminSettingsPage() {
     redirect("/");
   }
   const { settings } = await getAdminSettings();
+  const feeJackpotPlay = settings.feeJackpotPlay ?? 0;
+  const jackpotPlatformPercent = settings.jackpotPlatformPercent ?? 5;
+  const jackpotSeedPercent = settings.jackpotSeedPercent ?? 10;
+  const jackpotVendorPercent = settings.jackpotVendorPercent ?? 5;
 
   return (
     <div className="space-y-6">
@@ -54,6 +58,16 @@ export default async function AdminSettingsPage() {
             />
           </label>
           <label className="block text-sm text-slate-600">
+            Jackpot play fee (MINI)
+            <input
+              name="feeJackpotPlay"
+              type="number"
+              min={0}
+              defaultValue={feeJackpotPlay}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+            />
+          </label>
+          <label className="block text-sm text-slate-600">
             Promo card fee (MINI)
             <input
               name="feePromoCard"
@@ -75,6 +89,44 @@ export default async function AdminSettingsPage() {
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
             />
           </label>
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="block text-sm text-slate-600">
+              Jackpot platform fee (%)
+              <input
+                name="jackpotPlatformPercent"
+                type="number"
+                min={0}
+                max={100}
+                step={0.1}
+                defaultValue={jackpotPlatformPercent}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              />
+            </label>
+            <label className="block text-sm text-slate-600">
+              Jackpot seed reset (%)
+              <input
+                name="jackpotSeedPercent"
+                type="number"
+                min={0}
+                max={100}
+                step={0.1}
+                defaultValue={jackpotSeedPercent}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              />
+            </label>
+            <label className="block text-sm text-slate-600">
+              Jackpot vendor share (%)
+              <input
+                name="jackpotVendorPercent"
+                type="number"
+                min={0}
+                max={100}
+                step={0.1}
+                defaultValue={jackpotVendorPercent}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              />
+            </label>
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm text-slate-600">
               Transfer auto-approve limit (MINIS)
@@ -118,8 +170,12 @@ async function updateFees(formData: FormData) {
     feeMysteryBox: Number(formData.get("feeMysteryBox")),
     feeMysteryBoxPercent: Number(formData.get("feeMysteryBoxPercent")),
     feeChallenge: Number(formData.get("feeChallenge")),
+    feeJackpotPlay: Number(formData.get("feeJackpotPlay")),
     feePromoCard: Number(formData.get("feePromoCard")),
     feeTopWinnerPercent: Number(formData.get("feeTopWinnerPercent")),
+    jackpotPlatformPercent: Number(formData.get("jackpotPlatformPercent")),
+    jackpotSeedPercent: Number(formData.get("jackpotSeedPercent")),
+    jackpotVendorPercent: Number(formData.get("jackpotVendorPercent")),
     transferLimitMinis: Number(formData.get("transferLimitMinis")),
     transferFeePercent: Number(formData.get("transferFeePercent")),
   };
