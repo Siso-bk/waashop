@@ -49,9 +49,9 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full flex-col gap-4 overflow-hidden">
       {activeJackpot && (
-        <article className="jackpot-hero relative overflow-hidden rounded-[28px] border px-4 py-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:px-8 sm:py-8">
+        <article className="jackpot-hero relative flex-1 overflow-hidden rounded-[28px] border px-4 py-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:px-8 sm:py-8">
           <div className="jackpot-hero__glow jackpot-hero__glow--right" />
           <div className="jackpot-hero__glow jackpot-hero__glow--left" />
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -85,7 +85,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
         </article>
       )}
 
-      <div className="space-y-2">
+      <div className="shrink-0 space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">All jackpots</p>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {jackpots.map((item) => {
