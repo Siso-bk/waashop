@@ -176,31 +176,31 @@ export default async function ShopPage({
               return (
                 <article
                   key={jackpot.id}
-                  className="relative overflow-hidden rounded-[32px] border border-white/15 bg-gradient-to-br from-black via-slate-950 to-indigo-950 px-6 py-10 text-white shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:px-10 sm:py-12"
+                  className="jackpot-hero relative overflow-hidden rounded-[32px] border px-6 py-10 shadow-[0_30px_80px_rgba(0,0,0,0.45)] sm:px-10 sm:py-12"
                 >
-                  <div className="absolute -right-16 top-0 h-64 w-64 rounded-full bg-emerald-400/20 blur-[120px]" />
-                  <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-indigo-500/20 blur-[140px]" />
+                  <div className="jackpot-hero__glow jackpot-hero__glow--right" />
+                  <div className="jackpot-hero__glow jackpot-hero__glow--left" />
                   <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                     <div className="space-y-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-200/90">
+                      <p className="jackpot-hero__eyebrow text-xs font-semibold uppercase tracking-[0.4em]">
                         Jackpots play
                       </p>
                       <h3 className="text-3xl font-semibold sm:text-4xl">{jackpot.name}</h3>
-                      <p className="max-w-xl text-sm text-white/80">
+                      <p className="jackpot-hero__muted max-w-xl text-sm">
                         One try can ignite the pool. Every miss fuels the next winner.
                       </p>
-                      <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.3em] text-white/70">
-                        <span className="rounded-full border border-white/30 px-3 py-1">
+                      <div className="jackpot-hero__muted flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.3em]">
+                        <span className="jackpot-hero__pill rounded-full border px-3 py-1">
                           Try price {formatMinis(jackpot.priceMinis)}
                         </span>
-                        <span className="rounded-full border border-white/30 px-3 py-1">
+                        <span className="jackpot-hero__pill rounded-full border px-3 py-1">
                           Winner prize {formatMinis(winnerPrize)}
                         </span>
                       </div>
                     </div>
-                    <div className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur sm:p-6">
-                      <p className="text-xs uppercase tracking-[0.3em] text-white/70">Live pool</p>
-                      <p className="mt-2 text-4xl font-semibold text-emerald-200 sm:text-5xl">
+                    <div className="jackpot-hero__panel rounded-[28px] border p-5 sm:p-6">
+                      <p className="jackpot-hero__muted text-xs uppercase tracking-[0.3em]">Live pool</p>
+                      <p className="jackpot-hero__accent mt-2 text-4xl font-semibold sm:text-5xl">
                         {formatMinis(jackpot.poolMinis)}
                       </p>
                       <div className="mt-5">

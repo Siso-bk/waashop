@@ -108,6 +108,69 @@ body {
   border-color: var(--surface-border) !important;
 }
 
+.jackpot-hero {
+  background: linear-gradient(135deg, #ffffff, #eef1f6, #dbe3f2);
+  border-color: var(--surface-border);
+  color: var(--app-text);
+}
+
+:root[data-theme="dark"] .jackpot-hero {
+  background: linear-gradient(135deg, #050505, #0f172a 55%, #1e1b4b);
+  border-color: rgba(245, 245, 242, 0.2);
+  color: var(--app-text);
+}
+
+.jackpot-hero__glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(130px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.jackpot-hero__glow--right {
+  right: -64px;
+  top: 0;
+  height: 260px;
+  width: 260px;
+  background: rgba(16, 185, 129, 0.35);
+}
+
+.jackpot-hero__glow--left {
+  left: -96px;
+  bottom: 0;
+  height: 300px;
+  width: 300px;
+  background: rgba(59, 130, 246, 0.32);
+}
+
+.jackpot-hero__eyebrow {
+  color: rgba(16, 185, 129, 0.8);
+}
+
+.jackpot-hero__muted {
+  color: var(--app-text-muted);
+}
+
+.jackpot-hero__accent {
+  color: rgba(16, 185, 129, 0.85);
+}
+
+.jackpot-hero__panel {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: var(--surface-border);
+  backdrop-filter: blur(20px);
+}
+
+:root[data-theme="dark"] .jackpot-hero__panel {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(245, 245, 242, 0.16);
+}
+
+.jackpot-hero__pill {
+  border-color: var(--surface-border);
+}
+
 @supports (overscroll-behavior-y: none) {
   html,
   body {
