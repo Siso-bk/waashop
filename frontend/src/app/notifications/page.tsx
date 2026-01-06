@@ -1,32 +1,10 @@
 import Link from "next/link";
-import { getSessionUser } from "@/lib/queries";
-
-const demoNotifications = [
-  {
-    id: "n1",
-    title: "Drop reminder",
-    body: "The BOX_1000 drop restocks today at 18:00 UTC. Reserve a spot before it sells out.",
-    timestamp: "Today · 2:00 PM",
-    accent: "bg-black text-white",
-  },
-  {
-    id: "n2",
-    title: "Wallet synced",
-    body: "We refreshed your MINIS balance across Waashop and Telegram.",
-    timestamp: "Yesterday · 9:14 AM",
-    accent: "bg-white text-black",
-  },
-  {
-    id: "n3",
-    title: "Vendor spotlight",
-    body: "New verified vendor: Urban Nomad. Expect apparel drops within 48 hours.",
-    timestamp: "2 days ago",
-    accent: "bg-white text-black",
-  },
-];
+import { getNotifications, getSessionUser } from "@/lib/queries";
+import { NotificationsClient } from "@/components/NotificationsClient";
 
 export default async function NotificationsPage() {
   const user = await getSessionUser();
+  const notifications = user ? await getNotifications() : [];
 
   if (!user) {
     return (
@@ -56,23 +34,7 @@ export default async function NotificationsPage() {
         </div>
       </header>
 
-      <section className="space-y-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-        {demoNotifications.map((item, index) => (
-          <article
-            key={item.id}
-            className={`rounded-2xl border border-black/10 p-4 ${index === 0 ? "bg-black text-white" : "bg-white text-black"}`}
-          >
-            <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-500">
-              <span>{item.title}</span>
-              <span className="text-[10px] tracking-[0.3em]">{item.timestamp}</span>
-            </div>
-            <p className="mt-3 text-sm text-black/80 dark:text-white/80">{item.body}</p>
-          </article>
-        ))}
-        <div className="rounded-2xl border border-dashed border-black/10 p-4 text-center text-sm text-gray-500">
-          Real-time notifications will appear here as Waashop events occur.
-        </div>
-      </section>
+      <NotificationsClient initialNotifications={notifications} />
     </div>
   );
 }
