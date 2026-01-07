@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { formatMinis } from "@/lib/minis";
 
 const VENDOR_PRODUCTS_ENDPOINT = "/api/vendors/products";
+const MAX_IMAGE_BYTES = 500 * 1024;
 
 type VendorProfile = {
   name: string;
@@ -22,6 +24,7 @@ type VendorProduct = {
   description?: string;
   type: "STANDARD" | "MYSTERY_BOX" | "CHALLENGE";
   status: "PENDING" | "ACTIVE" | "REJECTED";
+  imageUrl?: string;
   priceMinis?: number;
   guaranteedMinMinis?: number;
   rewardTiers?: RewardTier[];
@@ -54,6 +57,8 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageError, setImageError] = useState<string | null>(null);
   const [priceMinis, setPriceMinis] = useState("10");
   const [guaranteedMinMinis, setGuaranteedMinMinis] = useState("5");
   const [rewardTiers, setRewardTiers] = useState<RewardTier[]>(defaultRewardTiers);
@@ -69,6 +74,8 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
   const resetForm = () => {
     setName("");
     setDescription("");
+    setImageUrl("");
+    setImageError(null);
     setPriceMinis("10");
     setGuaranteedMinMinis("5");
     setRewardTiers(defaultRewardTiers);
@@ -93,6 +100,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
         type: activeType,
         name: name.trim(),
         description: description.trim() || undefined,
+        imageUrl: imageUrl.trim() || undefined,
       };
       if (activeType === "STANDARD") {
         payload.priceMinis = Number(priceMinis);
@@ -145,6 +153,8 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
     setActiveType(product.type);
     setName(product.name);
     setDescription(product.description ?? "");
+    setImageUrl(product.imageUrl ?? "");
+    setImageError(null);
     setPriceMinis(String(product.priceMinis ?? 10));
     setGuaranteedMinMinis(String(product.guaranteedMinMinis ?? 0));
     setRewardTiers(product.rewardTiers?.length ? product.rewardTiers : defaultRewardTiers);
@@ -231,6 +241,71 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
               placeholder="What makes this drop special?"
             />
           </label>
+          <div className="space-y-2 text-sm text-gray-600">
+            <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Product image (optional)</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-600">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > MAX_IMAGE_BYTES) {
+                      setImageError("Image must be under 500KB.");
+                      event.target.value = "";
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const result = typeof reader.result === "string" ? reader.result : "";
+                      if (!result) {
+                        setImageError("Unable to read image file.");
+                        return;
+                      }
+                      setImageUrl(result);
+                      setImageError(null);
+                    };
+                    reader.onerror = () => setImageError("Unable to read image file.");
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                Upload image
+              </label>
+              {imageUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImageUrl("");
+                    setImageError(null);
+                  }}
+                  className="rounded-full border border-black/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-600"
+                >
+                  Clear
+                </button>
+              )}
+              {imageUrl && (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-black/10 bg-white">
+                    <Image src={imageUrl} alt="Listing preview" fill sizes="48px" className="object-cover" unoptimized />
+                  </div>
+                  <span>{imageUrl.startsWith("data:image/") ? "Uploaded from device" : "Image URL added"}</span>
+                </div>
+              )}
+            </div>
+            <input
+              type="url"
+              value={imageUrl.startsWith("data:image/") ? "" : imageUrl}
+              onChange={(event) => {
+                setImageUrl(event.target.value);
+                setImageError(null);
+              }}
+              className="w-full rounded-2xl border border-black/10 px-4 py-3 text-black"
+              placeholder="Paste image URL instead"
+            />
+            {imageError && <p className="text-xs text-red-500">{imageError}</p>}
+          </div>
 
           {activeType === "STANDARD" && (
             <label className="space-y-2">
