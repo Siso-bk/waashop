@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFormState } from "react-dom";
+import { useCallback, useEffect, useMemo, useRef, useState, useActionState } from "react";
 import { formatMinis } from "@/lib/minis";
 import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
@@ -102,9 +101,9 @@ export function WalletActionModal({
   const [active, setActive] = useState<ActionType>(null);
   const [showOutgoing, setShowOutgoing] = useState(false);
   const [showIncoming, setShowIncoming] = useState(false);
-  const [depositState, depositAction] = useFormState(createDeposit, initialFormState);
-  const [withdrawState, withdrawAction] = useFormState(createWithdrawal, initialFormState);
-  const [transferState, transferAction] = useFormState(createTransfer, initialFormState);
+  const [depositState, depositAction] = useActionState(createDeposit, initialFormState);
+  const [withdrawState, withdrawAction] = useActionState(createWithdrawal, initialFormState);
+  const [transferState, transferAction] = useActionState(createTransfer, initialFormState);
   const [isDepositSubmitting, setIsDepositSubmitting] = useState(false);
   const [isWithdrawSubmitting, setIsWithdrawSubmitting] = useState(false);
   const [isTransferSubmitting, setIsTransferSubmitting] = useState(false);

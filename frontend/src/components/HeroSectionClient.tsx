@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { HeroCards } from "@/components/HeroCards";
 import type { HomeHeroCard } from "@/types";
 
@@ -19,13 +18,7 @@ export function HeroSectionClient({
   backgroundClass,
   textClass,
 }: Props) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted || !cards.length) return null;
+  if (!cards.length) return null;
 
   return (
     <section

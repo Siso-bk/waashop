@@ -15,7 +15,6 @@ export function HeroCards({ cards, prefersLightText }: Props) {
     () => cards.filter((card) => card.status !== "DRAFT"),
     [cards]
   );
-  const [mounted, setMounted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -31,10 +30,6 @@ export function HeroCards({ cards, prefersLightText }: Props) {
   const buttonClass = prefersLightText
     ? "border border-white/40 text-white hover:bg-white/10"
     : "border border-black/30 text-black hover:bg-black/5";
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (visibleCards.length === 0) {
@@ -77,10 +72,6 @@ export function HeroCards({ cards, prefersLightText }: Props) {
     const left = button.offsetLeft - 12;
     container.scrollTo({ left, behavior: "smooth" });
   }, [activeIndex]);
-
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <div className="space-y-4">

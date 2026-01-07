@@ -1,7 +1,7 @@
-import { getSessionUser, getRecentLedger, getActiveBoxes } from "@/lib/queries";
+import { getSessionUser, getRecentLedger, getActiveJackpots } from "@/lib/queries";
 import { BalancePanel } from "@/components/BalancePanel";
 import { LedgerTable } from "@/components/LedgerTable";
-import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
+import { JackpotPlayButton } from "@/components/JackpotPlayButton";
 import Link from "next/link";
 import { formatMinis } from "@/lib/minis";
 import { backendFetch } from "@/lib/backendClient";
@@ -29,7 +29,7 @@ type ActionResult = {
 export default async function WalletPage({
   searchParams,
 }: {
-  searchParams?: { to?: string; amount?: string };
+  searchParams?: Promise<{ to?: string; amount?: string }>;
 }) {
   const user = await getSessionUser();
   if (!user) {
@@ -49,16 +49,17 @@ export default async function WalletPage({
     );
   }
 
-  const [entries, boxes, transfers] = await Promise.all([
+  const [entries, jackpots, transfers] = await Promise.all([
     getRecentLedger(50),
-    getActiveBoxes(),
+    getActiveJackpots(),
     backendFetch<{ outgoing: TransferDto[]; incoming: TransferDto[] }>("/api/transfers"),
   ]);
 
   const minis = (user as { minisBalance?: number }).minisBalance ?? 0;
 
-  const prefillRecipient = typeof searchParams?.to === "string" ? searchParams.to : undefined;
-  const prefillAmount = typeof searchParams?.amount === "string" ? searchParams.amount : undefined;
+  const resolvedParams = (await searchParams) ?? {};
+  const prefillRecipient = typeof resolvedParams.to === "string" ? resolvedParams.to : undefined;
+  const prefillAmount = typeof resolvedParams.amount === "string" ? resolvedParams.amount : undefined;
   const initialAction = prefillRecipient || prefillAmount ? "send" : null;
 
   return (
@@ -84,29 +85,39 @@ export default async function WalletPage({
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Play drops</p>
-            <p className="text-sm text-gray-600">This may change your life forever.</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Jackpots</p>
+            <p className="text-sm text-gray-600">Try your luck and watch the pool grow.</p>
           </div>
-          <Link href="/shop" className="text-xs font-semibold text-black">
+          <Link href="/shop?tab=jackpot-plays" className="text-xs font-semibold text-black">
             View all
           </Link>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {boxes.slice(0, 2).map((box) => (
-            <article key={box.boxId} className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>PRICE PER BOX</span>
-                <span className="rounded-full bg-black px-3 py-1 text-white">{formatMinis(box.priceMinis ?? 0)}</span>
-              </div>
-              <h3 className="mt-2 text-lg font-semibold text-black">{box.name}</h3>
-              <div className="mt-3">
-                <BoxPurchaseButton box={box} signedIn={Boolean(user)} />
-              </div>
-            </article>
-          ))}
-          {!boxes.length && (
-            <div className="rounded-2xl border border-dashed border-black/20 bg-white p-4 text-center text-xs text-gray-500">
-              No drops available right now.
+        <div className="flex gap-4 overflow-x-auto pb-3">
+          {jackpots.map((jackpot) => {
+            const totalPercent = jackpot.platformPercent + jackpot.seedPercent + jackpot.vendorPercent;
+            const winnerPrize = Math.max(0, Math.floor(jackpot.poolMinis * (1 - totalPercent / 100)));
+            return (
+              <article
+                key={jackpot.id}
+                className="min-w-[240px] rounded-2xl border border-black/10 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>TRY PRICE</span>
+                  <span className="rounded-full bg-black px-3 py-1 text-white">
+                    {formatMinis(jackpot.priceMinis)}
+                  </span>
+                </div>
+                <h3 className="mt-2 text-lg font-semibold text-black">{jackpot.name}</h3>
+                <p className="mt-1 text-xs text-gray-500">Winner prize {formatMinis(winnerPrize)}</p>
+                <div className="mt-3">
+                  <JackpotPlayButton jackpot={jackpot} signedIn={Boolean(user)} />
+                </div>
+              </article>
+            );
+          })}
+          {!jackpots.length && (
+            <div className="min-w-[240px] rounded-2xl border border-dashed border-black/20 bg-white p-4 text-center text-xs text-gray-500">
+              No jackpots available right now.
             </div>
           )}
         </div>
