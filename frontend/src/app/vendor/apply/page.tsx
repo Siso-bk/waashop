@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { backendFetch } from "@/lib/backendClient";
 import { getSessionUser } from "@/lib/queries";
 import { VendorApplySubmitButton } from "@/components/VendorApplySubmitButton";
+import { VendorLogoField } from "@/components/VendorLogoField";
 
 type VendorProfile = {
   name: string;
@@ -264,16 +265,8 @@ export default async function VendorApplicationPage({ searchParams }: PageProps)
                   placeholder="https://instagram.com/yourbrand"
                 />
               </label>
-              <label className="space-y-2 text-sm text-gray-600 sm:col-span-2">
-                <span>Brand logo URL (optional)</span>
-                <input
-                  name="logoUrl"
-                  type="url"
-                  className="w-full rounded-2xl border border-black/10 px-4 py-3 text-black"
-                  placeholder="https://.../logo.png"
-                />
-              </label>
             </div>
+            <VendorLogoField initialValue={vendor?.logoUrl ?? ""} />
             <div className="space-y-2 text-sm text-gray-600">
               <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Categories</span>
               <div className="flex flex-wrap gap-2">

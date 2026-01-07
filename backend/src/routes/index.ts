@@ -2235,6 +2235,15 @@ router.delete("/profile", authMiddleware, async (req, res) => {
 
 /** Vendor onboarding */
 router.post("/vendors", authMiddleware, async (req, res) => {
+  const isValidUrl = (value: string) => {
+    try {
+      // eslint-disable-next-line no-new
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
   const schema = z.object({
     name: z.string().min(2),
     description: z.string().max(500).optional(),
@@ -2246,7 +2255,13 @@ router.post("/vendors", authMiddleware, async (req, res) => {
     city: z.string().max(120).optional(),
     businessAddress: z.string().max(240).optional(),
     website: z.string().url().optional(),
-    logoUrl: z.string().url().optional(),
+    logoUrl: z
+      .string()
+      .max(400000)
+      .refine((value) => value.startsWith("data:image/") || isValidUrl(value), {
+        message: "Invalid logo URL",
+      })
+      .optional(),
     categories: z.array(z.string().max(60)).max(10).optional(),
     fulfillmentMethod: z.enum(["SHIPPING", "DIGITAL", "SERVICE"]).optional(),
     processingTime: z.enum(["SAME_DAY", "1_3_DAYS", "3_7_DAYS", "7_14_DAYS"]).optional(),
