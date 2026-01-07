@@ -267,7 +267,7 @@ export default async function VendorApplicationPage({ searchParams }: PageProps)
                 />
               </label>
             </div>
-            <VendorLogoField initialValue={vendor?.logoUrl ?? ""} />
+            <VendorLogoField initialValue="" />
             <div className="space-y-2 text-sm text-gray-600">
               <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Categories</span>
               <div className="flex flex-wrap gap-2">
