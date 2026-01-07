@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { TelegramViewport } from "@/components/TelegramViewport";
 import { MobileNav } from "@/components/MobileNav";
@@ -29,7 +30,9 @@ export default function RootLayout({
         <div className="min-h-[var(--tg-viewport-stable-height,100vh)]">
           <ThemeInitializer />
           <TelegramViewport />
-          <NavigationProgress />
+          <Suspense fallback={null}>
+            <NavigationProgress />
+          </Suspense>
           <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-8 sm:pb-10 sm:pt-10">{children}</main>
           <MobileNav />
         </div>
