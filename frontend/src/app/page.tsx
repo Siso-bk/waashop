@@ -17,6 +17,7 @@ import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
 import { JackpotPlayButton } from "@/components/JackpotPlayButton";
 import { HeroCards } from "@/components/HeroCards";
 import { formatMinis } from "@/lib/minis";
+import { triggerNavigationProgress } from "@/lib/navigationProgress";
 
 export default async function HomePage() {
   const [user, boxes, jackpots, hero, highlights, promoCards, challenges, winners, products] = await Promise.all([
@@ -329,7 +330,8 @@ export default async function HomePage() {
             </div>
             <Link
               href="/vendor/apply"
-              className="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/80"
+              onClick={() => triggerNavigationProgress()}
+              className="inline-flex items-center justify-center rounded-full border border-[var(--surface-border)] bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/80 active:scale-[0.98] active:translate-y-px"
             >
               Start vendor application
             </Link>

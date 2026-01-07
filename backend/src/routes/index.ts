@@ -2238,21 +2238,64 @@ router.post("/vendors", authMiddleware, async (req, res) => {
   const schema = z.object({
     name: z.string().min(2),
     description: z.string().max(500).optional(),
+    contactEmail: z.string().email().optional(),
+    contactPhone: z.string().max(50).optional(),
+    ownerHandle: z.string().max(50).optional(),
+    businessType: z.enum(["INDIVIDUAL", "COMPANY"]).optional(),
+    country: z.string().max(120).optional(),
+    city: z.string().max(120).optional(),
+    businessAddress: z.string().max(240).optional(),
+    website: z.string().url().optional(),
+    logoUrl: z.string().url().optional(),
+    categories: z.array(z.string().max(60)).max(10).optional(),
+    fulfillmentMethod: z.enum(["SHIPPING", "DIGITAL", "SERVICE"]).optional(),
+    processingTime: z.enum(["SAME_DAY", "1_3_DAYS", "3_7_DAYS", "7_14_DAYS"]).optional(),
+    returnsPolicy: z.string().max(600).optional(),
   });
   try {
     const payload = schema.parse(req.body);
     await connectDB();
+    const normalizedHandle =
+      payload.ownerHandle?.trim().length
+        ? normalizeHandle(payload.ownerHandle)
+        : req.userDoc?.username || undefined;
     let vendor = await Vendor.findOne({ ownerUserId: req.userId }).exec();
     if (!vendor) {
       vendor = new Vendor({
         ownerUserId: req.userId,
         name: payload.name,
         description: payload.description,
+        contactEmail: payload.contactEmail,
+        contactPhone: payload.contactPhone,
+        ownerHandle: normalizedHandle,
+        businessType: payload.businessType,
+        country: payload.country,
+        city: payload.city,
+        businessAddress: payload.businessAddress,
+        website: payload.website,
+        logoUrl: payload.logoUrl,
+        categories: payload.categories,
+        fulfillmentMethod: payload.fulfillmentMethod,
+        processingTime: payload.processingTime,
+        returnsPolicy: payload.returnsPolicy,
         status: "PENDING",
       });
     } else {
       vendor.name = payload.name;
       vendor.description = payload.description;
+      vendor.contactEmail = payload.contactEmail;
+      vendor.contactPhone = payload.contactPhone;
+      vendor.ownerHandle = normalizedHandle;
+      vendor.businessType = payload.businessType;
+      vendor.country = payload.country;
+      vendor.city = payload.city;
+      vendor.businessAddress = payload.businessAddress;
+      vendor.website = payload.website;
+      vendor.logoUrl = payload.logoUrl;
+      vendor.categories = payload.categories;
+      vendor.fulfillmentMethod = payload.fulfillmentMethod;
+      vendor.processingTime = payload.processingTime;
+      vendor.returnsPolicy = payload.returnsPolicy;
       if (vendor.status === "REJECTED") {
         vendor.status = "PENDING";
       }
