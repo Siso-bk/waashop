@@ -3123,12 +3123,23 @@ router.get("/products", async (req, res) => {
   const products = await Product.find(filter).sort({ createdAt: -1 }).lean();
   const vendorIds = products.map((product) => product.vendorId).filter(Boolean);
   const vendors = await Vendor.find({ _id: { $in: vendorIds } }).lean();
-  const vendorMap = new Map(vendors.map((vendor) => [vendor._id.toString(), vendor.name]));
+  const vendorMap = new Map(
+    vendors.map((vendor) => [
+      vendor._id.toString(),
+      {
+        name: vendor.name,
+        contactPhone: vendor.contactPhone,
+        businessAddress: vendor.businessAddress,
+      },
+    ])
+  );
   res.json({
     products: products.map((product) => ({
       id: product._id.toString(),
       ...normalizeProduct(product),
-      vendorName: vendorMap.get(product.vendorId?.toString?.() || "") || undefined,
+      vendorName: vendorMap.get(product.vendorId?.toString?.() || "")?.name || undefined,
+      vendorPhone: vendorMap.get(product.vendorId?.toString?.() || "")?.contactPhone || undefined,
+      vendorAddress: vendorMap.get(product.vendorId?.toString?.() || "")?.businessAddress || undefined,
     })),
   });
 });
@@ -3153,6 +3164,8 @@ router.get("/products/:id", async (req, res) => {
       id: product._id.toString(),
       ...normalizeProduct(product),
       vendorName: vendor?.name,
+      vendorPhone: vendor?.contactPhone,
+      vendorAddress: vendor?.businessAddress,
     },
   });
 });

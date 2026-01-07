@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { StandardProduct } from "@/types";
 import { addToCart, setCartItems } from "@/lib/cart";
 import { formatMinis } from "@/lib/minis";
+import { isFavorite, toggleFavorite } from "@/lib/favorites";
 
 export function ProductDetailClient({
   product,
@@ -17,6 +18,14 @@ export function ProductDetailClient({
 }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
+  const [favorite, setFavorite] = useState(false);
+
+  useEffect(() => {
+    setFavorite(isFavorite(product.id));
+    const handleUpdate = () => setFavorite(isFavorite(product.id));
+    window.addEventListener("favorites:updated", handleUpdate);
+    return () => window.removeEventListener("favorites:updated", handleUpdate);
+  }, [product.id]);
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -59,9 +68,41 @@ export function ProductDetailClient({
         <div className="space-y-5">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Product</p>
-            <h1 className="text-2xl font-semibold text-black">{product.name}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl font-semibold text-black">{product.name}</h1>
+              <button
+                type="button"
+                onClick={() => {
+                  const result = toggleFavorite({
+                    id: product.id,
+                    name: product.name,
+                    priceMinis: product.priceMinis,
+                    imageUrl: product.imageUrl,
+                    vendorName: product.vendorName,
+                  });
+                  setFavorite(result.isFavorite);
+                }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/20 bg-white/70 text-black shadow-sm transition hover:border-black/40"
+                aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                  <path
+                    fill={favorite ? "#e11d48" : "none"}
+                    stroke={favorite ? "#e11d48" : "currentColor"}
+                    strokeWidth="1.7"
+                    d="M12 20.25l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 5 4 3 6.5 3c1.74 0 3.41.81 4.5 2.09C12.09 3.81 13.76 3 15.5 3 18 3 20 5 20 7.5c0 3.78-3.4 6.86-8.55 11.43L12 20.25z"
+                  />
+                </svg>
+              </button>
+            </div>
             {product.vendorName && (
               <p className="text-xs text-gray-500">Vendor: {product.vendorName}</p>
+            )}
+            {product.vendorAddress && (
+              <p className="text-xs text-gray-500">Store address: {product.vendorAddress}</p>
+            )}
+            {product.vendorPhone && (
+              <p className="text-xs text-gray-500">Store phone: {product.vendorPhone}</p>
             )}
           </div>
 
@@ -75,6 +116,12 @@ export function ProductDetailClient({
               <span className="uppercase tracking-[0.3em] text-gray-400">Product ID</span>
               <span className="font-semibold text-black">{product.id}</span>
             </div>
+            {product.vendorAddress && (
+              <div className="flex items-center justify-between">
+                <span className="uppercase tracking-[0.3em] text-gray-400">Store address</span>
+                <span className="font-semibold text-black">{product.vendorAddress}</span>
+              </div>
+            )}
             {product.vendorName && (
               <div className="flex items-center justify-between">
                 <span className="uppercase tracking-[0.3em] text-gray-400">Vendor</span>
@@ -91,7 +138,9 @@ export function ProductDetailClient({
             </div>
             <div className="flex items-center justify-between">
               <span className="uppercase tracking-[0.3em] text-gray-400">Support</span>
-              <span className="font-semibold text-black">Waashop help desk</span>
+              <span className="font-semibold text-black">
+                {product.vendorPhone || "Waashop help desk"}
+              </span>
             </div>
           </div>
 

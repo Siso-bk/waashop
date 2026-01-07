@@ -155,6 +155,8 @@ export interface StandardProduct {
   description?: string;
   priceMinis: number;
   vendorName?: string;
+  vendorPhone?: string;
+  vendorAddress?: string;
   imageUrl?: string;
 }
 
