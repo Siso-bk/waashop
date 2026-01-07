@@ -26,6 +26,10 @@ type WalletActionModalProps = {
   userHandle: string;
   outgoingTransfers: TransferDto[];
   incomingTransfers: TransferDto[];
+  fxSettings: {
+    minisPerUsd: number;
+    usdToEtb: number;
+  };
   initialRecipient?: string;
   initialAmount?: string;
   initialAction?: ActionType;
@@ -90,6 +94,7 @@ export function WalletActionModal({
   userHandle,
   outgoingTransfers,
   incomingTransfers,
+  fxSettings,
   initialRecipient,
   initialAmount,
   initialAction,
@@ -109,6 +114,10 @@ export function WalletActionModal({
   const [isTransferSubmitting, setIsTransferSubmitting] = useState(false);
   const [recipientValue, setRecipientValue] = useState("");
   const [amountValue, setAmountValue] = useState("");
+  const [minisValue, setMinisValue] = useState("");
+  const [usdValue, setUsdValue] = useState("");
+  const [etbValue, setEtbValue] = useState("");
+  const [activeCurrency, setActiveCurrency] = useState<"MINIS" | "USD" | "ETB">("MINIS");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrStatus, setQrStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
@@ -181,9 +190,75 @@ export function WalletActionModal({
       setScanMessage(null);
       setIsTransferSubmitting(false);
     }
+    if (active !== "deposit" && active !== "withdraw") {
+      setMinisValue("");
+      setUsdValue("");
+      setEtbValue("");
+      setActiveCurrency("MINIS");
+    }
     if (active !== "deposit") setIsDepositSubmitting(false);
     if (active !== "withdraw") setIsWithdrawSubmitting(false);
   }, [active]);
+
+  const updateAmountsFromMinis = useCallback(
+    (minisRaw: string) => {
+      const minis = Number(minisRaw);
+      const minisPerUsd = fxSettings.minisPerUsd || 1;
+      const usdToEtb = fxSettings.usdToEtb || 1;
+      if (!Number.isFinite(minis)) {
+        setMinisValue(minisRaw);
+        setUsdValue("");
+        setEtbValue("");
+        return;
+      }
+      const usd = minis / minisPerUsd;
+      const etb = usd * usdToEtb;
+      setMinisValue(minisRaw);
+      setUsdValue(usd ? usd.toFixed(2) : "");
+      setEtbValue(etb ? etb.toFixed(2) : "");
+    },
+    [fxSettings.minisPerUsd, fxSettings.usdToEtb]
+  );
+
+  const updateAmountsFromUsd = useCallback(
+    (usdRaw: string) => {
+      const usd = Number(usdRaw);
+      const minisPerUsd = fxSettings.minisPerUsd || 1;
+      const usdToEtb = fxSettings.usdToEtb || 1;
+      if (!Number.isFinite(usd)) {
+        setUsdValue(usdRaw);
+        setMinisValue("");
+        setEtbValue("");
+        return;
+      }
+      const minis = usd * minisPerUsd;
+      const etb = usd * usdToEtb;
+      setUsdValue(usdRaw);
+      setMinisValue(minis ? minis.toFixed(2) : "");
+      setEtbValue(etb ? etb.toFixed(2) : "");
+    },
+    [fxSettings.minisPerUsd, fxSettings.usdToEtb]
+  );
+
+  const updateAmountsFromEtb = useCallback(
+    (etbRaw: string) => {
+      const etb = Number(etbRaw);
+      const minisPerUsd = fxSettings.minisPerUsd || 1;
+      const usdToEtb = fxSettings.usdToEtb || 1;
+      if (!Number.isFinite(etb)) {
+        setEtbValue(etbRaw);
+        setMinisValue("");
+        setUsdValue("");
+        return;
+      }
+      const usd = etb / usdToEtb;
+      const minis = usd * minisPerUsd;
+      setEtbValue(etbRaw);
+      setUsdValue(usd ? usd.toFixed(2) : "");
+      setMinisValue(minis ? minis.toFixed(2) : "");
+    },
+    [fxSettings.minisPerUsd, fxSettings.usdToEtb]
+  );
 
   useEffect(() => {
     if (active !== "receive") {
@@ -438,20 +513,60 @@ export function WalletActionModal({
                 className="space-y-4 text-sm text-gray-700"
                 onSubmit={() => setIsDepositSubmitting(true)}
               >
-                  <input
-                    name="amountMinis"
-                    type="number"
-                    min={0.01}
-                    step={0.01}
-                    required
-                    placeholder="Amount (MINIS)"
-                    className="w-full rounded-xl border border-black/10 px-3 py-2"
-                  />
                 <input
-                  name="currency"
-                  placeholder="Currency (USD, ETB, USDT...)"
-                  className="w-full rounded-xl border border-black/10 px-3 py-2"
+                  type="hidden"
+                  name="amountMinis"
+                  value={minisValue}
                 />
+                <input type="hidden" name="currency" value={activeCurrency} />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">MINIS</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      required
+                      value={minisValue}
+                      onChange={(event) => {
+                        setActiveCurrency("MINIS");
+                        updateAmountsFromMinis(event.target.value);
+                      }}
+                      placeholder="0.00"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">USD</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      value={usdValue}
+                      onChange={(event) => {
+                        setActiveCurrency("USD");
+                        updateAmountsFromUsd(event.target.value);
+                      }}
+                      placeholder="0.00"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">ETB</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      value={etbValue}
+                      onChange={(event) => {
+                        setActiveCurrency("ETB");
+                        updateAmountsFromEtb(event.target.value);
+                      }}
+                      placeholder="0.00"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </label>
+                </div>
                 <input
                   name="paymentMethod"
                   required
@@ -514,15 +629,60 @@ export function WalletActionModal({
                 className="space-y-4 text-sm text-gray-700"
                 onSubmit={() => setIsWithdrawSubmitting(true)}
               >
-                  <input
-                    name="amountMinis"
-                    type="number"
-                    min={0.01}
-                    step={0.01}
-                    required
-                    placeholder="Amount (MINIS)"
-                    className="w-full rounded-xl border border-black/10 px-3 py-2"
-                  />
+                <input
+                  type="hidden"
+                  name="amountMinis"
+                  value={minisValue}
+                />
+                <input type="hidden" name="currency" value={activeCurrency} />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">MINIS</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      required
+                      value={minisValue}
+                      onChange={(event) => {
+                        setActiveCurrency("MINIS");
+                        updateAmountsFromMinis(event.target.value);
+                      }}
+                      placeholder="0.00"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">USD</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      value={usdValue}
+                      onChange={(event) => {
+                        setActiveCurrency("USD");
+                        updateAmountsFromUsd(event.target.value);
+                      }}
+                      placeholder="0.00"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">ETB</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      value={etbValue}
+                      onChange={(event) => {
+                        setActiveCurrency("ETB");
+                        updateAmountsFromEtb(event.target.value);
+                      }}
+                      placeholder="0.00"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </label>
+                </div>
                 <input
                   name="payoutMethod"
                   required

@@ -26,6 +26,11 @@ type ActionResult = {
   message?: string;
 };
 
+type FxSettings = {
+  minisPerUsd: number;
+  usdToEtb: number;
+};
+
 export default async function WalletPage({
   searchParams,
 }: {
@@ -49,10 +54,13 @@ export default async function WalletPage({
     );
   }
 
-  const [entries, jackpots, transfers] = await Promise.all([
+  const [entries, jackpots, transfers, fxData] = await Promise.all([
     getRecentLedger(50),
     getActiveJackpots(),
     backendFetch<{ outgoing: TransferDto[]; incoming: TransferDto[] }>("/api/transfers"),
+    backendFetch<{ settings: FxSettings }>("/api/settings/public", { auth: false }).catch(() => ({
+      settings: { minisPerUsd: 100, usdToEtb: 120 },
+    })),
   ]);
 
   const minis = (user as { minisBalance?: number }).minisBalance ?? 0;
@@ -75,6 +83,7 @@ export default async function WalletPage({
         userHandle={user.username ? `${user.username}@pai` : user.email || user.telegramId || "No handle yet"}
         outgoingTransfers={transfers.outgoing}
         incomingTransfers={transfers.incoming}
+        fxSettings={fxData.settings}
         initialRecipient={prefillRecipient}
         initialAmount={prefillAmount}
         initialAction={initialAction}

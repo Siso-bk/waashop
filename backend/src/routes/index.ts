@@ -1918,6 +1918,17 @@ router.get("/notifications/unread-count", authMiddleware, async (req, res) => {
   res.json({ unread: count });
 });
 
+router.get("/settings/public", async (_req, res) => {
+  await connectDB();
+  const settings = await getPlatformSettings();
+  res.json({
+    settings: {
+      minisPerUsd: settings.minisPerUsd,
+      usdToEtb: settings.usdToEtb,
+    },
+  });
+});
+
 router.post("/notifications/read", authMiddleware, async (req, res) => {
   const schema = z.object({
     ids: z.array(z.string()).optional(),
@@ -1955,6 +1966,8 @@ router.get(
         jackpotPlatformPercent: settings.jackpotPlatformPercent,
         jackpotSeedPercent: settings.jackpotSeedPercent,
         jackpotVendorPercent: settings.jackpotVendorPercent,
+        minisPerUsd: settings.minisPerUsd,
+        usdToEtb: settings.usdToEtb,
         platformPayoutHandle: settings.platformPayoutHandle,
         jackpotWinSoundUrl: settings.jackpotWinSoundUrl,
         jackpotLoseSoundUrl: settings.jackpotLoseSoundUrl,
@@ -1983,6 +1996,8 @@ router.patch(
       jackpotPlatformPercent: z.number().min(0).max(100).optional(),
       jackpotSeedPercent: z.number().min(0).max(100).optional(),
       jackpotVendorPercent: z.number().min(0).max(100).optional(),
+      minisPerUsd: z.number().positive().optional(),
+      usdToEtb: z.number().positive().optional(),
       platformPayoutHandle: z.string().max(120).optional(),
       jackpotWinSoundUrl: z.string().max(400000).optional(),
       jackpotLoseSoundUrl: z.string().max(400000).optional(),
@@ -2007,6 +2022,8 @@ router.patch(
           jackpotPlatformPercent: doc.jackpotPlatformPercent,
           jackpotSeedPercent: doc.jackpotSeedPercent,
           jackpotVendorPercent: doc.jackpotVendorPercent,
+          minisPerUsd: doc.minisPerUsd,
+          usdToEtb: doc.usdToEtb,
           platformPayoutHandle: doc.platformPayoutHandle,
           jackpotWinSoundUrl: doc.jackpotWinSoundUrl,
           jackpotLoseSoundUrl: doc.jackpotLoseSoundUrl,

@@ -189,6 +189,8 @@ export interface PlatformSettingsDto {
   jackpotPlatformPercent: number;
   jackpotSeedPercent: number;
   jackpotVendorPercent: number;
+  minisPerUsd: number;
+  usdToEtb: number;
   platformPayoutHandle?: string;
   jackpotWinSoundUrl?: string;
   jackpotLoseSoundUrl?: string;

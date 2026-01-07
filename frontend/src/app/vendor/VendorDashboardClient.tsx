@@ -472,8 +472,8 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
         </div>
         <div className="mt-4 space-y-3">
           {products.length === 0 && <p className="text-sm text-gray-500">No listings yet.</p>}
-          {products.map((product) => (
-            <div key={product.id} className="rounded-2xl border border-black/10 bg-white p-4">
+          {products.map((product, index) => (
+            <div key={product.id || `${product.name}-${index}`} className="rounded-2xl border border-black/10 bg-white p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-black">{product.name}</p>

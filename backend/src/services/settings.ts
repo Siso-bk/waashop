@@ -31,6 +31,8 @@ export const getPlatformSettings = async () => {
       jackpotPlatformPercent: env.JACKPOT_PLATFORM_PERCENT,
       jackpotSeedPercent: env.JACKPOT_SEED_PERCENT,
       jackpotVendorPercent: env.JACKPOT_VENDOR_PERCENT,
+      minisPerUsd: env.MINIS_PER_USD,
+      usdToEtb: env.USD_TO_ETB,
       jackpotWinSoundUrl: env.JACKPOT_WIN_SOUND_URL,
       jackpotLoseSoundUrl: env.JACKPOT_LOSE_SOUND_URL,
       mysteryBoxWinSoundUrl: env.MYSTERY_BOX_WIN_SOUND_URL,

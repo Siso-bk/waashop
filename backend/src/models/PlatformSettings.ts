@@ -10,6 +10,8 @@ export interface IPlatformSettings extends Document {
   jackpotPlatformPercent: number;
   jackpotSeedPercent: number;
   jackpotVendorPercent: number;
+  minisPerUsd: number;
+  usdToEtb: number;
   platformPayoutHandle?: string;
   jackpotWinSoundUrl?: string;
   jackpotLoseSoundUrl?: string;
@@ -58,6 +60,8 @@ const PlatformSettingsSchema = new Schema<IPlatformSettings>(
     jackpotPlatformPercent: { type: Number, default: 5 },
     jackpotSeedPercent: { type: Number, default: 10 },
     jackpotVendorPercent: { type: Number, default: 5 },
+    minisPerUsd: { type: Number, default: 100 },
+    usdToEtb: { type: Number, default: 120 },
     platformPayoutHandle: { type: String },
     jackpotWinSoundUrl: { type: String },
     jackpotLoseSoundUrl: { type: String },

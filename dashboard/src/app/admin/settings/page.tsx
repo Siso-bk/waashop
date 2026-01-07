@@ -21,6 +21,8 @@ export default async function AdminSettingsPage() {
   const jackpotPlatformPercent = settings.jackpotPlatformPercent ?? 5;
   const jackpotSeedPercent = settings.jackpotSeedPercent ?? 10;
   const jackpotVendorPercent = settings.jackpotVendorPercent ?? 5;
+  const minisPerUsd = settings.minisPerUsd ?? 100;
+  const usdToEtb = settings.usdToEtb ?? 120;
   const platformPayoutHandle = settings.platformPayoutHandle ?? "";
   const jackpotWinSoundUrl = settings.jackpotWinSoundUrl ?? "";
   const jackpotLoseSoundUrl = settings.jackpotLoseSoundUrl ?? "";
@@ -135,6 +137,30 @@ export default async function AdminSettingsPage() {
               />
             </label>
           </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block text-sm text-slate-600">
+              MINIS per USD
+              <input
+                name="minisPerUsd"
+                type="number"
+                min={0.01}
+                step={0.01}
+                defaultValue={minisPerUsd}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              />
+            </label>
+            <label className="block text-sm text-slate-600">
+              ETB per USD
+              <input
+                name="usdToEtb"
+                type="number"
+                min={0.01}
+                step={0.01}
+                defaultValue={usdToEtb}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              />
+            </label>
+          </div>
           <label className="block text-sm text-slate-600">
             Platform payout handle (username@pai)
             <input
@@ -206,6 +232,8 @@ async function updateFees(formData: FormData) {
     jackpotPlatformPercent: Number(formData.get("jackpotPlatformPercent")),
     jackpotSeedPercent: Number(formData.get("jackpotSeedPercent")),
     jackpotVendorPercent: Number(formData.get("jackpotVendorPercent")),
+    minisPerUsd: Number(formData.get("minisPerUsd")),
+    usdToEtb: Number(formData.get("usdToEtb")),
     platformPayoutHandle: String(formData.get("platformPayoutHandle") || "").trim() || undefined,
     jackpotWinSoundUrl: String(formData.get("jackpotWinSoundUrl") || "").trim() || undefined,
     jackpotLoseSoundUrl: String(formData.get("jackpotLoseSoundUrl") || "").trim() || undefined,
