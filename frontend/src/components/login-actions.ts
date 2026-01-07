@@ -78,7 +78,7 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
 
   try {
     const name = `${firstName.trim()} ${lastName.trim()}`.trim();
-    const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
+    const normalizedUsername = typeof username === "string" ? normalizeHandleInput(username) : "";
     if (firstName.trim().length < 2 || lastName.trim().length < 2) {
       return { error: "First and last name must be at least 2 characters." };
     }
@@ -107,6 +107,7 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
     const payload = {
       preToken,
       name,
+      handle: normalizedUsername,
       password,
     };
     const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/pre-signup/complete", {
@@ -140,4 +141,20 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
     }
     return { error: message };
   }
+};
+
+const normalizeHandleInput = (value: string) => {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return "";
+  let normalized = trimmed;
+  if (normalized.startsWith("@")) {
+    normalized = normalized.slice(1);
+  }
+  if (normalized.endsWith("@pai")) {
+    normalized = normalized.slice(0, -4);
+  }
+  if (normalized.endsWith(".pai")) {
+    normalized = normalized.slice(0, -4);
+  }
+  return normalized;
 };

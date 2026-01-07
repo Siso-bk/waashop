@@ -71,7 +71,12 @@ export const registerAction = async (_prev: ActionState, formData: FormData): Pr
   }
 
   try {
-    const payload = { preToken, name, password };
+    const emailValue = email.trim().toLowerCase();
+    const handle = normalizeHandleInput(emailValue.split("@")[0] || "");
+    if (!handle || !/^[a-z0-9_]{3,32}$/.test(handle)) {
+      return { error: "Email must start with 3+ letters or numbers to create a handle." };
+    }
+    const payload = { preToken, name, handle, password };
     const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/pre-signup/complete", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -82,4 +87,20 @@ export const registerAction = async (_prev: ActionState, formData: FormData): Pr
     const message = error instanceof Error ? error.message : "Registration failed";
     return { error: message };
   }
+};
+
+const normalizeHandleInput = (value: string) => {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return "";
+  let normalized = trimmed;
+  if (normalized.startsWith("@")) {
+    normalized = normalized.slice(1);
+  }
+  if (normalized.endsWith("@pai")) {
+    normalized = normalized.slice(0, -4);
+  }
+  if (normalized.endsWith(".pai")) {
+    normalized = normalized.slice(0, -4);
+  }
+  return normalized;
 };
