@@ -51,6 +51,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
   const [activeType, setActiveType] = useState<"STANDARD" | "MYSTERY_BOX" | "CHALLENGE">("STANDARD");
   const [products, setProducts] = useState<VendorProduct[]>(initialProducts);
   const [formState, setFormState] = useState<FormState>({ status: "idle" });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [priceMinis, setPriceMinis] = useState("10");
@@ -73,6 +74,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
     setRewardTiers(defaultRewardTiers);
     setTicketPriceMinis("5");
     setTicketCount("100");
+    setEditingId(null);
   };
 
   const handleSubmit = async () => {
@@ -113,25 +115,43 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
         }
       }
 
-      const response = await fetch(VENDOR_PRODUCTS_ENDPOINT, {
-        method: "POST",
+      const response = await fetch(editingId ? `${VENDOR_PRODUCTS_ENDPOINT}/${editingId}` : VENDOR_PRODUCTS_ENDPOINT, {
+        method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(payload),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error((data as { error?: string }).error || "Unable to create listing.");
+        throw new Error((data as { error?: string }).error || "Unable to save listing.");
       }
       if (data?.product) {
-        setProducts((prev) => [data.product, ...prev]);
+        setProducts((prev) =>
+          editingId ? prev.map((item) => (item.id === editingId ? data.product : item)) : [data.product, ...prev]
+        );
       }
-      setFormState({ status: "success", message: "Listing submitted for review." });
+      setFormState({
+        status: "success",
+        message: editingId ? "Listing updated." : "Listing submitted for review.",
+      });
       resetForm();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to create listing.";
+      const message = error instanceof Error ? error.message : "Unable to save listing.";
       setFormState({ status: "error", message });
     }
+  };
+
+  const startEdit = (product: VendorProduct) => {
+    setActiveType(product.type);
+    setName(product.name);
+    setDescription(product.description ?? "");
+    setPriceMinis(String(product.priceMinis ?? 10));
+    setGuaranteedMinMinis(String(product.guaranteedMinMinis ?? 0));
+    setRewardTiers(product.rewardTiers?.length ? product.rewardTiers : defaultRewardTiers);
+    setTicketPriceMinis(String(product.ticketPriceMinis ?? 5));
+    setTicketCount(String(product.ticketCount ?? 100));
+    setEditingId(product.id);
+    setFormState({ status: "idle" });
   };
 
   const updateTier = (index: number, key: keyof RewardTier, value: string) => {
@@ -187,6 +207,11 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
         </div>
 
         <div className="mt-6 grid gap-4 text-sm text-gray-700">
+          {editingId && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.3em] text-amber-700">
+              Editing pending listing
+            </div>
+          )}
           <label className="space-y-2">
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Name</span>
             <input
@@ -343,8 +368,23 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
             disabled={formState.status === "submitting"}
             className="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
-            {formState.status === "submitting" ? "Submitting…" : "Submit listing"}
+            {formState.status === "submitting"
+              ? editingId
+                ? "Saving…"
+                : "Submitting…"
+              : editingId
+              ? "Save changes"
+              : "Submit listing"}
           </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded-full border border-black/20 px-6 py-3 text-sm font-semibold text-black transition hover:border-black/40"
+            >
+              Cancel edit
+            </button>
+          )}
         </div>
       </section>
 
@@ -364,9 +404,19 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
                   <p className="text-sm font-semibold text-black">{product.name}</p>
                   <p className="text-xs text-gray-500">{product.type.replace("_", " ")}</p>
                 </div>
-                <span className="rounded-full border border-black/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                  {product.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full border border-black/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                    {product.status}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={product.status !== "PENDING"}
+                    onClick={() => startEdit(product)}
+                    className="rounded-full border border-black/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black transition hover:border-black/30 disabled:cursor-not-allowed disabled:border-black/5 disabled:text-gray-400"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
               {product.description && <p className="mt-2 text-xs text-gray-500">{product.description}</p>}
               <div className="mt-3 text-xs text-gray-500">
