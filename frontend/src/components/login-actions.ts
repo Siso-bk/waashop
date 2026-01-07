@@ -73,12 +73,31 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
     !preToken ||
     typeof preToken !== "string"
   ) {
-    return { error: "Complete email verification before creating your account." };
+    return { error: "Complete all fields before creating your account." };
   }
 
   try {
     const name = `${firstName.trim()} ${lastName.trim()}`.trim();
     const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
+    if (!normalizedUsername) {
+      return { error: "Username is required." };
+    }
+    if (!/^[a-z0-9_]{3,32}$/.test(normalizedUsername)) {
+      return { error: "Username must be 3-32 characters, letters/numbers/underscore only." };
+    }
+    const availability = await backendFetch<{
+      valid?: boolean;
+      available?: boolean;
+      reserved?: boolean;
+    }>(`/api/profile/handle/check?handle=${encodeURIComponent(normalizedUsername)}`, {
+      auth: false,
+    });
+    if (availability.reserved) {
+      return { error: "That username is reserved." };
+    }
+    if (!availability.valid || availability.available === false) {
+      return { error: "That username is already taken." };
+    }
     const payload = {
       preToken,
       name,
