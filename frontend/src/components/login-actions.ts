@@ -55,13 +55,17 @@ export const loginAction = async (_prev: AuthActionState, formData: FormData): P
 };
 
 export const registerAction = async (_prev: AuthActionState, formData: FormData): Promise<AuthActionState> => {
-  const fullName = formData.get("fullName");
+  const firstName = formData.get("firstName");
+  const lastName = formData.get("lastName");
+  const username = formData.get("username");
   const email = formData.get("email");
   const password = formData.get("password");
   const preToken = formData.get("preToken");
   if (
-    !fullName ||
-    typeof fullName !== "string" ||
+    !firstName ||
+    typeof firstName !== "string" ||
+    !lastName ||
+    typeof lastName !== "string" ||
     !email ||
     typeof email !== "string" ||
     !password ||
@@ -73,9 +77,11 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
   }
 
   try {
+    const name = `${firstName.trim()} ${lastName.trim()}`.trim();
+    const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
     const payload = {
       preToken,
-      name: fullName,
+      name,
       password,
     };
     const { token } = await paiFetch<{ token: string; user: unknown }>("/api/auth/pre-signup/complete", {
@@ -83,6 +89,24 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
       body: JSON.stringify(payload),
     });
     await persistToken(token);
+    if (normalizedUsername) {
+      await backendFetch("/api/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          username: normalizedUsername,
+        }),
+      });
+    } else {
+      await backendFetch("/api/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+        }),
+      });
+    }
     return await syncSession();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed";
