@@ -3,6 +3,7 @@ import "./globals.css";
 import { TelegramViewport } from "@/components/TelegramViewport";
 import { MobileNav } from "@/components/MobileNav";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
+import { NavigationProgress } from "@/components/NavigationProgress";
 
 export const metadata: Metadata = {
   title: "Waashop",
@@ -28,6 +29,7 @@ export default function RootLayout({
         <div className="min-h-[var(--tg-viewport-stable-height,100vh)]">
           <ThemeInitializer />
           <TelegramViewport />
+          <NavigationProgress />
           <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-8 sm:pb-10 sm:pt-10">{children}</main>
           <MobileNav />
         </div>
