@@ -25,13 +25,14 @@ type VendorProfile = {
 };
 
 type PageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function VendorApplicationPage({ searchParams }: PageProps) {
   const user = await getSessionUser();
-  const status = typeof searchParams?.status === "string" ? searchParams.status : null;
-  const message = typeof searchParams?.message === "string" ? decodeURIComponent(searchParams.message) : null;
+  const resolvedParams = (await searchParams) ?? {};
+  const status = typeof resolvedParams.status === "string" ? resolvedParams.status : null;
+  const message = typeof resolvedParams.message === "string" ? decodeURIComponent(resolvedParams.message) : null;
 
   if (!user) {
     return (

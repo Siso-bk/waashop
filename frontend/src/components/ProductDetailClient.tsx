@@ -46,12 +46,14 @@ export function ProductDetailClient({
             </div>
           )}
 
-          {product.description && (
-            <div className="rounded-2xl border border-black/10 bg-gray-50 p-4 text-sm text-gray-600">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Details</p>
+          <div className="rounded-2xl border border-black/10 bg-gray-50 p-4 text-sm text-gray-600">
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Details</p>
+            {product.description ? (
               <p className="mt-2">{product.description}</p>
-            </div>
-          )}
+            ) : (
+              <p className="mt-2 text-gray-500">No description provided yet.</p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-5">
@@ -69,6 +71,16 @@ export function ProductDetailClient({
           </div>
 
           <div className="grid gap-3 rounded-2xl border border-black/10 bg-white p-4 text-xs text-gray-600">
+            <div className="flex items-center justify-between">
+              <span className="uppercase tracking-[0.3em] text-gray-400">Product ID</span>
+              <span className="font-semibold text-black">{product.id}</span>
+            </div>
+            {product.vendorName && (
+              <div className="flex items-center justify-between">
+                <span className="uppercase tracking-[0.3em] text-gray-400">Vendor</span>
+                <span className="font-semibold text-black">{product.vendorName}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className="uppercase tracking-[0.3em] text-gray-400">Status</span>
               <span className="font-semibold text-black">Available</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { formatMinis } from "@/lib/minis";
 import type { StandardProduct } from "@/types";
 
@@ -16,42 +16,28 @@ export function StandardProductOrderCard({
   onAddToCart: (product: StandardProduct) => void;
   onOrderNow: (product: StandardProduct) => void;
 }) {
-  const router = useRouter();
   const hasImage = Boolean(product.imageUrl);
   const imageSrc = product.imageUrl || "/images/no-image.svg";
-  const handleNavigate = () => {
-    router.push(`/products/${product.id}`);
-  };
 
   return (
-    <article
-      className="group relative flex cursor-pointer flex-col rounded-3xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg"
-      role="link"
-      tabIndex={0}
-      aria-label={`View ${product.name}`}
-      onClick={handleNavigate}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          handleNavigate();
-        }
-      }}
-    >
-      <div className="relative z-10 mb-2 block">
-        <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-[color:var(--surface-bg)]">
-          <Image
-            src={imageSrc}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 100vw"
-          />
+    <article className="group relative flex flex-col rounded-3xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg">
+      <Link href={`/products/${product.id}`} aria-label={`View ${product.name}`} className="relative z-10 block">
+        <div className="relative z-10 mb-2 block">
+          <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-[color:var(--surface-bg)]">
+            <Image
+              src={imageSrc}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 100vw"
+            />
+          </div>
         </div>
-      </div>
-      <div className="relative z-10 space-y-1">
-        <p className="truncate text-sm font-semibold text-black">{product.name}</p>
-        <p className="text-xs font-semibold text-black">{formatMinis(product.priceMinis)}</p>
-      </div>
+        <div className="relative z-10 space-y-1">
+          <p className="truncate text-sm font-semibold text-black">{product.name}</p>
+          <p className="text-xs font-semibold text-black">{formatMinis(product.priceMinis)}</p>
+        </div>
+      </Link>
 
       {!signedIn ? (
         <div className="relative z-10 mt-5 rounded-2xl border border-dashed border-black/15 bg-gray-50 p-4 text-xs text-gray-600">
