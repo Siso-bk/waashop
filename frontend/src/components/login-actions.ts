@@ -79,11 +79,17 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
   try {
     const name = `${firstName.trim()} ${lastName.trim()}`.trim();
     const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
+    if (firstName.trim().length < 2 || lastName.trim().length < 2) {
+      return { error: "First and last name must be at least 2 characters." };
+    }
     if (!normalizedUsername) {
       return { error: "Username is required." };
     }
     if (!/^[a-z0-9_]{3,32}$/.test(normalizedUsername)) {
       return { error: "Username must be 3-32 characters, letters/numbers/underscore only." };
+    }
+    if (password.trim().length < 6) {
+      return { error: "Password must be at least 6 characters." };
     }
     const availability = await backendFetch<{
       valid?: boolean;
@@ -129,6 +135,9 @@ export const registerAction = async (_prev: AuthActionState, formData: FormData)
     return await syncSession();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed";
+    if (message.toLowerCase().includes("invalid input")) {
+      return { error: "Invalid input. Check your name and password." };
+    }
     return { error: message };
   }
 };

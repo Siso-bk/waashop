@@ -95,6 +95,7 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
             name="firstName"
             type="text"
             required
+            minLength={2}
             autoComplete="given-name"
             className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
             placeholder="Jane"
@@ -109,6 +110,7 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
             name="lastName"
             type="text"
             required
+            minLength={2}
             autoComplete="family-name"
             className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
             placeholder="Doe"
@@ -128,6 +130,8 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
             autoComplete="username"
             value={username}
             onChange={(event) => setUsername(normalizeHandleInput(event.target.value))}
+            minLength={3}
+            maxLength={32}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-black focus:outline-none"
             placeholder="yourname"
           />
@@ -205,6 +209,7 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
             name="password"
             type={showPassword ? "text" : "password"}
             required
+            minLength={6}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 pr-10 text-sm focus:border-black focus:outline-none"
             placeholder="Create a secure password"
           />
