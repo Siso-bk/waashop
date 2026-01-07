@@ -7,6 +7,8 @@ interface Props {
   params: { productId: string };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductDetailPage({ params }: Props) {
   const [directProduct, user] = await Promise.all([
     getStandardProductById(params.productId),
