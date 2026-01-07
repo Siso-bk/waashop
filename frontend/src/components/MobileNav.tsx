@@ -17,6 +17,7 @@ export function MobileNav() {
   const pathname = usePathname();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -30,6 +31,10 @@ export function MobileNav() {
     viewport.addEventListener("resize", handler);
     return () => viewport.removeEventListener("resize", handler);
   }, []);
+
+  useEffect(() => {
+    setIsNavigating(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -70,6 +75,11 @@ export function MobileNav() {
 
   return (
     <nav className="fixed bottom-3 left-1/2 z-40 w-[90%] max-w-md -translate-x-1/2 rounded-2xl border border-black/10 bg-white/95 px-2 py-2 shadow-lg shadow-black/10 backdrop-blur md:hidden">
+      {isNavigating && (
+        <div className="absolute left-2 right-2 top-1 h-[2px] overflow-hidden rounded-full bg-[var(--surface-border)]">
+          <div className="h-full w-1/3 animate-nav-progress rounded-full bg-emerald-400" />
+        </div>
+      )}
       <div className="flex items-center justify-between text-[11px] font-semibold text-gray-500">
         {navLinks.map((link) => {
           const isActive =
@@ -80,6 +90,11 @@ export function MobileNav() {
             <Link
               key={link.href}
               href={link.href}
+              onClick={() => {
+                if (!isActive) {
+                  setIsNavigating(true);
+                }
+              }}
               className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-center ${
                 isActive ? "bg-black text-white" : "text-gray-500"
               }`}

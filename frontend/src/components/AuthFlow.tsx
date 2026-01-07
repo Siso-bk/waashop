@@ -272,7 +272,7 @@ export function AuthFlow() {
                 <button
                   type="button"
                   onClick={() => requestPreSignup(signupEmail)}
-                  className="mt-2 inline-flex items-center justify-center rounded-full border border-amber-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-amber-700 hover:bg-amber-100"
+                  className="mt-2 inline-flex items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface-bg)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--app-text)] hover:opacity-90"
                 >
                   Send verification code
                 </button>
@@ -282,7 +282,7 @@ export function AuthFlow() {
                   onClick={() =>
                     router.push(`/signup?message=${encodeURIComponent(signupRedirectMessage)}`)
                   }
-                  className="mt-2 inline-flex items-center justify-center rounded-full border border-amber-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-amber-700 hover:bg-amber-100"
+                  className="mt-2 inline-flex items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface-bg)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--app-text)] hover:opacity-90"
                 >
                   Create account
                 </button>
@@ -292,9 +292,16 @@ export function AuthFlow() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-black px-4 py-3 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+            className="w-full rounded-full border border-[var(--surface-border)] bg-[var(--app-text)] px-4 py-3 text-sm font-semibold text-[var(--app-bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Checking..." : "Continue"}
+            {loading ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Checking...
+              </span>
+            ) : (
+              "Continue"
+            )}
           </button>
         </form>
       ) : (
@@ -338,17 +345,31 @@ export function AuthFlow() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+                  className="flex-1 rounded-full border border-[var(--surface-border)] bg-[var(--app-text)] px-4 py-2 text-sm font-semibold text-[var(--app-bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading ? "Verifying…" : "Verify code"}
+                  {loading ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Verifying…
+                    </span>
+                  ) : (
+                    "Verify code"
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={handleResend}
                   disabled={resendLoading}
-                  className="rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-full border border-[var(--surface-border)] bg-[var(--surface-bg)] px-4 py-2 text-sm font-semibold text-[var(--app-text)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {resendLoading ? "Sending…" : "Resend"}
+                  {resendLoading ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Sending…
+                    </span>
+                  ) : (
+                    "Resend"
+                  )}
                 </button>
               </div>
               {resendMessage && <p className="text-xs text-gray-500">{resendMessage}</p>}

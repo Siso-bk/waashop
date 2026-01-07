@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { JackpotPlayDto } from "@/types";
 import { formatMinis } from "@/lib/minis";
 
 type Props = {
   jackpot: JackpotPlayDto;
+  signedIn?: boolean;
   disabled?: boolean;
 };
 
-export function JackpotPlayButton({ jackpot, disabled }: Props) {
+export function JackpotPlayButton({ jackpot, signedIn = true, disabled }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsAuth, setNeedsAuth] = useState(false);
   const [result, setResult] = useState<{ won: boolean; payoutMinis: number } | null>(null);
   const [animatedPayout, setAnimatedPayout] = useState(0);
   const animationRef = useRef<number | null>(null);
@@ -59,9 +62,15 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
   }, [result]);
 
   const handleTry = async () => {
+    if (!signedIn) {
+      setNeedsAuth(true);
+      setError("Sign in to try the jackpot.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setNeedsAuth(false);
     try {
       const response = await fetch(`/api/jackpots/${jackpot.id}/try`, {
         method: "POST",
@@ -70,6 +79,10 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
       });
       const data = await response.json();
       if (!response.ok) {
+        if (response.status === 401) {
+          setNeedsAuth(true);
+          throw new Error("Sign in to try the jackpot.");
+        }
         throw new Error(data.error || "Unable to try jackpot");
       }
       const won = Boolean(data.won);
@@ -101,6 +114,14 @@ export function JackpotPlayButton({ jackpot, disabled }: Props) {
         {isLoading ? "Trying..." : `TRY FOR ${formatMinis(jackpot.priceMinis)}`}
       </button>
       {error && <p className="text-xs text-red-500">{error}</p>}
+      {needsAuth && (
+        <p className="text-xs text-gray-500">
+          <Link href="/login" className="font-semibold underline">
+            Sign in
+          </Link>{" "}
+          to continue.
+        </p>
+      )}
       <div className="min-h-[36px]" aria-live="polite">
         {result && (
           <div

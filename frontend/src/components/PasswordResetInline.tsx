@@ -84,9 +84,16 @@ export function PasswordResetInline({ initialEmail = "" }: PasswordResetInlinePr
         type="button"
         onClick={handleSend}
         disabled={status === "sending"}
-        className="w-full rounded-full border border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:bg-gray-200"
+        className="w-full rounded-full border border-[var(--surface-border)] bg-[var(--surface-bg)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--app-text)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {status === "sending" ? "Sending…" : "Send reset code"}
+        {status === "sending" ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            Sending…
+          </span>
+        ) : (
+          "Send reset code"
+        )}
       </button>
       {message && (
         <p className={`text-xs ${status === "error" ? "text-red-500" : "text-emerald-600"}`}>
@@ -107,7 +114,7 @@ export function PasswordResetInline({ initialEmail = "" }: PasswordResetInlinePr
           </label>
           <a
             href={`/reset?email=${encodeURIComponent(email.trim())}&code=${encodeURIComponent(code.trim())}`}
-            className="inline-flex w-full items-center justify-center rounded-full border border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+            className="inline-flex w-full items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface-bg)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--app-text)] transition hover:opacity-90"
           >
             Continue
           </a>

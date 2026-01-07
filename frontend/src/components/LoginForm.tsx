@@ -54,9 +54,16 @@ export function LoginForm({ identifier }: { identifier: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-full bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="w-full rounded-full border border-[var(--surface-border)] bg-[var(--app-text)] px-4 py-2 text-sm font-semibold text-[var(--app-bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {pending ? "Signing in..." : "Sign in"}
+        {pending ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            Signing in...
+          </span>
+        ) : (
+          "Sign in"
+        )}
       </button>
     </form>
   );

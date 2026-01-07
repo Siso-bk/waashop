@@ -159,7 +159,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               value={profile.firstName}
               onChange={event => setProfile({ ...profile, firstName: event.target.value })}
               disabled={!editing}
-              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
+              className="w-full rounded-2xl border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:border-black focus:outline-none disabled:border-black/10 disabled:bg-white/70"
             />
           </label>
           <label className="space-y-1">
@@ -172,7 +172,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               value={profile.lastName || ""}
               onChange={event => setProfile({ ...profile, lastName: event.target.value })}
               disabled={!editing}
-              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
+              className="w-full rounded-2xl border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:border-black focus:outline-none disabled:border-black/10 disabled:bg-white/70"
             />
           </label>
           <label className="space-y-1 sm:col-span-2">
@@ -184,13 +184,13 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
                 type="text"
                 autoComplete="username"
                 value={displayHandle}
-                onChange={event =>
+              onChange={event =>
                   setProfile({ ...profile, username: normalizeHandleInput(event.target.value) })
                 }
-                disabled={!editing}
-                placeholder="username"
-                className="w-full rounded-2xl border border-gray-300 px-3 py-2 pr-16 text-sm text-black focus:border-black focus:outline-none disabled:border-gray-200 disabled:bg-gray-100"
-              />
+              disabled={!editing}
+              placeholder="username"
+              className="w-full rounded-2xl border border-gray-300 bg-white px-3 py-2 pr-16 text-sm text-black focus:border-black focus:outline-none disabled:border-black/10 disabled:bg-white/70"
+            />
               <span className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2 text-xs text-gray-400">
                 @pai
               </span>
@@ -265,7 +265,7 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               autoComplete="email"
               value={profile.email}
               disabled
-              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm text-gray-500 disabled:border-gray-200 disabled:bg-gray-100"
+              className="w-full rounded-2xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 disabled:border-black/10 disabled:bg-white/70"
             />
           </label>
         </div>

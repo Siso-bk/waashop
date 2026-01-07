@@ -65,7 +65,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
                 {formatMinis(activeJackpot.poolMinis)}
               </p>
               <div className="mt-5">
-                <JackpotPlayButton jackpot={activeJackpot} disabled={!signedIn} />
+                <JackpotPlayButton jackpot={activeJackpot} signedIn={signedIn} />
               </div>
             </div>
           </div>

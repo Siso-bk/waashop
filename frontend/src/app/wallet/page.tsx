@@ -100,7 +100,7 @@ export default async function WalletPage({
               </div>
               <h3 className="mt-2 text-lg font-semibold text-black">{box.name}</h3>
               <div className="mt-3">
-                <BoxPurchaseButton box={box} disabled={!user} />
+                <BoxPurchaseButton box={box} signedIn={Boolean(user)} />
               </div>
             </article>
           ))}

@@ -109,7 +109,7 @@ export default async function ShopPage({
       )}
 
       {activeTab === "challenges" && (
-        <ChallengeShowcase challenges={filteredChallenges} />
+        <ChallengeShowcase challenges={filteredChallenges} signedIn={Boolean(user)} />
       )}
 
       {activeTab === "jackpot-plays" && (

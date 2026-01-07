@@ -7,9 +7,10 @@ import { formatMinis } from "@/lib/minis";
 
 type Props = {
   challenges: ChallengeProduct[];
+  signedIn: boolean;
 };
 
-export function ChallengeShowcase({ challenges }: Props) {
+export function ChallengeShowcase({ challenges, signedIn }: Props) {
   const [activeId, setActiveId] = useState<string | null>(challenges[0]?.id ?? null);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export function ChallengeShowcase({ challenges }: Props) {
               {formatMinis(activeChallenge.ticketPriceMinis)}
             </p>
             <div className="mt-5">
-              <ChallengePurchaseButton challenge={activeChallenge} />
+              <ChallengePurchaseButton challenge={activeChallenge} signedIn={signedIn} />
             </div>
           </div>
         </div>

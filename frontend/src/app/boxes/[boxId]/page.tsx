@@ -50,7 +50,7 @@ export default async function BoxDetails({ params }: Props) {
           <RewardTable tiers={box.rewardTiers} guaranteedMin={box.guaranteedMinMinis} />
         </div>
         <div className="mt-6">
-          <BoxPurchaseButton box={box} disabled={!user} />
+          <BoxPurchaseButton box={box} signedIn={Boolean(user)} />
           {!user && <p className="mt-2 text-xs text-red-500">Log in with email or username@pai to buy boxes.</p>}
         </div>
       </div>

@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChallengeProduct } from "@/types";
 
 interface Props {
   challenge: ChallengeProduct;
+  signedIn?: boolean;
 }
 
-export function ChallengePurchaseButton({ challenge }: Props) {
+export function ChallengePurchaseButton({ challenge, signedIn = true }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [needsAuth, setNeedsAuth] = useState(false);
 
   const remaining = Math.max(challenge.ticketCount - challenge.ticketsSold, 0);
   const hasWinner = Boolean(challenge.winnerUserId);
@@ -18,9 +21,15 @@ export function ChallengePurchaseButton({ challenge }: Props) {
   const ticketLabel = challenge.winnerTicketNumber ? `Ticket #${challenge.winnerTicketNumber}` : "Winning ticket";
 
   const handleBuy = async () => {
+    if (!signedIn) {
+      setNeedsAuth(true);
+      setError("Sign in to buy a ticket.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setSuccess(null);
+    setNeedsAuth(false);
     try {
       const response = await fetch(`/api/challenges/${challenge.id}/buy`, {
         method: "POST",
@@ -32,6 +41,10 @@ export function ChallengePurchaseButton({ challenge }: Props) {
       });
       const data = await response.json();
       if (!response.ok) {
+        if (response.status === 401) {
+          setNeedsAuth(true);
+          throw new Error("Sign in to buy a ticket.");
+        }
         throw new Error(data.error || "Unable to buy ticket");
       }
       setSuccess("Ticket purchased. Good luck!");
@@ -58,6 +71,11 @@ export function ChallengePurchaseButton({ challenge }: Props) {
               ? "Processing..."
               : "Buy ticket"}
       </button>
+      {needsAuth && (
+        <Link href="/login" className="text-xs font-semibold text-black underline">
+          Sign in to continue
+        </Link>
+      )}
       {hasWinner && (
         <div className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-[11px] text-gray-600">
           <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Winner</p>

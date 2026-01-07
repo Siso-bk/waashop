@@ -157,7 +157,7 @@ export default async function HomePage() {
                     {challenge.description && <p className="text-sm text-gray-600">{challenge.description}</p>}
                   </header>
                   <p className="text-xs text-gray-500">{formatMinis(challenge.ticketPriceMinis ?? 0)} each</p>
-                  <ChallengePurchaseButton challenge={challenge} />
+                  <ChallengePurchaseButton challenge={challenge} signedIn={Boolean(user)} />
                 </article>
             ))}
           </div>
@@ -194,7 +194,7 @@ export default async function HomePage() {
                     WINNER PRIZE {formatMinis(winnerPrize)}
                   </p>
                   <div className="mt-6">
-                    <JackpotPlayButton jackpot={jackpot} disabled={!user} />
+                    <JackpotPlayButton jackpot={jackpot} signedIn={Boolean(user)} />
                   </div>
                 </article>
               );
@@ -304,7 +304,7 @@ export default async function HomePage() {
                   <span>TRY AND SEE IT NOW</span>
                 </div>
                 <div className="mt-6">
-                  <BoxPurchaseButton box={box} disabled={!user} />
+                  <BoxPurchaseButton box={box} signedIn={Boolean(user)} />
                 </div>
               </article>
             );

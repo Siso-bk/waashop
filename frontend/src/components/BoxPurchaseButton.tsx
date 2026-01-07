@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MysteryBoxDto } from "@/types";
 import { formatMinis } from "@/lib/minis";
 
 interface Props {
   box: MysteryBoxDto;
+  signedIn?: boolean;
   disabled?: boolean;
 }
 
@@ -17,10 +19,11 @@ const newPurchaseId = () => {
   return `${Date.now()}-${Math.random()}`;
 };
 
-export function BoxPurchaseButton({ box, disabled }: Props) {
+export function BoxPurchaseButton({ box, signedIn = true, disabled }: Props) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsAuth, setNeedsAuth] = useState(false);
   const [result, setResult] = useState<null | {
     purchaseId: string;
     rewardMinis: number;
@@ -33,9 +36,15 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
   const isSoldOut = remaining !== null && remaining <= 0;
 
   const handleBuy = async () => {
+    if (!signedIn) {
+      setNeedsAuth(true);
+      setError("Sign in to open a box.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setShowResult(false);
+    setNeedsAuth(false);
     try {
       const purchaseId = newPurchaseId();
       const response = await fetch("/api/boxes/buy", {
@@ -49,6 +58,11 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
 
       const data = await response.json();
       if (!response.ok) {
+        if (response.status === 401) {
+          setNeedsAuth(true);
+          setError("Sign in to open a box.");
+          return;
+        }
         setError(data.error || "Unable to complete purchase");
         return;
       }
@@ -84,6 +98,11 @@ export function BoxPurchaseButton({ box, disabled }: Props) {
         {isSoldOut ? "Sold out" : isLoading ? "Processing..." : `A BOX FOR ${formatMinis(box.priceMinis ?? 0)}`}
       </button>
       {error && <p className="text-sm text-red-500">{error}</p>}
+      {needsAuth && (
+        <Link href="/login" className="text-xs font-semibold text-black underline">
+          Sign in to continue
+        </Link>
+      )}
       {result && showResult && (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/60 p-4">
           <div className="max-w-sm rounded-3xl border border-white/10 bg-black p-6 text-center text-white shadow-xl">

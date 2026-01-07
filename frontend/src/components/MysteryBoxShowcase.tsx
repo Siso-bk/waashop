@@ -73,7 +73,7 @@ export function MysteryBoxShowcase({ boxes, signedIn }: Props) {
               {formatMinis(activeBox.priceMinis)}
             </p>
             <div className="mt-5">
-              <BoxPurchaseButton box={activeBox} disabled={!signedIn} />
+              <BoxPurchaseButton box={activeBox} signedIn={signedIn} />
             </div>
           </div>
         </div>
