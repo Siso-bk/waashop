@@ -330,7 +330,6 @@ export default async function HomePage() {
             </div>
             <Link
               href="/vendor/apply"
-              onClick={() => triggerNavigationProgress()}
               className="inline-flex items-center justify-center rounded-full border border-[var(--surface-border)] bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/80 active:scale-[0.98] active:translate-y-px"
             >
               Start vendor application
