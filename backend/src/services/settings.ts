@@ -40,6 +40,28 @@ export const getPlatformSettings = async () => {
       reservedHandles: DEFAULT_RESERVED_HANDLES,
       transferLimitMinis: env.TRANSFER_LIMIT_MINIS,
       transferFeePercent: env.TRANSFER_FEE_PERCENT,
+      depositMethodEntries: [
+        { key: "usd-bank-1", currency: "USD", method: "BANK_TRANSFER", label: "Bank transfer" },
+        { key: "usd-mobile-1", currency: "USD", method: "MOBILE_MONEY", label: "Mobile money" },
+        { key: "usd-wallet-1", currency: "USD", method: "WALLET_ADDRESS", label: "Wallet address" },
+        { key: "etb-bank-1", currency: "ETB", method: "BANK_TRANSFER", label: "Bank transfer" },
+        { key: "etb-mobile-1", currency: "ETB", method: "MOBILE_MONEY", label: "Mobile money" },
+        { key: "etb-wallet-1", currency: "ETB", method: "WALLET_ADDRESS", label: "Wallet address" },
+      ],
+      payoutMethodEntries: [
+        { key: "usd-bank-1", currency: "USD", method: "BANK_TRANSFER", label: "Bank transfer" },
+        { key: "usd-mobile-1", currency: "USD", method: "MOBILE_MONEY", label: "Mobile money" },
+        { key: "usd-wallet-1", currency: "USD", method: "WALLET_ADDRESS", label: "Wallet address" },
+        { key: "etb-bank-1", currency: "ETB", method: "BANK_TRANSFER", label: "Bank transfer" },
+        { key: "etb-mobile-1", currency: "ETB", method: "MOBILE_MONEY", label: "Mobile money" },
+        { key: "etb-wallet-1", currency: "ETB", method: "WALLET_ADDRESS", label: "Wallet address" },
+      ],
+      payoutProcessingTimes: {
+        BANK_TRANSFER: "1–3 business days",
+        MOBILE_MONEY: "Same day",
+        WALLET_ADDRESS: "Within 24 hours",
+        OTHER: "1–3 business days",
+      },
     });
   }
   cachedSettings = settings as IPlatformSettings;

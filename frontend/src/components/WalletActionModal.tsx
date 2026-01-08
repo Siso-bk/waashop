@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useActionState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useActionState, type ChangeEvent } from "react";
 import { formatMinis } from "@/lib/minis";
 import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { uploadFileToGcs } from "@/lib/uploads";
 
 type TransferDto = {
   id: string;
@@ -30,6 +31,23 @@ type WalletActionModalProps = {
     minisPerUsd: number;
     usdToEtb: number;
   };
+  depositMethodEntries: {
+    currency: "USD" | "ETB";
+    method: "BANK_TRANSFER" | "MOBILE_MONEY" | "WALLET_ADDRESS" | string;
+    label?: string;
+    accountName?: string;
+    accountNumber?: string;
+    phoneNumber?: string;
+    walletAddress?: string;
+    instructions?: string;
+  }[];
+  payoutMethodEntries: {
+    currency: "USD" | "ETB";
+    method: "BANK_TRANSFER" | "MOBILE_MONEY" | "WALLET_ADDRESS" | string;
+    label?: string;
+    instructions?: string;
+  }[];
+  payoutProcessingTimes: Record<string, string>;
   initialRecipient?: string;
   initialAmount?: string;
   initialAction?: ActionType;
@@ -95,6 +113,9 @@ export function WalletActionModal({
   outgoingTransfers,
   incomingTransfers,
   fxSettings,
+  depositMethodEntries,
+  payoutMethodEntries,
+  payoutProcessingTimes,
   initialRecipient,
   initialAmount,
   initialAction,
@@ -118,6 +139,17 @@ export function WalletActionModal({
   const [usdValue, setUsdValue] = useState("");
   const [etbValue, setEtbValue] = useState("");
   const [activeCurrency, setActiveCurrency] = useState<"MINIS" | "USD" | "ETB">("MINIS");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethodKey, setPaymentMethodKey] = useState("");
+  const [selectedDepositIndex, setSelectedDepositIndex] = useState("");
+  const [payoutMethod, setPayoutMethod] = useState("");
+  const [payoutMethodKey, setPayoutMethodKey] = useState("");
+  const [selectedPayoutIndex, setSelectedPayoutIndex] = useState("");
+  const [payoutConfirmed, setPayoutConfirmed] = useState(false);
+  const [proofUrl, setProofUrl] = useState("");
+  const [proofUploading, setProofUploading] = useState(false);
+  const [proofError, setProofError] = useState<string | null>(null);
+  const [depositCopyMessage, setDepositCopyMessage] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrStatus, setQrStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
@@ -161,6 +193,35 @@ export function WalletActionModal({
     ],
     []
   );
+  const depositOptions = useMemo(() => {
+    if (activeCurrency !== "USD" && activeCurrency !== "ETB") return [];
+    return depositMethodEntries.filter((entry) => entry.currency === activeCurrency);
+  }, [activeCurrency, depositMethodEntries]);
+  const payoutOptions = useMemo(() => {
+    if (activeCurrency !== "USD" && activeCurrency !== "ETB") return [];
+    return payoutMethodEntries.filter((entry) => entry.currency === activeCurrency);
+  }, [activeCurrency, payoutMethodEntries]);
+  const selectedDepositMethod = useMemo(
+    () => {
+      if (!selectedDepositIndex) return undefined;
+      const index = Number(selectedDepositIndex);
+      return Number.isFinite(index) ? depositOptions[index] : undefined;
+    },
+    [depositOptions, selectedDepositIndex]
+  );
+  const selectedPayoutMethod = useMemo(() => {
+    if (!selectedPayoutIndex) return undefined;
+    const index = Number(selectedPayoutIndex);
+    return Number.isFinite(index) ? payoutOptions[index] : undefined;
+  }, [payoutOptions, selectedPayoutIndex]);
+  const payoutMethodType = selectedPayoutMethod?.method || payoutMethod;
+  const payoutFieldLabel = useMemo(() => {
+    const method = selectedPayoutMethod?.method || payoutMethod;
+    if (method === "BANK_TRANSFER" || method === "CBE") return "Bank account number";
+    if (method === "MOBILE_MONEY" || method === "TELEBIRR") return "Phone number";
+    if (method === "WALLET_ADDRESS") return "Wallet address";
+    return "Account / wallet address";
+  }, [payoutMethod, selectedPayoutMethod]);
 
   useEffect(() => {
     if (!userHandle) return;
@@ -198,7 +259,73 @@ export function WalletActionModal({
     }
     if (active !== "deposit") setIsDepositSubmitting(false);
     if (active !== "withdraw") setIsWithdrawSubmitting(false);
+    if (active !== "withdraw") setPayoutMethod("");
+    if (active !== "deposit") {
+      setSelectedDepositIndex("");
+      setPaymentMethod("");
+      setPaymentMethodKey("");
+    }
+    if (active !== "withdraw") {
+      setSelectedPayoutIndex("");
+      setPayoutConfirmed(false);
+    }
   }, [active]);
+
+  useEffect(() => {
+    if (activeCurrency !== "USD" && activeCurrency !== "ETB") {
+      setSelectedDepositIndex("");
+      setPaymentMethod("");
+      setPaymentMethodKey("");
+      return;
+    }
+    if (selectedDepositIndex === "OTHER") {
+      setPaymentMethod("OTHER");
+      setPaymentMethodKey("");
+      return;
+    }
+    if (selectedDepositIndex) {
+      const index = Number(selectedDepositIndex);
+      const entry = Number.isFinite(index) ? depositOptions[index] : undefined;
+      if (!entry) {
+        setSelectedDepositIndex("");
+        setPaymentMethod("");
+        setPaymentMethodKey("");
+        return;
+      }
+      setPaymentMethod(entry.label || entry.method);
+      setPaymentMethodKey(entry.key || `${entry.currency}-${entry.method}-${index}`);
+    } else if (depositOptions.length === 1) {
+      setSelectedDepositIndex("0");
+    }
+  }, [activeCurrency, selectedDepositIndex, depositOptions]);
+
+  useEffect(() => {
+    if (activeCurrency !== "USD" && activeCurrency !== "ETB") {
+      setSelectedPayoutIndex("");
+      setPayoutMethod("");
+      setPayoutMethodKey("");
+      return;
+    }
+    if (selectedPayoutIndex === "OTHER") {
+      setPayoutMethod("OTHER");
+      setPayoutMethodKey("");
+      return;
+    }
+    if (selectedPayoutIndex) {
+      const index = Number(selectedPayoutIndex);
+      const entry = Number.isFinite(index) ? payoutOptions[index] : undefined;
+      if (!entry) {
+        setSelectedPayoutIndex("");
+        setPayoutMethod("");
+        setPayoutMethodKey("");
+        return;
+      }
+      setPayoutMethod(entry.label || entry.method);
+      setPayoutMethodKey(entry.key || `${entry.currency}-${entry.method}-${index}`);
+    } else if (payoutOptions.length === 1) {
+      setSelectedPayoutIndex("0");
+    }
+  }, [activeCurrency, payoutOptions, selectedPayoutIndex]);
 
   const updateAmountsFromMinis = useCallback(
     (minisRaw: string) => {
@@ -259,6 +386,56 @@ export function WalletActionModal({
     },
     [fxSettings.minisPerUsd, fxSettings.usdToEtb]
   );
+
+  const resetDepositProof = useCallback(() => {
+    setProofUrl("");
+    setProofUploading(false);
+    setProofError(null);
+  }, []);
+
+  const handleOpenAction = useCallback(
+    (next: ActionType) => {
+      setActive(next);
+      if (next === "deposit") {
+        setPaymentMethod("");
+        resetDepositProof();
+      }
+    },
+    [resetDepositProof]
+  );
+
+  const handleProofUpload = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) {
+        return;
+      }
+      setProofError(null);
+      setProofUploading(true);
+      try {
+        const uploadedUrl = await uploadFileToGcs(file, "deposit-proofs");
+        setProofUrl(uploadedUrl);
+      } catch (error) {
+        setProofError(error instanceof Error ? error.message : "Upload failed.");
+      } finally {
+        setProofUploading(false);
+      }
+    },
+    []
+  );
+
+  const handleDepositCopy = useCallback((value: string, label: string) => {
+    if (!value) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(value).then(
+        () => setDepositCopyMessage(`${label} copied`),
+        () => setDepositCopyMessage("Copy failed")
+      );
+    } else {
+      setDepositCopyMessage("Copy not supported");
+    }
+    window.setTimeout(() => setDepositCopyMessage(null), 1500);
+  }, []);
 
   useEffect(() => {
     if (active !== "receive") {
@@ -481,7 +658,7 @@ export function WalletActionModal({
             <button
               key={action.key}
               type="button"
-              onClick={() => setActive(action.key as ActionType)}
+              onClick={() => handleOpenAction(action.key as ActionType)}
               className={`flex min-w-[90px] items-center justify-center rounded-full px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.26em] transition ${
                 active === action.key
                   ? "bg-black text-white hover:bg-gray-900"
@@ -573,22 +750,134 @@ export function WalletActionModal({
                     />
                   </label>
                 </div>
-                <input
-                  name="paymentMethod"
-                  required
-                  placeholder="Payment method"
-                  className="w-full rounded-xl border border-black/10 px-3 py-2"
-                />
+                <label className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Payment method</span>
+                  <select
+                    required
+                    value={selectedDepositIndex}
+                    onChange={(event) => setSelectedDepositIndex(event.target.value)}
+                    className="w-full rounded-xl border border-black/10 bg-white px-3 py-2"
+                  >
+                    <option value="" disabled>
+                      Select method
+                    </option>
+                    {depositOptions.map((entry, index) => (
+                      <option key={`${entry.currency}-${entry.method}-${index}`} value={String(index)}>
+                        {entry.label || entry.method}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <input type="hidden" name="paymentMethod" value={paymentMethod} />
+                <input type="hidden" name="paymentMethodKey" value={paymentMethodKey} />
+                {activeCurrency !== "USD" && activeCurrency !== "ETB" && (
+                  <p className="text-xs text-gray-500">
+                    Select USD or ETB to see the available payment options.
+                  </p>
+                )}
+                {selectedDepositMethod &&
+                  (selectedDepositMethod.accountName ||
+                    selectedDepositMethod.accountNumber ||
+                    selectedDepositMethod.phoneNumber ||
+                    selectedDepositMethod.walletAddress ||
+                    selectedDepositMethod.instructions) && (
+                    <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-xs text-gray-600">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-400">
+                        Payment details
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        {selectedDepositMethod.accountName && (
+                          <div className="flex items-center justify-between gap-2">
+                            <p>
+                              <span className="text-gray-400">Account name:</span>{" "}
+                              {selectedDepositMethod.accountName}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleDepositCopy(selectedDepositMethod.accountName || "", "Account name")}
+                              className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-gray-500"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        )}
+                        {selectedDepositMethod.accountNumber && (
+                          <div className="flex items-center justify-between gap-2">
+                            <p>
+                              <span className="text-gray-400">Account number:</span>{" "}
+                              {selectedDepositMethod.accountNumber}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDepositCopy(selectedDepositMethod.accountNumber || "", "Account number")
+                              }
+                              className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-gray-500"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        )}
+                        {selectedDepositMethod.phoneNumber && (
+                          <div className="flex items-center justify-between gap-2">
+                            <p>
+                              <span className="text-gray-400">Phone number:</span>{" "}
+                              {selectedDepositMethod.phoneNumber}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDepositCopy(selectedDepositMethod.phoneNumber || "", "Phone number")
+                              }
+                              className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-gray-500"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        )}
+                        {selectedDepositMethod.walletAddress && (
+                          <div className="flex items-center justify-between gap-2">
+                            <p>
+                              <span className="text-gray-400">Wallet address:</span>{" "}
+                              {selectedDepositMethod.walletAddress}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDepositCopy(selectedDepositMethod.walletAddress || "", "Wallet address")
+                              }
+                              className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-gray-500"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        )}
+                        {selectedDepositMethod.instructions && (
+                          <p className="text-gray-500">{selectedDepositMethod.instructions}</p>
+                        )}
+                      </div>
+                      {depositCopyMessage && <p className="mt-2 text-[10px] text-gray-400">{depositCopyMessage}</p>}
+                    </div>
+                  )}
                 <input
                   name="paymentReference"
                   placeholder="Transaction reference"
                   className="w-full rounded-xl border border-black/10 px-3 py-2"
                 />
-                <input
-                  name="proofUrl"
-                  placeholder="Proof link (optional)"
-                  className="w-full rounded-xl border border-black/10 px-3 py-2"
-                />
+                <input type="hidden" name="proofUrl" value={proofUrl} />
+                <label className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Upload proof</span>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={handleProofUpload}
+                    className="w-full rounded-xl border border-black/10 px-3 py-2 text-xs text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-black file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white"
+                    required
+                  />
+                </label>
+                {proofUploading && <p className="text-xs text-gray-500">Uploading proof...</p>}
+                {!proofUploading && !proofUrl && <p className="text-xs text-gray-500">Receipt upload required.</p>}
+                {proofError && <p className="text-xs text-red-500">{proofError}</p>}
                 <textarea
                   name="note"
                   rows={3}
@@ -597,7 +886,7 @@ export function WalletActionModal({
                 />
                 <button
                   type="submit"
-                  disabled={isDepositSubmitting || depositState.status === "success"}
+                  disabled={isDepositSubmitting || proofUploading || !proofUrl || depositState.status === "success"}
                   className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                     isDepositSubmitting
                       ? "bg-black/80"
@@ -608,7 +897,9 @@ export function WalletActionModal({
                       : "bg-black hover:bg-gray-900"
                   }`}
                 >
-                  {isDepositSubmitting
+                  {proofUploading
+                    ? "Uploading proof…"
+                    : isDepositSubmitting
                     ? "Submitting…"
                     : depositState.status === "success"
                     ? "Success ✓"
@@ -689,22 +980,109 @@ export function WalletActionModal({
                     />
                   </label>
                 </div>
-                <input
-                  name="payoutMethod"
-                  required
-                  placeholder="Payout method"
-                  className="w-full rounded-xl border border-black/10 px-3 py-2"
-                />
-                <input
-                  name="payoutAddress"
-                  placeholder="Account / wallet address"
-                  className="w-full rounded-xl border border-black/10 px-3 py-2"
-                />
-                <input
-                  name="accountName"
-                  placeholder="Account name"
-                  className="w-full rounded-xl border border-black/10 px-3 py-2"
-                />
+                <label className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Payout method</span>
+                  <select
+                    required
+                    className="w-full rounded-xl border border-black/10 bg-white px-3 py-2"
+                    value={selectedPayoutIndex}
+                    onChange={(event) => setSelectedPayoutIndex(event.target.value)}
+                  >
+                    <option value="" disabled>
+                      Select method
+                    </option>
+                    {payoutOptions.map((entry, index) => (
+                      <option key={`${entry.currency}-${entry.method}-${index}`} value={String(index)}>
+                        {entry.label || entry.method}
+                      </option>
+                    ))}
+                    <option value="OTHER">Other method</option>
+                  </select>
+                </label>
+                <input type="hidden" name="payoutMethod" value={payoutMethod} />
+                <input type="hidden" name="payoutMethodKey" value={payoutMethodKey} />
+                <input type="hidden" name="payoutMethodType" value={payoutMethodType} />
+                {activeCurrency !== "USD" && activeCurrency !== "ETB" && (
+                  <p className="text-xs text-gray-500">
+                    Select USD or ETB to see the available payout options.
+                  </p>
+                )}
+                {(payoutMethodType === "BANK_TRANSFER" || payoutMethodType === "CBE") && (
+                  <>
+                    <input
+                      name="accountName"
+                      placeholder="Account name"
+                      required
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                    <input
+                      name="payoutBankName"
+                      placeholder="Bank name"
+                      required
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                    <input
+                      name="payoutAccountNumber"
+                      placeholder="Account number"
+                      required
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </>
+                )}
+                {(payoutMethodType === "MOBILE_MONEY" || payoutMethodType === "TELEBIRR") && (
+                  <>
+                    <input
+                      name="payoutPhone"
+                      placeholder="Phone number"
+                      required
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                    <input
+                      name="accountName"
+                      placeholder="Account name (optional)"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                    <input
+                      name="payoutProviderName"
+                      placeholder="Provider name (optional)"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </>
+                )}
+                {(payoutMethodType === "WALLET_ADDRESS" || payoutMethodType === "OTHER") && (
+                  <>
+                    <input
+                      name="payoutAddress"
+                      placeholder={payoutFieldLabel}
+                      required={payoutMethodType === "WALLET_ADDRESS"}
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                    <input
+                      name="payoutNetwork"
+                      placeholder="Network (optional)"
+                      className="w-full rounded-xl border border-black/10 px-3 py-2"
+                    />
+                  </>
+                )}
+                {selectedPayoutMethod?.instructions && (
+                  <p className="text-xs text-gray-500">{selectedPayoutMethod.instructions}</p>
+                )}
+                <p className="text-xs text-gray-500">
+                  Processing time:{" "}
+                  {payoutProcessingTimes[payoutMethodType] ||
+                    payoutProcessingTimes.OTHER ||
+                    "1–3 business days"}
+                  .
+                </p>
+                <label className="flex items-start gap-2 rounded-xl border border-black/10 px-3 py-2 text-xs text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={payoutConfirmed}
+                    onChange={(event) => setPayoutConfirmed(event.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>I confirm payout details are correct.</span>
+                </label>
                 <textarea
                   name="note"
                   rows={3}
@@ -713,7 +1091,7 @@ export function WalletActionModal({
                 />
                 <button
                   type="submit"
-                  disabled={isWithdrawSubmitting || withdrawState.status === "success"}
+                  disabled={isWithdrawSubmitting || withdrawState.status === "success" || !payoutConfirmed}
                   className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                     isWithdrawSubmitting
                       ? "bg-black/80"

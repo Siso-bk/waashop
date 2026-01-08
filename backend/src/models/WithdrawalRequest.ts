@@ -6,8 +6,15 @@ export interface IWithdrawalRequest extends Document {
   userId: Types.ObjectId;
   amountMinis: number;
   payoutMethod: string;
+  payoutMethodKey?: string;
+  payoutMethodType?: string;
   payoutAddress?: string;
   accountName?: string;
+  payoutBankName?: string;
+  payoutAccountNumber?: string;
+  payoutPhone?: string;
+  payoutProviderName?: string;
+  payoutNetwork?: string;
   note?: string;
   status: WithdrawalStatus;
   adminNote?: string;
@@ -22,8 +29,15 @@ const WithdrawalRequestSchema = new Schema<IWithdrawalRequest>(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     amountMinis: { type: Number, required: true },
     payoutMethod: { type: String, required: true },
+    payoutMethodKey: { type: String },
+    payoutMethodType: { type: String },
     payoutAddress: { type: String },
     accountName: { type: String },
+    payoutBankName: { type: String },
+    payoutAccountNumber: { type: String },
+    payoutPhone: { type: String },
+    payoutProviderName: { type: String },
+    payoutNetwork: { type: String },
     note: { type: String },
     status: { type: String, enum: ["PENDING", "APPROVED", "REJECTED"], default: "PENDING" },
     adminNote: { type: String },

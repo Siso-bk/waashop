@@ -7,7 +7,13 @@ export interface IDepositRequest extends Document {
   amountMinis: number;
   currency?: string;
   paymentMethod: string;
+  paymentMethodKey?: string;
+  senderName?: string;
+  senderPhone?: string;
+  senderAccount?: string;
   paymentReference?: string;
+  otherMethodName?: string;
+  otherMethodDetails?: string;
   proofUrl?: string;
   note?: string;
   status: DepositStatus;
@@ -25,7 +31,13 @@ const DepositRequestSchema = new Schema<IDepositRequest>(
     amountMinis: { type: Number, required: true },
     currency: { type: String },
     paymentMethod: { type: String, required: true },
+    paymentMethodKey: { type: String },
+    senderName: { type: String },
+    senderPhone: { type: String },
+    senderAccount: { type: String },
     paymentReference: { type: String },
+    otherMethodName: { type: String },
+    otherMethodDetails: { type: String },
     proofUrl: { type: String },
     note: { type: String },
     status: { type: String, enum: ["PENDING", "APPROVED", "REJECTED"], default: "PENDING" },

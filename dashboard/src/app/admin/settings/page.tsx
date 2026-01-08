@@ -7,6 +7,7 @@ import { backendFetch } from "@/lib/backendClient";
 import { requireToken } from "@/lib/session";
 import { JackpotSoundFields } from "./JackpotSoundFields";
 import { MysteryBoxSoundFields } from "./MysteryBoxSoundFields";
+import { DepositMethodsEditor, PayoutMethodsEditor } from "./DepositMethodsEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,9 @@ export default async function AdminSettingsPage() {
   const mysteryBoxWinSoundUrl = settings.mysteryBoxWinSoundUrl ?? "";
   const mysteryBoxLoseSoundUrl = settings.mysteryBoxLoseSoundUrl ?? "";
   const reservedHandles = settings.reservedHandles ?? [];
+  const depositMethodEntries = settings.depositMethodEntries ?? [];
+  const payoutMethodEntries = settings.payoutMethodEntries ?? [];
+  const payoutProcessingTimes = settings.payoutProcessingTimes ?? {};
 
   return (
     <div className="space-y-6">
@@ -181,6 +185,54 @@ export default async function AdminSettingsPage() {
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
             />
           </label>
+          <DepositMethodsEditor initialEntries={depositMethodEntries} />
+          <PayoutMethodsEditor initialEntries={payoutMethodEntries} />
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Payout processing times</p>
+              <p className="mt-1 text-sm text-slate-500">
+                These messages show under withdrawal based on method type.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-sm text-slate-600">
+                Bank transfer
+                <input
+                  name="payoutProcessing_BANK_TRANSFER"
+                  type="text"
+                  defaultValue={payoutProcessingTimes.BANK_TRANSFER || "1–3 business days"}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+                />
+              </label>
+              <label className="block text-sm text-slate-600">
+                Mobile money
+                <input
+                  name="payoutProcessing_MOBILE_MONEY"
+                  type="text"
+                  defaultValue={payoutProcessingTimes.MOBILE_MONEY || "Same day"}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+                />
+              </label>
+              <label className="block text-sm text-slate-600">
+                Wallet address
+                <input
+                  name="payoutProcessing_WALLET_ADDRESS"
+                  type="text"
+                  defaultValue={payoutProcessingTimes.WALLET_ADDRESS || "Within 24 hours"}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+                />
+              </label>
+              <label className="block text-sm text-slate-600">
+                Other
+                <input
+                  name="payoutProcessing_OTHER"
+                  type="text"
+                  defaultValue={payoutProcessingTimes.OTHER || "1–3 business days"}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+                />
+              </label>
+            </div>
+          </div>
           <MysteryBoxSoundFields winUrl={mysteryBoxWinSoundUrl} loseUrl={mysteryBoxLoseSoundUrl} />
           <JackpotSoundFields winUrl={jackpotWinSoundUrl} loseUrl={jackpotLoseSoundUrl} />
           <div className="grid gap-4 md:grid-cols-2">
@@ -222,6 +274,28 @@ export default async function AdminSettingsPage() {
 
 async function updateFees(formData: FormData) {
   "use server";
+  const depositMethodEntriesRaw = String(formData.get("depositMethodEntries") || "[]");
+  const payoutMethodEntriesRaw = String(formData.get("payoutMethodEntries") || "[]");
+  let depositMethodEntries = [];
+  let payoutMethodEntries = [];
+  try {
+    const parsed = JSON.parse(depositMethodEntriesRaw);
+    depositMethodEntries = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    depositMethodEntries = [];
+  }
+  try {
+    const parsed = JSON.parse(payoutMethodEntriesRaw);
+    payoutMethodEntries = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    payoutMethodEntries = [];
+  }
+  const payoutProcessingTimes = {
+    BANK_TRANSFER: String(formData.get("payoutProcessing_BANK_TRANSFER") || "").trim(),
+    MOBILE_MONEY: String(formData.get("payoutProcessing_MOBILE_MONEY") || "").trim(),
+    WALLET_ADDRESS: String(formData.get("payoutProcessing_WALLET_ADDRESS") || "").trim(),
+    OTHER: String(formData.get("payoutProcessing_OTHER") || "").trim(),
+  };
   const payload = {
     feeMysteryBox: Number(formData.get("feeMysteryBox")),
     feeMysteryBoxPercent: Number(formData.get("feeMysteryBoxPercent")),
@@ -245,6 +319,9 @@ async function updateFees(formData: FormData) {
       .filter(Boolean),
     transferLimitMinis: Number(formData.get("transferLimitMinis")),
     transferFeePercent: Number(formData.get("transferFeePercent")),
+    depositMethodEntries,
+    payoutMethodEntries,
+    payoutProcessingTimes,
   };
   await backendFetch("/api/admin/settings/fees", {
     method: "PATCH",

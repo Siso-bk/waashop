@@ -26,9 +26,30 @@ type ActionResult = {
   message?: string;
 };
 
-type FxSettings = {
+type DepositMethodInfo = {
+  key?: string;
+  currency: "USD" | "ETB";
+  method: "BANK_TRANSFER" | "MOBILE_MONEY" | "WALLET_ADDRESS" | string;
+  label?: string;
+  accountName?: string;
+  accountNumber?: string;
+  phoneNumber?: string;
+  walletAddress?: string;
+  instructions?: string;
+};
+
+type PublicSettings = {
   minisPerUsd: number;
   usdToEtb: number;
+  depositMethodEntries?: DepositMethodInfo[];
+  payoutMethodEntries?: {
+    key?: string;
+    currency: "USD" | "ETB";
+    method: "BANK_TRANSFER" | "MOBILE_MONEY" | "WALLET_ADDRESS" | string;
+    label?: string;
+    instructions?: string;
+  }[];
+  payoutProcessingTimes?: Record<string, string>;
 };
 
 export default async function WalletPage({
@@ -58,8 +79,14 @@ export default async function WalletPage({
     getRecentLedger(50),
     getActiveJackpots(),
     backendFetch<{ outgoing: TransferDto[]; incoming: TransferDto[] }>("/api/transfers"),
-    backendFetch<{ settings: FxSettings }>("/api/settings/public", { auth: false }).catch(() => ({
-      settings: { minisPerUsd: 100, usdToEtb: 120 },
+    backendFetch<{ settings: PublicSettings }>("/api/settings/public", { auth: false }).catch(() => ({
+      settings: {
+        minisPerUsd: 100,
+        usdToEtb: 120,
+        depositMethodEntries: [],
+        payoutMethodEntries: [],
+        payoutProcessingTimes: {},
+      },
     })),
   ]);
 
@@ -84,6 +111,9 @@ export default async function WalletPage({
         outgoingTransfers={transfers.outgoing}
         incomingTransfers={transfers.incoming}
         fxSettings={fxData.settings}
+        depositMethodEntries={fxData.settings.depositMethodEntries || []}
+        payoutMethodEntries={fxData.settings.payoutMethodEntries || []}
+        payoutProcessingTimes={fxData.settings.payoutProcessingTimes || {}}
         initialRecipient={prefillRecipient}
         initialAmount={prefillAmount}
         initialAction={initialAction}
@@ -147,11 +177,21 @@ async function createDeposit(_prevState: ActionResult, formData: FormData): Prom
   if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
     return { status: "error", message: "Enter a valid amount." };
   }
+  const otherMethodName = valueOrUndefined(formData.get("otherMethodName"));
+  if (paymentMethod === "OTHER" && !otherMethodName) {
+    return { status: "error", message: "Other method name is required." };
+  }
   const payload = {
     amountMinis,
     currency: valueOrUndefined(formData.get("currency")),
     paymentMethod: String(paymentMethod),
+    paymentMethodKey: valueOrUndefined(formData.get("paymentMethodKey")),
+    senderName: valueOrUndefined(formData.get("senderName")),
+    senderPhone: valueOrUndefined(formData.get("senderPhone")),
+    senderAccount: valueOrUndefined(formData.get("senderAccount")),
     paymentReference: valueOrUndefined(formData.get("paymentReference")),
+    otherMethodName,
+    otherMethodDetails: valueOrUndefined(formData.get("otherMethodDetails")),
     proofUrl: valueOrUndefined(formData.get("proofUrl")),
     note: valueOrUndefined(formData.get("note")),
   };
@@ -179,11 +219,35 @@ async function createWithdrawal(_prevState: ActionResult, formData: FormData): P
   if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
     return { status: "error", message: "Enter a valid amount." };
   }
+  const payoutMethodType = valueOrUndefined(formData.get("payoutMethodType"));
+  const payoutAddress = valueOrUndefined(formData.get("payoutAddress"));
+  const accountName = valueOrUndefined(formData.get("accountName"));
+  const payoutBankName = valueOrUndefined(formData.get("payoutBankName"));
+  const payoutAccountNumber = valueOrUndefined(formData.get("payoutAccountNumber"));
+  const payoutPhone = valueOrUndefined(formData.get("payoutPhone"));
+  if (payoutMethodType === "BANK_TRANSFER") {
+    if (!accountName || !payoutBankName || !payoutAccountNumber) {
+      return { status: "error", message: "Bank payout details are required." };
+    }
+  }
+  if (payoutMethodType === "MOBILE_MONEY" && !payoutPhone) {
+    return { status: "error", message: "Mobile money phone number is required." };
+  }
+  if (payoutMethodType === "WALLET_ADDRESS" && !payoutAddress) {
+    return { status: "error", message: "Wallet address is required." };
+  }
   const payload = {
     amountMinis,
     payoutMethod: String(payoutMethod),
-    payoutAddress: valueOrUndefined(formData.get("payoutAddress")),
-    accountName: valueOrUndefined(formData.get("accountName")),
+    payoutMethodKey: valueOrUndefined(formData.get("payoutMethodKey")),
+    payoutMethodType,
+    payoutAddress,
+    accountName,
+    payoutBankName,
+    payoutAccountNumber,
+    payoutPhone,
+    payoutProviderName: valueOrUndefined(formData.get("payoutProviderName")),
+    payoutNetwork: valueOrUndefined(formData.get("payoutNetwork")),
     note: valueOrUndefined(formData.get("note")),
   };
   try {

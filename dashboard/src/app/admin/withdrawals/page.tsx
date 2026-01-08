@@ -61,8 +61,14 @@ async function WithdrawalsTable() {
               </td>
               <td className="px-4 py-3 text-xs text-slate-600">
                 <p>{entry.payoutMethod}</p>
+                {entry.payoutMethodKey && <p className="text-slate-400">Method key: {entry.payoutMethodKey}</p>}
                 {entry.payoutAddress && <p className="text-slate-400">{entry.payoutAddress}</p>}
                 {entry.accountName && <p className="text-slate-400">{entry.accountName}</p>}
+                {entry.payoutBankName && <p className="text-slate-400">Bank: {entry.payoutBankName}</p>}
+                {entry.payoutAccountNumber && <p className="text-slate-400">Account #: {entry.payoutAccountNumber}</p>}
+                {entry.payoutPhone && <p className="text-slate-400">Phone: {entry.payoutPhone}</p>}
+                {entry.payoutProviderName && <p className="text-slate-400">Provider: {entry.payoutProviderName}</p>}
+                {entry.payoutNetwork && <p className="text-slate-400">Network: {entry.payoutNetwork}</p>}
                 {entry.note && <p className="mt-1 text-slate-400">{entry.note}</p>}
               </td>
               <td className="px-4 py-3">

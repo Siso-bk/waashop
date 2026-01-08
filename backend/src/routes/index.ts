@@ -358,7 +358,13 @@ const serializeDeposit = (deposit: IDepositRequest & { userId?: IUser | Types.Ob
     amountMinis: deposit.amountMinis,
     currency: deposit.currency,
     paymentMethod: deposit.paymentMethod,
+    paymentMethodKey: deposit.paymentMethodKey,
+    senderName: deposit.senderName,
+    senderPhone: deposit.senderPhone,
+    senderAccount: deposit.senderAccount,
     paymentReference: deposit.paymentReference,
+    otherMethodName: deposit.otherMethodName,
+    otherMethodDetails: deposit.otherMethodDetails,
     proofUrl: deposit.proofUrl,
     note: deposit.note,
     status: deposit.status,
@@ -403,8 +409,15 @@ const serializeWithdrawal = (
     lastName,
     amountMinis: withdrawal.amountMinis,
     payoutMethod: withdrawal.payoutMethod,
+    payoutMethodKey: withdrawal.payoutMethodKey,
+    payoutMethodType: withdrawal.payoutMethodType,
     payoutAddress: withdrawal.payoutAddress,
     accountName: withdrawal.accountName,
+    payoutBankName: withdrawal.payoutBankName,
+    payoutAccountNumber: withdrawal.payoutAccountNumber,
+    payoutPhone: withdrawal.payoutPhone,
+    payoutProviderName: withdrawal.payoutProviderName,
+    payoutNetwork: withdrawal.payoutNetwork,
     note: withdrawal.note,
     status: withdrawal.status,
     adminNote: withdrawal.adminNote,
@@ -1263,13 +1276,22 @@ router.post("/deposits", authMiddleware, async (req, res) => {
     amountMinis: z.number().finite().min(0.01),
     currency: z.string().max(20).optional(),
     paymentMethod: z.string().min(1).max(100),
+    paymentMethodKey: z.string().max(120).optional(),
+    senderName: z.string().max(120).optional(),
+    senderPhone: z.string().max(80).optional(),
+    senderAccount: z.string().max(160).optional(),
     paymentReference: z.string().max(120).optional(),
+    otherMethodName: z.string().max(120).optional(),
+    otherMethodDetails: z.string().max(300).optional(),
     proofUrl: z.string().max(500).optional(),
     note: z.string().max(500).optional(),
   });
 
   try {
     const payload = schema.parse(req.body);
+    if (payload.paymentMethod === "OTHER" && !payload.otherMethodName) {
+      return res.status(400).json({ error: "Other method name is required." });
+    }
     const amountMinis = roundToTwo(payload.amountMinis);
     if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
       return res.status(400).json({ error: "Invalid amount" });
@@ -1280,7 +1302,13 @@ router.post("/deposits", authMiddleware, async (req, res) => {
       amountMinis,
       currency: payload.currency,
       paymentMethod: payload.paymentMethod,
+      paymentMethodKey: payload.paymentMethodKey,
+      senderName: payload.senderName,
+      senderPhone: payload.senderPhone,
+      senderAccount: payload.senderAccount,
       paymentReference: payload.paymentReference,
+      otherMethodName: payload.otherMethodName,
+      otherMethodDetails: payload.otherMethodDetails,
       proofUrl: payload.proofUrl,
       note: payload.note,
       status: "PENDING",
@@ -1481,8 +1509,15 @@ router.post("/withdrawals", authMiddleware, async (req, res) => {
   const schema = z.object({
     amountMinis: z.number().finite().min(0.01),
     payoutMethod: z.string().min(1).max(100),
+    payoutMethodKey: z.string().max(120).optional(),
+    payoutMethodType: z.string().max(40).optional(),
     payoutAddress: z.string().max(200).optional(),
     accountName: z.string().max(120).optional(),
+    payoutBankName: z.string().max(120).optional(),
+    payoutAccountNumber: z.string().max(120).optional(),
+    payoutPhone: z.string().max(80).optional(),
+    payoutProviderName: z.string().max(120).optional(),
+    payoutNetwork: z.string().max(120).optional(),
     note: z.string().max(500).optional(),
   });
 
@@ -1491,6 +1526,20 @@ router.post("/withdrawals", authMiddleware, async (req, res) => {
     const amountMinis = roundToTwo(payload.amountMinis);
     if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
       return res.status(400).json({ error: "Invalid amount" });
+    }
+    const methodType = payload.payoutMethodType?.toUpperCase();
+    if (methodType === "BANK_TRANSFER") {
+      if (!payload.accountName || !payload.payoutBankName || !payload.payoutAccountNumber) {
+        return res.status(400).json({ error: "Bank payout details are required." });
+      }
+    } else if (methodType === "MOBILE_MONEY") {
+      if (!payload.payoutPhone) {
+        return res.status(400).json({ error: "Mobile money phone number is required." });
+      }
+    } else if (methodType === "WALLET_ADDRESS") {
+      if (!payload.payoutAddress) {
+        return res.status(400).json({ error: "Wallet address is required." });
+      }
     }
     await connectDB();
     const user = await User.findById(req.userId).exec();
@@ -1507,8 +1556,15 @@ router.post("/withdrawals", authMiddleware, async (req, res) => {
       userId: req.userId,
       amountMinis,
       payoutMethod: payload.payoutMethod,
+      payoutMethodKey: payload.payoutMethodKey,
+      payoutMethodType: payload.payoutMethodType,
       payoutAddress: payload.payoutAddress,
       accountName: payload.accountName,
+      payoutBankName: payload.payoutBankName,
+      payoutAccountNumber: payload.payoutAccountNumber,
+      payoutPhone: payload.payoutPhone,
+      payoutProviderName: payload.payoutProviderName,
+      payoutNetwork: payload.payoutNetwork,
       note: payload.note,
       status: "PENDING",
     });
@@ -1955,6 +2011,9 @@ router.get("/settings/public", async (_req, res) => {
     settings: {
       minisPerUsd: settings.minisPerUsd,
       usdToEtb: settings.usdToEtb,
+      depositMethodEntries: settings.depositMethodEntries,
+      payoutMethodEntries: settings.payoutMethodEntries,
+      payoutProcessingTimes: settings.payoutProcessingTimes,
     },
   });
 });
@@ -2006,6 +2065,9 @@ router.get(
         reservedHandles: settings.reservedHandles,
         transferLimitMinis: settings.transferLimitMinis,
         transferFeePercent: settings.transferFeePercent,
+        depositMethodEntries: settings.depositMethodEntries,
+        payoutMethodEntries: settings.payoutMethodEntries,
+        payoutProcessingTimes: settings.payoutProcessingTimes,
       },
     });
   }
@@ -2036,6 +2098,33 @@ router.patch(
       reservedHandles: z.array(z.string().max(64)).optional(),
       transferLimitMinis: z.number().nonnegative().optional(),
       transferFeePercent: z.number().min(0).max(100).optional(),
+      depositMethodEntries: z
+        .array(
+          z.object({
+            key: z.string().max(80).optional(),
+            currency: z.enum(["USD", "ETB"]),
+            method: z.string().max(40),
+            label: z.string().max(80).optional(),
+            accountName: z.string().max(120).optional(),
+            accountNumber: z.string().max(120).optional(),
+            phoneNumber: z.string().max(80).optional(),
+            walletAddress: z.string().max(200).optional(),
+            instructions: z.string().max(500).optional(),
+          })
+        )
+        .optional(),
+      payoutMethodEntries: z
+        .array(
+          z.object({
+            key: z.string().max(80).optional(),
+            currency: z.enum(["USD", "ETB"]),
+            method: z.string().max(40),
+            label: z.string().max(80).optional(),
+            instructions: z.string().max(500).optional(),
+          })
+        )
+        .optional(),
+      payoutProcessingTimes: z.record(z.string().max(40), z.string().max(120)).optional(),
     });
     try {
       const payload = schema.parse(req.body);
@@ -2062,6 +2151,9 @@ router.patch(
           reservedHandles: doc.reservedHandles,
           transferLimitMinis: doc.transferLimitMinis,
           transferFeePercent: doc.transferFeePercent,
+          depositMethodEntries: doc.depositMethodEntries,
+          payoutMethodEntries: doc.payoutMethodEntries,
+          payoutProcessingTimes: doc.payoutProcessingTimes,
         },
       });
     } catch (error) {

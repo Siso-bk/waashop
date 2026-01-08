@@ -200,6 +200,25 @@ export interface PlatformSettingsDto {
   reservedHandles?: string[];
   transferLimitMinis: number;
   transferFeePercent: number;
+  depositMethodEntries?: {
+    key?: string;
+    currency: "USD" | "ETB";
+    method: "BANK_TRANSFER" | "MOBILE_MONEY" | "WALLET_ADDRESS" | string;
+    label?: string;
+    accountName?: string;
+    accountNumber?: string;
+    phoneNumber?: string;
+    walletAddress?: string;
+    instructions?: string;
+  }[];
+  payoutMethodEntries?: {
+    key?: string;
+    currency: "USD" | "ETB";
+    method: "BANK_TRANSFER" | "MOBILE_MONEY" | "WALLET_ADDRESS" | string;
+    label?: string;
+    instructions?: string;
+  }[];
+  payoutProcessingTimes?: Record<string, string>;
 }
 
 export interface ShopTabDto {
@@ -219,7 +238,13 @@ export interface DepositRequestDto {
   amountMinis: number;
   currency?: string;
   paymentMethod: string;
+  paymentMethodKey?: string;
+  senderName?: string;
+  senderPhone?: string;
+  senderAccount?: string;
   paymentReference?: string;
+  otherMethodName?: string;
+  otherMethodDetails?: string;
   proofUrl?: string;
   note?: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
@@ -240,8 +265,15 @@ export interface WithdrawalRequestDto {
   lastName?: string;
   amountMinis: number;
   payoutMethod: string;
+  payoutMethodKey?: string;
+  payoutMethodType?: string;
   payoutAddress?: string;
   accountName?: string;
+  payoutBankName?: string;
+  payoutAccountNumber?: string;
+  payoutPhone?: string;
+  payoutProviderName?: string;
+  payoutNetwork?: string;
   note?: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   adminNote?: string;

@@ -61,6 +61,12 @@ async function DepositsTable() {
               </td>
               <td className="px-4 py-3 text-xs text-slate-600">
                 <p>{entry.paymentMethod}</p>
+                {entry.paymentMethodKey && <p className="text-slate-400">Method key: {entry.paymentMethodKey}</p>}
+                {entry.senderName && <p className="text-slate-400">Sender: {entry.senderName}</p>}
+                {entry.senderPhone && <p className="text-slate-400">Phone: {entry.senderPhone}</p>}
+                {entry.senderAccount && <p className="text-slate-400">Account: {entry.senderAccount}</p>}
+                {entry.otherMethodName && <p className="text-slate-400">Other: {entry.otherMethodName}</p>}
+                {entry.otherMethodDetails && <p className="text-slate-400">{entry.otherMethodDetails}</p>}
                 {entry.paymentReference && <p className="text-slate-400">{entry.paymentReference}</p>}
                 {entry.note && <p className="mt-1 text-slate-400">{entry.note}</p>}
               </td>
@@ -211,4 +217,3 @@ async function rejectDepositAction(formData: FormData) {
   revalidatePath("/admin/deposits");
   revalidatePath("/deposits");
 }
-
