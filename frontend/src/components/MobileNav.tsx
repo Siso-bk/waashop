@@ -95,8 +95,10 @@ export function MobileNav() {
                   setIsNavigating(true);
                 }
               }}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-center ${
-                isActive ? "bg-black text-white" : "text-gray-500"
+              className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-center transition ${
+                isActive
+                  ? "bg-black text-white shadow-sm"
+                  : "text-gray-500 hover:text-black"
               }`}
               style={{ minWidth: "48px" }}
             >
@@ -109,6 +111,7 @@ export function MobileNav() {
                 )}
               </span>
               <span>{link.label}</span>
+              {isActive && <span className="h-1 w-6 rounded-full bg-emerald-400" />}
             </Link>
           );
         })}
