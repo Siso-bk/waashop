@@ -32,6 +32,7 @@ type WalletActionModalProps = {
     usdToEtb: number;
   };
   depositMethodEntries: {
+    key?: string;
     currency: "USD" | "ETB";
     method: "BANK_TRANSFER" | "MOBILE_MONEY" | "WALLET_ADDRESS" | string;
     label?: string;
@@ -42,6 +43,7 @@ type WalletActionModalProps = {
     instructions?: string;
   }[];
   payoutMethodEntries: {
+    key?: string;
     currency: "USD" | "ETB";
     method: "BANK_TRANSFER" | "MOBILE_MONEY" | "WALLET_ADDRESS" | string;
     label?: string;
