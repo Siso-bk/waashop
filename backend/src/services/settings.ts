@@ -62,6 +62,41 @@ export const getPlatformSettings = async () => {
         WALLET_ADDRESS: "Within 24 hours",
       },
     });
+  } else {
+    const needsDepositEntries = !settings.depositMethodEntries || settings.depositMethodEntries.length === 0;
+    const needsPayoutEntries = !settings.payoutMethodEntries || settings.payoutMethodEntries.length === 0;
+    const needsPayoutTimes = !settings.payoutProcessingTimes || Object.keys(settings.payoutProcessingTimes).length === 0;
+    if (needsDepositEntries || needsPayoutEntries || needsPayoutTimes) {
+      const updates: Partial<IPlatformSettings> = {};
+      if (needsDepositEntries) {
+        updates.depositMethodEntries = [
+          { key: "usd-bank-1", currency: "USD", method: "BANK_TRANSFER", label: "Bank transfer" },
+          { key: "usd-mobile-1", currency: "USD", method: "MOBILE_MONEY", label: "Mobile money" },
+          { key: "usd-wallet-1", currency: "USD", method: "WALLET_ADDRESS", label: "Wallet address" },
+          { key: "etb-bank-1", currency: "ETB", method: "BANK_TRANSFER", label: "Bank transfer" },
+          { key: "etb-mobile-1", currency: "ETB", method: "MOBILE_MONEY", label: "Mobile money" },
+          { key: "etb-wallet-1", currency: "ETB", method: "WALLET_ADDRESS", label: "Wallet address" },
+        ];
+      }
+      if (needsPayoutEntries) {
+        updates.payoutMethodEntries = [
+          { key: "usd-bank-1", currency: "USD", method: "BANK_TRANSFER", label: "Bank transfer" },
+          { key: "usd-mobile-1", currency: "USD", method: "MOBILE_MONEY", label: "Mobile money" },
+          { key: "usd-wallet-1", currency: "USD", method: "WALLET_ADDRESS", label: "Wallet address" },
+          { key: "etb-bank-1", currency: "ETB", method: "BANK_TRANSFER", label: "Bank transfer" },
+          { key: "etb-mobile-1", currency: "ETB", method: "MOBILE_MONEY", label: "Mobile money" },
+          { key: "etb-wallet-1", currency: "ETB", method: "WALLET_ADDRESS", label: "Wallet address" },
+        ];
+      }
+      if (needsPayoutTimes) {
+        updates.payoutProcessingTimes = {
+          BANK_TRANSFER: "1–3 business days",
+          MOBILE_MONEY: "Same day",
+          WALLET_ADDRESS: "Within 24 hours",
+        };
+      }
+      settings = (await updatePlatformSettings(updates)).toObject() as IPlatformSettings;
+    }
   }
   cachedSettings = settings as IPlatformSettings;
   cachedAt = now;
