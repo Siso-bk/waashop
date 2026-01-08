@@ -168,7 +168,7 @@ export default async function HomePage() {
                     </span>
                   </div>
                   <h3 className="mt-3 text-xl font-semibold text-black">{jackpot.name}</h3>
-                  <p className="text-sm font-semibold text-black/80">
+                  <p className="text-sm font-semibold text-emerald-500">
                     WINNER PRIZE {formatMinis(winnerPrize)}
                   </p>
                   <div className="mt-6">
@@ -275,7 +275,7 @@ export default async function HomePage() {
                   </span>
                 </div>
                 <h3 className="mt-3 text-xl font-semibold text-black">{box.name}</h3>
-                <p className="mt-1 text-sm font-semibold text-black/80">
+                <p className="mt-1 text-sm font-semibold text-emerald-500">
                   Top winner {formatMinis(topPrize)}
                 </p>
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
