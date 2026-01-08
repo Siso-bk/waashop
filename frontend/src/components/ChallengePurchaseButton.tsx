@@ -61,7 +61,7 @@ export function ChallengePurchaseButton({ challenge, signedIn = true }: Props) {
       <button
         onClick={handleBuy}
         disabled={isLoading || remaining <= 0 || hasWinner}
-        className="w-full rounded-full border border-white/15 bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="w-full rounded-full border border-orange-400/70 bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {hasWinner
           ? "Winner selected"
