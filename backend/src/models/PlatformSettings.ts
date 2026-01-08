@@ -90,7 +90,6 @@ const DEFAULT_PAYOUT_PROCESSING_TIMES: Record<string, string> = {
   BANK_TRANSFER: "1–3 business days",
   MOBILE_MONEY: "Same day",
   WALLET_ADDRESS: "Within 24 hours",
-  OTHER: "1–3 business days",
 };
 
 const PlatformSettingsSchema = new Schema<IPlatformSettings>(

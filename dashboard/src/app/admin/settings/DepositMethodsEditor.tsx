@@ -100,7 +100,6 @@ export function DepositMethodsEditor({ initialEntries }: DepositMethodsEditorPro
                     <option value="BANK_TRANSFER">Bank transfer</option>
                     <option value="MOBILE_MONEY">Mobile money</option>
                     <option value="WALLET_ADDRESS">Wallet address</option>
-                    <option value="OTHER">Other</option>
                   </select>
                 </label>
               </div>
@@ -267,7 +266,6 @@ export function PayoutMethodsEditor({ initialEntries }: PayoutMethodsEditorProps
                     <option value="BANK_TRANSFER">Bank transfer</option>
                     <option value="MOBILE_MONEY">Mobile money</option>
                     <option value="WALLET_ADDRESS">Wallet address</option>
-                    <option value="OTHER">Other</option>
                   </select>
                 </label>
               </div>

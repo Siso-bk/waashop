@@ -280,11 +280,6 @@ export function WalletActionModal({
       setPaymentMethodKey("");
       return;
     }
-    if (selectedDepositIndex === "OTHER") {
-      setPaymentMethod("OTHER");
-      setPaymentMethodKey("");
-      return;
-    }
     if (selectedDepositIndex) {
       const index = Number(selectedDepositIndex);
       const entry = Number.isFinite(index) ? depositOptions[index] : undefined;
@@ -305,11 +300,6 @@ export function WalletActionModal({
     if (activeCurrency !== "USD" && activeCurrency !== "ETB") {
       setSelectedPayoutIndex("");
       setPayoutMethod("");
-      setPayoutMethodKey("");
-      return;
-    }
-    if (selectedPayoutIndex === "OTHER") {
-      setPayoutMethod("OTHER");
       setPayoutMethodKey("");
       return;
     }
@@ -998,7 +988,6 @@ export function WalletActionModal({
                         {entry.label || entry.method}
                       </option>
                     ))}
-                    <option value="OTHER">Other method</option>
                   </select>
                 </label>
                 <input type="hidden" name="payoutMethod" value={payoutMethod} />
@@ -1051,7 +1040,7 @@ export function WalletActionModal({
                     />
                   </>
                 )}
-                {(payoutMethodType === "WALLET_ADDRESS" || payoutMethodType === "OTHER") && (
+                {payoutMethodType === "WALLET_ADDRESS" && (
                   <>
                     <input
                       name="payoutAddress"
@@ -1071,9 +1060,7 @@ export function WalletActionModal({
                 )}
                 <p className="text-xs text-gray-500">
                   Processing time:{" "}
-                  {payoutProcessingTimes[payoutMethodType] ||
-                    payoutProcessingTimes.OTHER ||
-                    "1–3 business days"}
+                  {payoutProcessingTimes[payoutMethodType] || "1–3 business days"}
                   .
                 </p>
                 <label className="flex items-start gap-2 rounded-xl border border-black/10 px-3 py-2 text-xs text-gray-600">

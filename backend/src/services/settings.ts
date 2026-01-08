@@ -3,7 +3,7 @@ import { env } from "../config/env";
 
 let cachedSettings: IPlatformSettings | null = null;
 let cachedAt = 0;
-const CACHE_TTL = 60 * 1000;
+const CACHE_TTL = 0;
 const DEFAULT_RESERVED_HANDLES = [
   "admin",
   "support",
@@ -60,7 +60,6 @@ export const getPlatformSettings = async () => {
         BANK_TRANSFER: "1–3 business days",
         MOBILE_MONEY: "Same day",
         WALLET_ADDRESS: "Within 24 hours",
-        OTHER: "1–3 business days",
       },
     });
   }

@@ -1289,9 +1289,6 @@ router.post("/deposits", authMiddleware, async (req, res) => {
 
   try {
     const payload = schema.parse(req.body);
-    if (payload.paymentMethod === "OTHER" && !payload.otherMethodName) {
-      return res.status(400).json({ error: "Other method name is required." });
-    }
     const amountMinis = roundToTwo(payload.amountMinis);
     if (!Number.isFinite(amountMinis) || amountMinis < 0.01) {
       return res.status(400).json({ error: "Invalid amount" });

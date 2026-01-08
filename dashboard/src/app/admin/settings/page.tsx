@@ -222,15 +222,6 @@ export default async function AdminSettingsPage() {
                   className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
                 />
               </label>
-              <label className="block text-sm text-slate-600">
-                Other
-                <input
-                  name="payoutProcessing_OTHER"
-                  type="text"
-                  defaultValue={payoutProcessingTimes.OTHER || "1–3 business days"}
-                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
-                />
-              </label>
             </div>
           </div>
           <MysteryBoxSoundFields winUrl={mysteryBoxWinSoundUrl} loseUrl={mysteryBoxLoseSoundUrl} />
@@ -294,7 +285,6 @@ async function updateFees(formData: FormData) {
     BANK_TRANSFER: String(formData.get("payoutProcessing_BANK_TRANSFER") || "").trim(),
     MOBILE_MONEY: String(formData.get("payoutProcessing_MOBILE_MONEY") || "").trim(),
     WALLET_ADDRESS: String(formData.get("payoutProcessing_WALLET_ADDRESS") || "").trim(),
-    OTHER: String(formData.get("payoutProcessing_OTHER") || "").trim(),
   };
   const payload = {
     feeMysteryBox: Number(formData.get("feeMysteryBox")),
