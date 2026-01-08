@@ -5,6 +5,10 @@ type SignedUploadResponse = {
 };
 
 export const uploadFileToGcs = async (file: File, folder?: string): Promise<string> => {
+  const maxBytes = 900 * 1024;
+  if (file.size > maxBytes) {
+    throw new Error("File must be 900KB or smaller.");
+  }
   const response = await fetch("/api/uploads/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
