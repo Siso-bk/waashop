@@ -117,7 +117,7 @@ export default async function WalletPage({
                   </span>
                 </div>
                 <h3 className="mt-2 text-lg font-semibold text-black">{jackpot.name}</h3>
-                <p className="mt-1 text-xs text-gray-500">Winner prize {formatMinis(winnerPrize)}</p>
+                <p className="mt-1 text-xs font-semibold text-emerald-500">Winner prize {formatMinis(winnerPrize)}</p>
                 <div className="mt-3">
                   <JackpotPlayButton jackpot={jackpot} signedIn={Boolean(user)} />
                 </div>
