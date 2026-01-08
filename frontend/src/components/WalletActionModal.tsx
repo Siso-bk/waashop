@@ -148,6 +148,7 @@ export function WalletActionModal({
   const [payoutMethodKey, setPayoutMethodKey] = useState("");
   const [selectedPayoutIndex, setSelectedPayoutIndex] = useState("");
   const [payoutConfirmed, setPayoutConfirmed] = useState(false);
+  const [methodCurrency, setMethodCurrency] = useState<"USD" | "ETB">("USD");
   const [proofUrl, setProofUrl] = useState("");
   const [proofUploading, setProofUploading] = useState(false);
   const [proofError, setProofError] = useState<string | null>(null);
@@ -195,14 +196,13 @@ export function WalletActionModal({
     ],
     []
   );
-  const depositOptions = useMemo(() => {
-    if (activeCurrency !== "USD" && activeCurrency !== "ETB") return [];
-    return depositMethodEntries.filter((entry) => entry.currency === activeCurrency);
-  }, [activeCurrency, depositMethodEntries]);
+  const depositOptions = useMemo(
+    () => depositMethodEntries.filter((entry) => entry.currency === methodCurrency),
+    [depositMethodEntries, methodCurrency]
+  );
   const payoutOptions = useMemo(() => {
-    if (activeCurrency !== "USD" && activeCurrency !== "ETB") return [];
-    return payoutMethodEntries.filter((entry) => entry.currency === activeCurrency);
-  }, [activeCurrency, payoutMethodEntries]);
+    return payoutMethodEntries.filter((entry) => entry.currency === methodCurrency);
+  }, [methodCurrency, payoutMethodEntries]);
   const selectedDepositMethod = useMemo(
     () => {
       if (!selectedDepositIndex) return undefined;
@@ -274,11 +274,8 @@ export function WalletActionModal({
   }, [active]);
 
   useEffect(() => {
-    if (activeCurrency !== "USD" && activeCurrency !== "ETB") {
-      setSelectedDepositIndex("");
-      setPaymentMethod("");
-      setPaymentMethodKey("");
-      return;
+    if (activeCurrency === "USD" || activeCurrency === "ETB") {
+      setMethodCurrency(activeCurrency);
     }
     if (selectedDepositIndex) {
       const index = Number(selectedDepositIndex);
@@ -297,12 +294,6 @@ export function WalletActionModal({
   }, [activeCurrency, selectedDepositIndex, depositOptions]);
 
   useEffect(() => {
-    if (activeCurrency !== "USD" && activeCurrency !== "ETB") {
-      setSelectedPayoutIndex("");
-      setPayoutMethod("");
-      setPayoutMethodKey("");
-      return;
-    }
     if (selectedPayoutIndex) {
       const index = Number(selectedPayoutIndex);
       const entry = Number.isFinite(index) ? payoutOptions[index] : undefined;
@@ -317,7 +308,7 @@ export function WalletActionModal({
     } else if (payoutOptions.length === 1) {
       setSelectedPayoutIndex("0");
     }
-  }, [activeCurrency, payoutOptions, selectedPayoutIndex]);
+  }, [payoutOptions, selectedPayoutIndex]);
 
   const updateAmountsFromMinis = useCallback(
     (minisRaw: string) => {
@@ -744,6 +735,22 @@ export function WalletActionModal({
                 </div>
                 <label className="space-y-1">
                   <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Payment method</span>
+                  <div className="mb-2 flex items-center gap-2">
+                    {(["USD", "ETB"] as const).map((currency) => (
+                      <button
+                        key={currency}
+                        type="button"
+                        onClick={() => setMethodCurrency(currency)}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${
+                          methodCurrency === currency
+                            ? "border-black bg-black text-white"
+                            : "border-black/15 text-gray-600"
+                        }`}
+                      >
+                        {currency}
+                      </button>
+                    ))}
+                  </div>
                   <select
                     required
                     value={selectedDepositIndex}
@@ -762,11 +769,6 @@ export function WalletActionModal({
                 </label>
                 <input type="hidden" name="paymentMethod" value={paymentMethod} />
                 <input type="hidden" name="paymentMethodKey" value={paymentMethodKey} />
-                {activeCurrency !== "USD" && activeCurrency !== "ETB" && (
-                  <p className="text-xs text-gray-500">
-                    Select USD or ETB to see the available payment options.
-                  </p>
-                )}
                 {selectedDepositMethod &&
                   (selectedDepositMethod.accountName ||
                     selectedDepositMethod.accountNumber ||
@@ -974,6 +976,22 @@ export function WalletActionModal({
                 </div>
                 <label className="space-y-1">
                   <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Payout method</span>
+                  <div className="mb-2 flex items-center gap-2">
+                    {(["USD", "ETB"] as const).map((currency) => (
+                      <button
+                        key={currency}
+                        type="button"
+                        onClick={() => setMethodCurrency(currency)}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${
+                          methodCurrency === currency
+                            ? "border-black bg-black text-white"
+                            : "border-black/15 text-gray-600"
+                        }`}
+                      >
+                        {currency}
+                      </button>
+                    ))}
+                  </div>
                   <select
                     required
                     className="w-full rounded-xl border border-black/10 bg-white px-3 py-2"
@@ -993,11 +1011,6 @@ export function WalletActionModal({
                 <input type="hidden" name="payoutMethod" value={payoutMethod} />
                 <input type="hidden" name="payoutMethodKey" value={payoutMethodKey} />
                 <input type="hidden" name="payoutMethodType" value={payoutMethodType} />
-                {activeCurrency !== "USD" && activeCurrency !== "ETB" && (
-                  <p className="text-xs text-gray-500">
-                    Select USD or ETB to see the available payout options.
-                  </p>
-                )}
                 {(payoutMethodType === "BANK_TRANSFER" || payoutMethodType === "CBE") && (
                   <>
                     <input
