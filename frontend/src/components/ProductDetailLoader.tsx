@@ -25,8 +25,10 @@ const mapProduct = (product: any): StandardProduct => ({
   priceMinis: product.priceMinis ?? 0,
   vendorName: product.vendorName,
   vendorPhone: product.vendorPhone,
+  vendorCity: product.vendorCity,
   vendorAddress: product.vendorAddress,
   imageUrl: product.imageUrl,
+  imageUrls: product.imageUrls,
 });
 
 export function ProductDetailLoader({ productId, signedIn }: Props) {

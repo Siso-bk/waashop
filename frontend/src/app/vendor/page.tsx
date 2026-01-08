@@ -15,6 +15,8 @@ type VendorProduct = {
   description?: string;
   type: "STANDARD" | "MYSTERY_BOX" | "CHALLENGE";
   status: "PENDING" | "ACTIVE" | "REJECTED";
+  imageUrl?: string;
+  imageUrls?: string[];
   priceMinis?: number;
   guaranteedMinMinis?: number;
   rewardTiers?: Array<{ minis: number; probability: number }>;

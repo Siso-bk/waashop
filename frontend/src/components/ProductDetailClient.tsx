@@ -19,6 +19,8 @@ export function ProductDetailClient({
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [favorite, setFavorite] = useState(false);
+  const images = product.imageUrls?.length ? product.imageUrls : product.imageUrl ? [product.imageUrl] : [];
+  const [activeImage, setActiveImage] = useState(images[0] || "");
 
   useEffect(() => {
     setFavorite(isFavorite(product.id));
@@ -26,6 +28,16 @@ export function ProductDetailClient({
     window.addEventListener("favorites:updated", handleUpdate);
     return () => window.removeEventListener("favorites:updated", handleUpdate);
   }, [product.id]);
+
+  useEffect(() => {
+    if (!images.length) {
+      setActiveImage("");
+      return;
+    }
+    if (!activeImage || !images.includes(activeImage)) {
+      setActiveImage(images[0]);
+    }
+  }, [activeImage, images]);
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -42,16 +54,35 @@ export function ProductDetailClient({
     <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
-          {product.imageUrl && (
-            <div className="relative h-72 w-full overflow-hidden rounded-2xl border border-black/10">
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                unoptimized
-              />
+          {images.length > 0 && (
+            <div className="space-y-3">
+              <div className="relative h-72 w-full overflow-hidden rounded-2xl border border-black/10">
+                <Image
+                  src={activeImage}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  unoptimized
+                />
+              </div>
+              {images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {images.map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setActiveImage(url)}
+                      className={`relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border ${
+                        url === activeImage ? "border-black" : "border-black/10"
+                      }`}
+                      aria-label="Preview image"
+                    >
+                      <Image src={url} alt={product.name} fill className="object-cover" sizes="64px" unoptimized />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -77,7 +108,7 @@ export function ProductDetailClient({
                     id: product.id,
                     name: product.name,
                     priceMinis: product.priceMinis,
-                    imageUrl: product.imageUrl,
+                    imageUrl: product.imageUrls?.[0] || product.imageUrl,
                     vendorName: product.vendorName,
                   });
                   setFavorite(result.isFavorite);
@@ -97,6 +128,9 @@ export function ProductDetailClient({
             </div>
             {product.vendorName && (
               <p className="text-xs text-gray-500">Vendor: {product.vendorName}</p>
+            )}
+            {product.vendorCity && (
+              <p className="text-xs text-gray-500">Store city: {product.vendorCity}</p>
             )}
             {product.vendorAddress && (
               <p className="text-xs text-gray-500">Store address: {product.vendorAddress}</p>
@@ -120,6 +154,12 @@ export function ProductDetailClient({
               <div className="flex items-center justify-between">
                 <span className="uppercase tracking-[0.3em] text-gray-400">Store address</span>
                 <span className="font-semibold text-black">{product.vendorAddress}</span>
+              </div>
+            )}
+            {product.vendorCity && (
+              <div className="flex items-center justify-between">
+                <span className="uppercase tracking-[0.3em] text-gray-400">Store city</span>
+                <span className="font-semibold text-black">{product.vendorCity}</span>
               </div>
             )}
             {product.vendorName && (

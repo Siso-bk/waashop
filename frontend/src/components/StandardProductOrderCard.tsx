@@ -18,8 +18,8 @@ export function StandardProductOrderCard({
   onAddToCart: (product: StandardProduct) => void;
   onOrderNow: (product: StandardProduct) => void;
 }) {
-  const hasImage = Boolean(product.imageUrl);
-  const imageSrc = product.imageUrl || "/images/no-image.svg";
+  const hasImage = Boolean(product.imageUrls?.length || product.imageUrl);
+  const imageSrc = product.imageUrls?.[0] || product.imageUrl || "/images/no-image.svg";
   const [favorite, setFavorite] = useState(false);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export function StandardProductOrderCard({
             id: product.id,
             name: product.name,
             priceMinis: product.priceMinis,
-            imageUrl: product.imageUrl,
+            imageUrl: product.imageUrls?.[0] || product.imageUrl,
             vendorName: product.vendorName,
           });
           setFavorite(result.isFavorite);
@@ -70,6 +70,9 @@ export function StandardProductOrderCard({
         <div className="relative z-10 space-y-1">
           <p className="truncate text-sm font-semibold text-black">{product.name}</p>
           <p className="text-xs font-semibold text-black">{formatMinis(product.priceMinis)}</p>
+          {product.vendorCity && (
+            <p className="text-[11px] text-gray-500">{product.vendorCity}</p>
+          )}
         </div>
       </Link>
 

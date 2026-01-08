@@ -32,6 +32,7 @@ export interface ProductDto {
   name: string;
   description?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   type: "MYSTERY_BOX" | "STANDARD" | "CHALLENGE" | "JACKPOT_PLAY";
   status: "DRAFT" | "PENDING" | "ACTIVE" | "INACTIVE";
   priceMinis: number;

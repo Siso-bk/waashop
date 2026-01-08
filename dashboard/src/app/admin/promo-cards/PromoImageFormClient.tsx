@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { PendingButton } from "@/components/PendingButton";
+import { uploadFileToGcs } from "@/lib/uploads";
 
 type PromoImageFormClientProps = {
   action: (formData: FormData) => void;
@@ -16,6 +17,8 @@ type PromoImageFormClientProps = {
 export function PromoImageFormClient({ action, card }: PromoImageFormClientProps) {
   const { pending } = useFormStatus();
   const [imageUrl, setImageUrl] = useState(card.imageUrl || "");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const handleClear = useCallback(() => {
     if (window.confirm("Clear this promo image?")) {
       setImageUrl("");
@@ -34,25 +37,30 @@ export function PromoImageFormClient({ action, card }: PromoImageFormClientProps
       />
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
         <label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1 font-semibold uppercase tracking-[0.2em]">
-          Upload
+          {isUploading ? "Uploading..." : "Upload"}
           <input
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(event) => {
+            onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) return;
               if (file.size > 1024 * 1024) {
                 window.alert("Please use an image under 1MB.");
                 return;
               }
-              const reader = new FileReader();
-              reader.onload = () => {
-                if (typeof reader.result === "string") {
-                  setImageUrl(reader.result);
-                }
-              };
-              reader.readAsDataURL(file);
+              try {
+                setIsUploading(true);
+                setUploadError("");
+                const url = await uploadFileToGcs(file, "promo-cards");
+                setImageUrl(url);
+              } catch (error) {
+                const message = error instanceof Error ? error.message : "Unable to upload image.";
+                setUploadError(message);
+              } finally {
+                setIsUploading(false);
+                event.target.value = "";
+              }
             }}
           />
         </label>
@@ -65,7 +73,11 @@ export function PromoImageFormClient({ action, card }: PromoImageFormClientProps
             Clear
           </button>
         )}
-        <span>Uploads store as data URLs.</span>
+        {uploadError ? (
+          <span className="text-red-500">{uploadError}</span>
+        ) : (
+          <span>Uploads store in your Waashop bucket.</span>
+        )}
       </div>
       {imageUrl && (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">

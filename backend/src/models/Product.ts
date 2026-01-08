@@ -14,6 +14,7 @@ export interface IProduct extends Document {
   name: string;
   description?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   type: ProductType;
   status: ProductStatus;
   categories?: string[];
@@ -61,6 +62,7 @@ const ProductSchema = new Schema<IProduct>(
   name: { type: String, required: true },
   description: { type: String },
   imageUrl: { type: String },
+  imageUrls: { type: [String], default: [] },
   type: { type: String, enum: ["MYSTERY_BOX", "STANDARD", "CHALLENGE", "JACKPOT_PLAY"], default: "MYSTERY_BOX" },
     status: { type: String, enum: ["DRAFT", "PENDING", "ACTIVE", "INACTIVE"], default: "DRAFT" },
     categories: { type: [String], default: [] },

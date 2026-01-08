@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { formatMinis } from "@/lib/minis";
+import { uploadFileToGcs } from "@/lib/uploads";
 
 const VENDOR_PRODUCTS_ENDPOINT = "/api/vendors/products";
 const MAX_IMAGE_BYTES = 500 * 1024;
@@ -25,6 +26,7 @@ type VendorProduct = {
   type: "STANDARD" | "MYSTERY_BOX" | "CHALLENGE";
   status: "PENDING" | "ACTIVE" | "REJECTED";
   imageUrl?: string;
+  imageUrls?: string[];
   priceMinis?: number;
   guaranteedMinMinis?: number;
   rewardTiers?: RewardTier[];
@@ -57,8 +59,10 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
   const [priceMinis, setPriceMinis] = useState("10");
   const [guaranteedMinMinis, setGuaranteedMinMinis] = useState("5");
   const [rewardTiers, setRewardTiers] = useState<RewardTier[]>(defaultRewardTiers);
@@ -74,7 +78,8 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
   const resetForm = () => {
     setName("");
     setDescription("");
-    setImageUrl("");
+    setImageUrls([]);
+    setImageUrlInput("");
     setImageError(null);
     setPriceMinis("10");
     setGuaranteedMinMinis("5");
@@ -100,7 +105,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
         type: activeType,
         name: name.trim(),
         description: description.trim() || undefined,
-        imageUrl: imageUrl.trim() || undefined,
+        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       };
       if (activeType === "STANDARD") {
         payload.priceMinis = Number(priceMinis);
@@ -153,7 +158,8 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
     setActiveType(product.type);
     setName(product.name);
     setDescription(product.description ?? "");
-    setImageUrl(product.imageUrl ?? "");
+    setImageUrls(product.imageUrls?.length ? product.imageUrls : product.imageUrl ? [product.imageUrl] : []);
+    setImageUrlInput("");
     setImageError(null);
     setPriceMinis(String(product.priceMinis ?? 10));
     setGuaranteedMinMinis(String(product.guaranteedMinMinis ?? 0));
@@ -242,42 +248,48 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
             />
           </label>
           <div className="space-y-2 text-sm text-gray-600">
-            <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Product image (optional)</span>
+            <span className="text-xs uppercase tracking-[0.3em] text-gray-400">Product images (optional)</span>
             <div className="flex flex-wrap items-center gap-3">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-600">
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(event) => {
+                  onChange={async (event) => {
                     const file = event.target.files?.[0];
                     if (!file) return;
+                    if (imageUrls.length >= 6) {
+                      setImageError("Add up to 6 images.");
+                      event.target.value = "";
+                      return;
+                    }
                     if (file.size > MAX_IMAGE_BYTES) {
                       setImageError("Image must be under 500KB.");
                       event.target.value = "";
                       return;
                     }
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      const result = typeof reader.result === "string" ? reader.result : "";
-                      if (!result) {
-                        setImageError("Unable to read image file.");
-                        return;
-                      }
-                      setImageUrl(result);
+                    try {
+                      setImageUploading(true);
                       setImageError(null);
-                    };
-                    reader.onerror = () => setImageError("Unable to read image file.");
-                    reader.readAsDataURL(file);
+                      const url = await uploadFileToGcs(file, "vendor-products");
+                      setImageUrls((current) => [...current, url]);
+                    } catch (uploadError) {
+                      const message = uploadError instanceof Error ? uploadError.message : "Unable to upload image.";
+                      setImageError(message);
+                    } finally {
+                      setImageUploading(false);
+                      event.target.value = "";
+                    }
                   }}
                 />
-                Upload image
+                {imageUploading ? "Uploading..." : "Upload image"}
               </label>
-              {imageUrl && (
+              {imageUrls.length > 0 && (
                 <button
                   type="button"
                   onClick={() => {
-                    setImageUrl("");
+                    setImageUrls([]);
+                    setImageUrlInput("");
                     setImageError(null);
                   }}
                   className="rounded-full border border-black/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-600"
@@ -285,25 +297,57 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
                   Clear
                 </button>
               )}
-              {imageUrl && (
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-black/10 bg-white">
-                    <Image src={imageUrl} alt="Listing preview" fill sizes="48px" className="object-cover" unoptimized />
-                  </div>
-                  <span>{imageUrl.startsWith("data:image/") ? "Uploaded from device" : "Image URL added"}</span>
-                </div>
-              )}
             </div>
-            <input
-              type="url"
-              value={imageUrl.startsWith("data:image/") ? "" : imageUrl}
-              onChange={(event) => {
-                setImageUrl(event.target.value);
-                setImageError(null);
-              }}
-              className="w-full rounded-2xl border border-black/10 px-4 py-3 text-black"
-              placeholder="Paste image URL instead"
-            />
+            {imageUrls.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                {imageUrls.map((url) => (
+                  <div key={url} className="relative h-12 w-12 overflow-hidden rounded-xl border border-black/10 bg-white">
+                    <Image src={url} alt="Listing preview" fill sizes="48px" className="object-cover" unoptimized />
+                    <button
+                      type="button"
+                      onClick={() => setImageUrls((current) => current.filter((item) => item !== url))}
+                      className="absolute -right-1 -top-1 rounded-full bg-black/70 px-1 text-[10px] text-white"
+                      aria-label="Remove image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                type="url"
+                value={imageUrlInput}
+                onChange={(event) => {
+                  setImageUrlInput(event.target.value);
+                  setImageError(null);
+                }}
+                className="w-full rounded-2xl border border-black/10 px-4 py-3 text-black"
+                placeholder="Paste image URL"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const value = imageUrlInput.trim();
+                  if (!value) return;
+                  if (imageUrls.length >= 6) {
+                    setImageError("Add up to 6 images.");
+                    return;
+                  }
+                  if (imageUrls.includes(value)) {
+                    setImageError("Image already added.");
+                    return;
+                  }
+                  setImageUrls((current) => [...current, value]);
+                  setImageUrlInput("");
+                  setImageError(null);
+                }}
+                className="rounded-full border border-black/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-600"
+              >
+                Add URL
+              </button>
+            </div>
             {imageError && <p className="text-xs text-red-500">{imageError}</p>}
           </div>
 

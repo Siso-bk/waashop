@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Request } from "express";
 import { Types } from "mongoose";
 import { z } from "zod";
+import { Storage } from "@google-cloud/storage";
 import { authMiddleware, loadVendor, requireApprovedVendor, requireRole } from "../middleware/auth";
 import {
   verifyTelegramInitData,
@@ -31,6 +32,29 @@ import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
 
 const router = Router();
+let gcsStorage: Storage | null = null;
+
+const getGcsStorage = () => {
+  if (gcsStorage) return gcsStorage;
+  const raw = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (!raw) {
+    throw new Error("Missing GOOGLE_APPLICATION_CREDENTIALS_JSON");
+  }
+  const credentials = JSON.parse(raw) as { project_id?: string };
+  gcsStorage = new Storage({ credentials, projectId: credentials.project_id });
+  return gcsStorage;
+};
+
+const getGcsBucketName = () => {
+  const bucket = process.env.GCS_BUCKET_NAME;
+  if (!bucket) {
+    throw new Error("Missing GCS_BUCKET_NAME");
+  }
+  return bucket;
+};
+
+const sanitizePathSegment = (value: string) =>
+  value.replace(/[^a-zA-Z0-9/_-]+/g, "-").replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
 
 type HeroCard = {
   id: string;
@@ -131,6 +155,12 @@ const normalizeProduct = (product: any) => ({
   name: product.name,
   description: product.description,
   imageUrl: product.imageUrl,
+  imageUrls:
+    Array.isArray(product.imageUrls) && product.imageUrls.length > 0
+      ? product.imageUrls
+      : product.imageUrl
+        ? [product.imageUrl]
+        : [],
   type: product.type,
   status: product.status,
   categories: product.categories || [],
@@ -2428,6 +2458,7 @@ const mysteryBoxSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
   imageUrl: z.string().max(2000000).optional(),
+  imageUrls: z.array(z.string().max(2000000)).max(6).optional(),
   priceMinis: z.number().int().positive(),
   guaranteedMinMinis: z.number().int().nonnegative(),
   totalTries: z.number().int().positive(),
@@ -2439,6 +2470,7 @@ const standardProductSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
   imageUrl: z.string().max(2000000).optional(),
+  imageUrls: z.array(z.string().max(2000000)).max(6).optional(),
   priceMinis: z.number().positive(),
   categories: z.array(z.string().min(1).max(40)).max(8).optional(),
 });
@@ -2447,6 +2479,7 @@ const challengeSchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
   imageUrl: z.string().max(2000000).optional(),
+  imageUrls: z.array(z.string().max(2000000)).max(6).optional(),
   ticketPriceMinis: z.number().int().positive(),
   ticketCount: z.number().int().positive(),
 });
@@ -2455,6 +2488,7 @@ const jackpotPlaySchema = z.object({
   name: z.string().min(2),
   description: z.string().max(500).optional(),
   imageUrl: z.string().max(2000000).optional(),
+  imageUrls: z.array(z.string().max(2000000)).max(6).optional(),
   priceMinis: z.number().int().positive(),
   winOdds: z.number().min(0.001).max(1),
 });
@@ -2473,6 +2507,7 @@ router.post(
       if (type === "STANDARD") {
         const payload = standardProductSchema.parse(req.body);
         const categories = (payload.categories || []).map((category) => category.trim().toLowerCase());
+        const imageUrls = (payload.imageUrls ?? (payload.imageUrl ? [payload.imageUrl] : [])).filter(Boolean);
         await chargeSubmissionFee(submitter, settings.feeMysteryBox || 0, "PRODUCT_SUBMISSION_FEE", {
           name: payload.name,
         });
@@ -2480,7 +2515,8 @@ router.post(
           vendorId: req.vendorDoc!._id,
           name: payload.name,
           description: payload.description,
-          imageUrl: payload.imageUrl,
+          imageUrl: imageUrls[0],
+          imageUrls,
           type: "STANDARD",
           status: "PENDING",
           priceMinis: payload.priceMinis,
@@ -2491,6 +2527,7 @@ router.post(
       }
       if (type === "CHALLENGE") {
         const payload = challengeSchema.parse(req.body);
+        const imageUrls = (payload.imageUrls ?? (payload.imageUrl ? [payload.imageUrl] : [])).filter(Boolean);
         await chargeSubmissionFee(submitter, settings.feeChallenge || 0, "CHALLENGE_SUBMISSION_FEE", {
           name: payload.name,
         });
@@ -2498,7 +2535,8 @@ router.post(
           vendorId: req.vendorDoc!._id,
           name: payload.name,
           description: payload.description,
-          imageUrl: payload.imageUrl,
+          imageUrl: imageUrls[0],
+          imageUrls,
           type: "CHALLENGE",
           status: "PENDING",
           ticketPriceMinis: payload.ticketPriceMinis,
@@ -2511,6 +2549,7 @@ router.post(
       }
       if (type === "JACKPOT_PLAY") {
         const payload = jackpotPlaySchema.parse(req.body);
+        const imageUrls = (payload.imageUrls ?? (payload.imageUrl ? [payload.imageUrl] : [])).filter(Boolean);
         await chargeSubmissionFee(submitter, settings.feeJackpotPlay || 0, "JACKPOT_SUBMISSION_FEE", {
           name: payload.name,
         });
@@ -2518,7 +2557,8 @@ router.post(
           vendorId: req.vendorDoc!._id,
           name: payload.name,
           description: payload.description,
-          imageUrl: payload.imageUrl,
+          imageUrl: imageUrls[0],
+          imageUrls,
           type: "JACKPOT_PLAY",
           status: "PENDING",
           priceMinis: payload.priceMinis,
@@ -2532,6 +2572,7 @@ router.post(
         return res.json({ product: normalizeProduct(product) });
       }
       const payload = mysteryBoxSchema.parse(req.body);
+      const imageUrls = (payload.imageUrls ?? (payload.imageUrl ? [payload.imageUrl] : [])).filter(Boolean);
       const totalProbability = payload.rewardTiers.reduce((acc, tier) => acc + tier.probability, 0);
       if (totalProbability <= 0 || Math.abs(totalProbability - 1) > 0.01) {
         return res.status(400).json({ error: "Reward probabilities must sum to 1" });
@@ -2558,7 +2599,8 @@ router.post(
         vendorId: req.vendorDoc!._id,
         name: payload.name,
         description: payload.description,
-        imageUrl: payload.imageUrl,
+        imageUrl: imageUrls[0],
+        imageUrls,
         priceMinis: payload.priceMinis,
         guaranteedMinMinis: payload.guaranteedMinMinis,
         rewardTiers: payload.rewardTiers,
@@ -2596,10 +2638,12 @@ router.patch(
       const type = typeof req.body?.type === "string" ? req.body.type : product.type;
       if (type === "STANDARD") {
         const payload = standardProductSchema.parse(req.body);
+        const imageUrls = (payload.imageUrls ?? (payload.imageUrl ? [payload.imageUrl] : [])).filter(Boolean);
         Object.assign(product, {
           name: payload.name,
           description: payload.description,
-          imageUrl: payload.imageUrl,
+          imageUrl: imageUrls[0],
+          imageUrls,
           priceMinis: payload.priceMinis,
           type: "STANDARD",
           categories: (payload.categories || []).map((category) => category.trim().toLowerCase()),
@@ -2610,10 +2654,12 @@ router.patch(
         });
       } else if (type === "CHALLENGE") {
         const payload = challengeSchema.parse(req.body);
+        const imageUrls = (payload.imageUrls ?? (payload.imageUrl ? [payload.imageUrl] : [])).filter(Boolean);
         Object.assign(product, {
           name: payload.name,
           description: payload.description,
-          imageUrl: payload.imageUrl,
+          imageUrl: imageUrls[0],
+          imageUrls,
           type: "CHALLENGE",
           ticketPriceMinis: payload.ticketPriceMinis,
           ticketCount: payload.ticketCount,
@@ -2623,10 +2669,12 @@ router.patch(
         });
       } else if (type === "JACKPOT_PLAY") {
         const payload = jackpotPlaySchema.parse(req.body);
+        const imageUrls = (payload.imageUrls ?? (payload.imageUrl ? [payload.imageUrl] : [])).filter(Boolean);
         Object.assign(product, {
           name: payload.name,
           description: payload.description,
-          imageUrl: payload.imageUrl,
+          imageUrl: imageUrls[0],
+          imageUrls,
           type: "JACKPOT_PLAY",
           priceMinis: payload.priceMinis,
           jackpotWinOdds: payload.winOdds,
@@ -2637,10 +2685,12 @@ router.patch(
         });
       } else {
         const payload = mysteryBoxSchema.parse(req.body);
+        const imageUrls = (payload.imageUrls ?? (payload.imageUrl ? [payload.imageUrl] : [])).filter(Boolean);
         Object.assign(product, {
           name: payload.name,
           description: payload.description,
-          imageUrl: payload.imageUrl,
+          imageUrl: imageUrls[0],
+          imageUrls,
           priceMinis: payload.priceMinis,
           guaranteedMinMinis: payload.guaranteedMinMinis,
           rewardTiers: payload.rewardTiers,
@@ -3146,6 +3196,7 @@ router.get("/products", async (req, res) => {
       {
         name: vendor.name,
         contactPhone: vendor.contactPhone,
+        city: vendor.city,
         businessAddress: vendor.businessAddress,
       },
     ])
@@ -3156,6 +3207,7 @@ router.get("/products", async (req, res) => {
       ...normalizeProduct(product),
       vendorName: vendorMap.get(product.vendorId?.toString?.() || "")?.name || undefined,
       vendorPhone: vendorMap.get(product.vendorId?.toString?.() || "")?.contactPhone || undefined,
+      vendorCity: vendorMap.get(product.vendorId?.toString?.() || "")?.city || undefined,
       vendorAddress: vendorMap.get(product.vendorId?.toString?.() || "")?.businessAddress || undefined,
     })),
   });
@@ -3182,9 +3234,43 @@ router.get("/products/:id", async (req, res) => {
       ...normalizeProduct(product),
       vendorName: vendor?.name,
       vendorPhone: vendor?.contactPhone,
+      vendorCity: vendor?.city,
       vendorAddress: vendor?.businessAddress,
     },
   });
+});
+
+router.post("/uploads/sign", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    filename: z.string().min(1).max(200),
+    contentType: z.string().min(1).max(200),
+    folder: z.string().optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    const bucketName = getGcsBucketName();
+    const storage = getGcsStorage();
+    const safeFolder = payload.folder ? sanitizePathSegment(payload.folder) : "uploads";
+    const safeName = sanitizePathSegment(payload.filename).replace(/\/+/g, "-");
+    const objectName = `${safeFolder}/${req.userId}/${Date.now()}-${safeName}`;
+    const file = storage.bucket(bucketName).file(objectName);
+    const expires = Date.now() + 10 * 60 * 1000;
+    const [uploadUrl] = await file.getSignedUrl({
+      version: "v4",
+      action: "write",
+      expires,
+      contentType: payload.contentType,
+    });
+    const publicBase = process.env.GCS_PUBLIC_BASE_URL || `https://storage.googleapis.com/${bucketName}`;
+    res.json({
+      uploadUrl,
+      publicUrl: `${publicBase}/${objectName}`,
+      objectName,
+    });
+  } catch (error) {
+    console.error("GCS sign error", error);
+    res.status(400).json({ error: "Unable to sign upload" });
+  }
 });
 
 router.post("/orders", authMiddleware, async (req, res) => {

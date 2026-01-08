@@ -301,8 +301,10 @@ export function WalletActionModal({
   }, [active]);
 
   useEffect(() => {
-    if (active === "deposit" && depositState.status === "success") {
+    if (active === "deposit" && (depositState.status === "success" || depositState.status === "error")) {
       router.refresh();
+    }
+    if (active === "deposit" && depositState.status === "success") {
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
     }
@@ -313,8 +315,10 @@ export function WalletActionModal({
   }, [active, depositState.status, router]);
 
   useEffect(() => {
-    if (active === "withdraw" && withdrawState.status === "success") {
+    if (active === "withdraw" && (withdrawState.status === "success" || withdrawState.status === "error")) {
       router.refresh();
+    }
+    if (active === "withdraw" && withdrawState.status === "success") {
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
     }
@@ -325,8 +329,10 @@ export function WalletActionModal({
   }, [active, withdrawState.status, router]);
 
   useEffect(() => {
-    if (active === "send" && transferState.status === "success") {
+    if (active === "send" && (transferState.status === "success" || transferState.status === "error")) {
       router.refresh();
+    }
+    if (active === "send" && transferState.status === "success") {
       const timeout = setTimeout(() => setActive(null), 900);
       return () => clearTimeout(timeout);
     }
@@ -592,7 +598,7 @@ export function WalletActionModal({
                 <button
                   type="submit"
                   disabled={isDepositSubmitting || depositState.status === "success"}
-                  className={`w-full rounded-full px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                  className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                     isDepositSubmitting
                       ? "bg-black/80"
                       : depositState.status === "success"
@@ -708,7 +714,7 @@ export function WalletActionModal({
                 <button
                   type="submit"
                   disabled={isWithdrawSubmitting || withdrawState.status === "success"}
-                  className={`w-full rounded-full px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                  className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                     isWithdrawSubmitting
                       ? "bg-black/80"
                       : withdrawState.status === "success"
@@ -774,7 +780,7 @@ export function WalletActionModal({
                   <button
                     type="submit"
                     disabled={isTransferSubmitting || transferState.status === "success"}
-                    className={`w-full rounded-full px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                    className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                       isTransferSubmitting
                         ? "bg-black/80"
                         : transferState.status === "success"

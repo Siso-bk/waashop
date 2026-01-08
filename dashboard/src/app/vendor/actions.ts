@@ -137,6 +137,21 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
   const description = formData.get("productDescription");
   const type = (formData.get("productType") || formData.get("type") || "MYSTERY_BOX") as string;
   const imageUrl = formData.get("imageUrl");
+  const imageUrlsRaw = formData.get("imageUrls");
+  let imageUrls: string[] | undefined;
+
+  if (typeof imageUrlsRaw === "string" && imageUrlsRaw.trim()) {
+    try {
+      const parsed = JSON.parse(imageUrlsRaw);
+      if (Array.isArray(parsed)) {
+        imageUrls = parsed.filter((url) => typeof url === "string" && url.trim().length > 0);
+      } else {
+        return { error: "Image list must be an array." };
+      }
+    } catch {
+      return { error: "Image list must be valid JSON." };
+    }
+  }
 
   if (!name || typeof name !== "string") {
     return { error: "Product name is required" };
@@ -152,6 +167,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
         type: "STANDARD",
         name,
         description: typeof description === "string" ? description : undefined,
+        imageUrls: imageUrls && imageUrls.length > 0 ? imageUrls : undefined,
         imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
         priceMinis,
       },
@@ -172,6 +188,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
         type: "CHALLENGE",
         name,
         description: typeof description === "string" ? description : undefined,
+        imageUrls: imageUrls && imageUrls.length > 0 ? imageUrls : undefined,
         imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
         ticketPriceMinis,
         ticketCount,
@@ -192,6 +209,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
         type: "JACKPOT_PLAY",
         name,
         description: typeof description === "string" ? description : undefined,
+        imageUrls: imageUrls && imageUrls.length > 0 ? imageUrls : undefined,
         imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
         priceMinis,
         winOdds,
@@ -256,6 +274,7 @@ const extractProductPayload = (formData: FormData): { data?: unknown; error?: st
       type: "MYSTERY_BOX",
       name,
       description: typeof description === "string" ? description : undefined,
+      imageUrls: imageUrls && imageUrls.length > 0 ? imageUrls : undefined,
       imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : undefined,
       priceMinis,
       guaranteedMinMinis,

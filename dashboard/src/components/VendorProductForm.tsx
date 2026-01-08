@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createVendorProductAction } from "@/app/vendor/actions";
 import { PendingButton } from "@/components/PendingButton";
+import { uploadFileToGcs } from "@/lib/uploads";
 
 const initialState = { error: "" };
 
@@ -13,7 +14,10 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
   const [productType, setProductType] = useState<"MYSTERY_BOX" | "CHALLENGE" | "STANDARD" | "JACKPOT_PLAY">("MYSTERY_BOX");
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [imageError, setImageError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const [priceMinis, setPriceMinis] = useState("");
   const [guaranteedMinMinis, setGuaranteedMinMinis] = useState("");
   const [totalTries, setTotalTries] = useState("");
@@ -167,57 +171,110 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
       </div>
       <div>
         <label className="text-sm font-medium text-slate-600" htmlFor="productImageUrl">
-          Product image
+          Product images
         </label>
-        <input
-          id="productImageUrl"
-          name="imageUrl"
-          value={imageUrl}
-          disabled={isLocked}
-          onChange={(event) => setImageUrl(event.target.value)}
-          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
-          placeholder="https://..."
-        />
+        <input type="hidden" name="imageUrls" value={JSON.stringify(imageUrls)} />
         <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
           <label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
-            Upload
+            {isUploading ? "Uploading..." : "Upload"}
             <input
               type="file"
               accept="image/*"
               className="hidden"
               disabled={isLocked}
-              onChange={(event) => {
+              onChange={async (event) => {
                 const file = event.target.files?.[0];
                 if (!file) return;
-                if (file.size > 1024 * 1024) {
-                  window.alert("Please use an image under 1MB.");
+                if (imageUrls.length >= 6) {
+                  setImageError("Add up to 6 images.");
+                  event.target.value = "";
                   return;
                 }
-                const reader = new FileReader();
-                reader.onload = () => {
-                  if (typeof reader.result === "string") {
-                    setImageUrl(reader.result);
-                  }
-                };
-                reader.readAsDataURL(file);
+                if (file.size > 1024 * 1024) {
+                  setImageError("Please use an image under 1MB.");
+                  event.target.value = "";
+                  return;
+                }
+                try {
+                  setIsUploading(true);
+                  setImageError("");
+                  const url = await uploadFileToGcs(file, "vendor-products");
+                  setImageUrls((current) => [...current, url]);
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : "Unable to upload image.";
+                  setImageError(message);
+                } finally {
+                  setIsUploading(false);
+                  event.target.value = "";
+                }
               }}
             />
           </label>
-          {imageUrl && (
+          {imageUrls.length > 0 && (
             <button
               type="button"
-              onClick={() => setImageUrl("")}
+              onClick={() => {
+                setImageUrls([]);
+                setImageUrlInput("");
+                setImageError("");
+              }}
               className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
             >
               Clear
             </button>
           )}
-          <span>Uploads store as data URLs. Use hosted URLs for production.</span>
+          <span>Uploads store in your Waashop bucket.</span>
         </div>
-        {imageUrl && (
-          <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt={productName || "Product preview"} className="h-36 w-full object-cover" />
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            id="productImageUrl"
+            value={imageUrlInput}
+            disabled={isLocked}
+            onChange={(event) => {
+              setImageUrlInput(event.target.value);
+              setImageError("");
+            }}
+            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
+            placeholder="Paste image URL"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const value = imageUrlInput.trim();
+              if (!value) return;
+              if (imageUrls.length >= 6) {
+                setImageError("Add up to 6 images.");
+                return;
+              }
+              if (imageUrls.includes(value)) {
+                setImageError("Image already added.");
+                return;
+              }
+              setImageUrls((current) => [...current, value]);
+              setImageUrlInput("");
+              setImageError("");
+            }}
+            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
+          >
+            Add URL
+          </button>
+        </div>
+        {imageError && <p className="mt-2 text-xs text-red-500">{imageError}</p>}
+        {imageUrls.length > 0 && (
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {imageUrls.map((url) => (
+              <div key={url} className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={productName || "Product preview"} className="h-36 w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setImageUrls((current) => current.filter((item) => item !== url))}
+                  className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white opacity-0 transition group-hover:opacity-100"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -457,9 +514,9 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Preview</p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          {imageUrl && (
+          {imageUrls[0] && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={previewName} className="h-36 w-full object-cover" />
+            <img src={imageUrls[0]} alt={previewName} className="h-36 w-full object-cover" />
           )}
           <div className="p-4">
             <div className="flex items-center justify-between text-xs text-slate-400">

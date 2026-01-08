@@ -156,8 +156,10 @@ export interface StandardProduct {
   priceMinis: number;
   vendorName?: string;
   vendorPhone?: string;
+  vendorCity?: string;
   vendorAddress?: string;
   imageUrl?: string;
+  imageUrls?: string[];
 }
 
 export interface CustomerOrder {

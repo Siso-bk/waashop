@@ -2,6 +2,7 @@
 
 import { useState, type ChangeEvent } from "react";
 import { PendingButton } from "@/components/PendingButton";
+import { uploadFileToGcs } from "@/lib/uploads";
 
 type WinnerFormClientProps = {
   action: (formData: FormData) => void;
@@ -17,13 +18,14 @@ export function WinnerFormClient({ action }: WinnerFormClientProps) {
   const [imageUrl, setImageUrl] = useState("");
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [imageError, setImageError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const effectiveImageUrl = uploadedImageUrl || imageUrl;
   const previewName = winnerName.trim() || "Winner name";
   const previewHeadline = headline.trim() || "Spotlight headline";
   const previewDescription = description.trim() || "Add a short description for the spotlight.";
 
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_IMAGE_BYTES) {
@@ -31,12 +33,18 @@ export function WinnerFormClient({ action }: WinnerFormClientProps) {
       event.target.value = "";
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setUploadedImageUrl(String(reader.result || ""));
+    try {
+      setIsUploading(true);
       setImageError("");
-    };
-    reader.readAsDataURL(file);
+      const url = await uploadFileToGcs(file, "winners");
+      setUploadedImageUrl(url);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to upload image.";
+      setImageError(message);
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
+    }
   };
 
   return (
@@ -101,7 +109,9 @@ export function WinnerFormClient({ action }: WinnerFormClientProps) {
           onChange={handleImageUpload}
           className="mt-2 w-full rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-sm"
         />
-        <span className="mt-2 block text-xs text-slate-400">JPG, PNG, or WEBP up to 2MB.</span>
+        <span className="mt-2 block text-xs text-slate-400">
+          {isUploading ? "Uploading..." : "JPG, PNG, or WEBP up to 2MB."}
+        </span>
         {imageError && <span className="mt-2 block text-xs text-red-500">{imageError}</span>}
       </label>
       <input type="hidden" name="imageUrl" value={effectiveImageUrl} />

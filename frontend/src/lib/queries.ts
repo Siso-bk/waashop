@@ -254,8 +254,10 @@ export const getStandardProducts = async (): Promise<StandardProduct[]> => {
       priceMinis: product.priceMinis ?? 0,
       vendorName: product.vendorName,
       vendorPhone: product.vendorPhone,
+      vendorCity: product.vendorCity,
       vendorAddress: product.vendorAddress,
       imageUrl: product.imageUrl,
+      imageUrls: product.imageUrls,
     }));
   } catch {
     return [];
@@ -278,8 +280,10 @@ export const getStandardProductById = async (id: string): Promise<StandardProduc
       priceMinis: data.product.priceMinis ?? 0,
       vendorName: data.product.vendorName,
       vendorPhone: data.product.vendorPhone,
+      vendorCity: data.product.vendorCity,
       vendorAddress: data.product.vendorAddress,
       imageUrl: data.product.imageUrl,
+      imageUrls: data.product.imageUrls,
     };
   } catch {
     return null;

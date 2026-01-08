@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { HomeHeroCard } from "@/types";
+import { uploadFileToGcs } from "@/lib/uploads";
 
 type Props = {
   initialCards: HomeHeroCard[];
@@ -44,6 +45,7 @@ export function HeroCardsEditor({ initialCards }: Props) {
   const [cards, setCards] = useState<CardState[]>(normalized);
   const [dragId, setDragId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(normalized[0]?.id ?? null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   const updateCard = (id: string, patch: Partial<CardState>) => {
     setCards((prev) => prev.map((card) => (card.id === id ? { ...card, ...patch } : card)));
@@ -283,25 +285,29 @@ export function HeroCardsEditor({ initialCards }: Props) {
                 />
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
                   <label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
-                    Upload
+                    {uploadingId === card.id ? "Uploading..." : "Upload"}
                     <input
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(event) => {
+                      onChange={async (event) => {
                         const file = event.target.files?.[0];
                         if (!file) return;
                         if (file.size > 1024 * 1024) {
                           window.alert("Please use an image under 1MB.");
                           return;
                         }
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          if (typeof reader.result === "string") {
-                            updateCard(card.id, { imageUrl: reader.result });
-                          }
-                        };
-                        reader.readAsDataURL(file);
+                        try {
+                          setUploadingId(card.id);
+                          const url = await uploadFileToGcs(file, "home-hero");
+                          updateCard(card.id, { imageUrl: url });
+                        } catch (error) {
+                          const message = error instanceof Error ? error.message : "Unable to upload image.";
+                          window.alert(message);
+                        } finally {
+                          setUploadingId(null);
+                          event.target.value = "";
+                        }
                       }}
                     />
                   </label>
@@ -314,7 +320,7 @@ export function HeroCardsEditor({ initialCards }: Props) {
                       Clear
                     </button>
                   )}
-                  <span>Uploads store as data URLs. Use hosted URLs for production.</span>
+                  <span>Uploads store in your Waashop bucket.</span>
                 </div>
               </label>
               <label className="space-y-2 text-sm text-slate-600">

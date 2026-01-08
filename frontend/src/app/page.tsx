@@ -61,15 +61,13 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      <div suppressHydrationWarning>
-        <HeroSectionClient
-          cards={heroCards}
-          prefersLightText={heroPrefersLightText}
-          borderClass={heroBorderClass}
-          backgroundClass={heroBackgroundClass}
-          textClass={heroTextClass}
-        />
-      </div>
+      <HeroSectionClient
+        cards={heroCards}
+        prefersLightText={heroPrefersLightText}
+        borderClass={heroBorderClass}
+        backgroundClass={heroBackgroundClass}
+        textClass={heroTextClass}
+      />
 
       <GuestHighlightsClient signedIn={isAuthenticated} highlightCards={highlightCards} />
 
