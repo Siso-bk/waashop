@@ -54,7 +54,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
                 <span className="jackpot-hero__pill rounded-full border px-3 py-1">
                   Try price {formatMinis(activeJackpot.priceMinis)}
                 </span>
-                <span className="jackpot-hero__pill rounded-full border px-3 py-1">
+                <span className="jackpot-hero__pill rounded-full border px-3 py-1 text-[11px] font-semibold sm:text-sm">
                   Winner prize {formatMinis(winnerPrize)}
                 </span>
               </div>
@@ -97,7 +97,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
                   </span>
                 </div>
                 <p className="mt-2 text-base font-semibold text-black">{item.name}</p>
-                <p className="text-[10px] text-gray-500">Winner prize {formatMinis(prize)}</p>
+                <p className="text-sm font-semibold text-black/80">Winner prize {formatMinis(prize)}</p>
               </button>
             );
           })}

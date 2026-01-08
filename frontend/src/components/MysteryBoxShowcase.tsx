@@ -62,7 +62,7 @@ export function MysteryBoxShowcase({ boxes, signedIn }: Props) {
               <span className="jackpot-hero__pill rounded-full border px-3 py-1">
                 Price {formatMinis(activeBox.priceMinis)}
               </span>
-              <span className="jackpot-hero__pill rounded-full border px-3 py-1">
+              <span className="jackpot-hero__pill rounded-full border px-3 py-1 text-[11px] font-semibold sm:text-sm">
                 Top winner {formatMinis(topPrize)}
               </span>
             </div>
@@ -103,7 +103,7 @@ export function MysteryBoxShowcase({ boxes, signedIn }: Props) {
                   </span>
                 </div>
                 <p className="mt-2 text-base font-semibold text-black">{box.name}</p>
-                <p className="text-[10px] text-gray-500">Top winner {formatMinis(top)}</p>
+                <p className="text-sm font-semibold text-black/80">Top winner {formatMinis(top)}</p>
               </button>
             );
           })}

@@ -208,9 +208,21 @@ export function AuthFlow() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
+            className="relative w-full overflow-hidden rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
           >
-            {loading ? "Checking..." : "Continue"}
+            {loading ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" />
+                Checking...
+              </span>
+            ) : (
+              "Continue"
+            )}
+            {loading && (
+              <span className="absolute inset-x-2 bottom-1 h-0.5 overflow-hidden rounded-full bg-white/30">
+                <span className="block h-full w-1/3 animate-nav-progress rounded-full bg-white" />
+              </span>
+            )}
           </button>
         </form>
       )}
@@ -252,9 +264,21 @@ export function AuthFlow() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
+            className="relative w-full overflow-hidden rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-400"
           >
-            {loading ? "Verifying..." : "Confirm code"}
+            {loading ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" />
+                Verifying...
+              </span>
+            ) : (
+              "Confirm code"
+            )}
+            {loading && (
+              <span className="absolute inset-x-2 bottom-1 h-0.5 overflow-hidden rounded-full bg-white/30">
+                <span className="block h-full w-1/3 animate-nav-progress rounded-full bg-white" />
+              </span>
+            )}
           </button>
           <button
             type="button"
