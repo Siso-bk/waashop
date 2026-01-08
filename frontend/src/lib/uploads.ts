@@ -4,13 +4,10 @@ type SignedUploadResponse = {
   objectName: string;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
 export const uploadFileToGcs = async (file: File, folder?: string): Promise<string> => {
-  const response = await fetch(`${API_BASE_URL}/api/uploads/sign`, {
+  const response = await fetch("/api/uploads/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({
       filename: file.name,
       contentType: file.type || "application/octet-stream",

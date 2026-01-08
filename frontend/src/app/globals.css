@@ -119,9 +119,9 @@ body {
 }
 
 .notification-unread {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(251, 191, 36, 0.04)),
-    var(--surface-bg);
-  border-color: rgba(251, 191, 36, 0.45);
+  background: var(--surface-bg);
+  border-color: rgba(251, 191, 36, 0.7);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.25);
 }
 
 .jackpot-hero {

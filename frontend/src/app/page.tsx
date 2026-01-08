@@ -140,48 +140,46 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Jackpots</p>
-              <h2 className="text-2xl font-semibold text-black">Always-on jackpot plays</h2>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Jackpots</p>
+            <p className="text-sm text-gray-600">Try your luck and watch the pool grow.</p>
+          </div>
+          <Link href="/shop?tab=jackpot-plays" className="text-xs font-semibold text-black">
+            View all
+          </Link>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-3">
+          {jackpots.map((jackpot) => {
+            const totalPercent = jackpot.platformPercent + jackpot.seedPercent + jackpot.vendorPercent;
+            const winnerPrize = Math.max(0, Math.floor(jackpot.poolMinis * (1 - totalPercent / 100)));
+            return (
+              <article
+                key={jackpot.id}
+                className="min-w-[240px] rounded-2xl border border-black/10 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>TRY PRICE</span>
+                  <span className="rounded-full bg-black px-3 py-1 text-white">
+                    {formatMinis(jackpot.priceMinis)}
+                  </span>
+                </div>
+                <h3 className="mt-2 text-lg font-semibold text-black">{jackpot.name}</h3>
+                <p className="mt-1 text-xs font-semibold text-emerald-500">Winner prize {formatMinis(winnerPrize)}</p>
+                <div className="mt-3">
+                  <JackpotPlayButton jackpot={jackpot} signedIn={Boolean(user)} />
+                </div>
+              </article>
+            );
+          })}
+          {!jackpots.length && (
+            <div className="min-w-[240px] rounded-2xl border border-dashed border-black/20 bg-white p-4 text-center text-xs text-gray-500">
+              No jackpots available right now.
             </div>
-            <Link href="/shop?tab=jackpot-plays" className="text-sm text-gray-500 hover:text-gray-700">
-              View more
-            </Link>
-          </div>
-          <div className="flex gap-6 overflow-x-auto pb-3">
-            {jackpots.map((jackpot) => {
-              const totalPercent = jackpot.platformPercent + jackpot.seedPercent + jackpot.vendorPercent;
-              const winnerPrize = Math.max(0, Math.floor(jackpot.poolMinis * (1 - totalPercent / 100)));
-              return (
-                <article
-                  key={jackpot.id}
-                  className="flex min-w-[280px] flex-col rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-black/30 hover:shadow-xl"
-                >
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>TRY PRICE</span>
-                    <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                      {formatMinis(jackpot.priceMinis)}
-                    </span>
-                  </div>
-                  <h3 className="mt-3 text-xl font-semibold text-black">{jackpot.name}</h3>
-                  <p className="text-sm font-semibold text-emerald-500">
-                    WINNER PRIZE {formatMinis(winnerPrize)}
-                  </p>
-                  <div className="mt-6">
-                    <JackpotPlayButton jackpot={jackpot} signedIn={Boolean(user)} />
-                  </div>
-                </article>
-              );
-            })}
-            {!jackpots.length && (
-              <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
-                No jackpot plays live right now. Check back soon.
-              </div>
-            )}
-          </div>
-        </section>
+          )}
+        </div>
+      </section>
 
       {winners.length > 0 && (
         <section className="space-y-4">
