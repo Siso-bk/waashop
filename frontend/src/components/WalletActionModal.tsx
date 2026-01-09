@@ -141,7 +141,6 @@ export function WalletActionModal({
   const [depositFeedback, setDepositFeedback] = useState<FormState>(initialFormState);
   const [transferFeedback, setTransferFeedback] = useState<FormState>(initialFormState);
   const [transferAttempt, setTransferAttempt] = useState(0);
-  const [isDepositSubmitting, setIsDepositSubmitting] = useState(false);
   const [isWithdrawSubmitting, setIsWithdrawSubmitting] = useState(false);
   const [recipientValue, setRecipientValue] = useState("");
   const [amountValue, setAmountValue] = useState("");
@@ -267,7 +266,6 @@ export function WalletActionModal({
       setEtbValue("");
       setActiveCurrency("MINIS");
     }
-    if (active !== "deposit") setIsDepositSubmitting(false);
     if (active !== "withdraw") setIsWithdrawSubmitting(false);
     if (active !== "withdraw") setPayoutMethod("");
     if (active !== "deposit") {
@@ -489,9 +487,6 @@ export function WalletActionModal({
     if (active === "deposit" && depositState.status === "error") {
       const timeout = setTimeout(() => setDepositFeedback(initialFormState), 2500);
       return () => clearTimeout(timeout);
-    }
-    if (depositState.status !== "idle") {
-      setIsDepositSubmitting(false);
     }
     return undefined;
   }, [active, depositState, router]);
@@ -721,7 +716,6 @@ export function WalletActionModal({
                 action={depositAction}
                 className="space-y-4 text-sm text-gray-700"
                 onSubmit={() => {
-                  setIsDepositSubmitting(true);
                   setDepositFeedback(initialFormState);
                 }}
               >
@@ -951,29 +945,11 @@ export function WalletActionModal({
                   placeholder="Notes to admin"
                   className="w-full rounded-xl border border-black/10 px-3 py-2"
                 />
-                <button
-                  type="submit"
-                  disabled={isDepositSubmitting || proofUploading || !proofUrl || depositFeedback.status === "success"}
-                  className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
-                    isDepositSubmitting
-                      ? "bg-black/80"
-                      : depositFeedback.status === "success"
-                      ? "bg-emerald-600"
-                      : depositFeedback.status === "error"
-                      ? "bg-red-600"
-                      : "bg-black hover:bg-gray-900"
-                  }`}
-                >
-                  {proofUploading
-                    ? "Uploading proof…"
-                    : isDepositSubmitting
-                    ? "Submitting…"
-                    : depositFeedback.status === "success"
-                    ? "Success ✓"
-                    : depositFeedback.status === "error"
-                    ? "Failed ✕"
-                    : "Submit deposit"}
-                </button>
+                <DepositSubmitButton
+                  proofUploading={proofUploading}
+                  proofUrl={proofUrl}
+                  status={depositFeedback.status}
+                />
                 {depositFeedback.status !== "idle" && (
                   <p
                     className={`text-xs ${
@@ -1462,6 +1438,47 @@ function TransferSubmitButton({ status }: { status: FormState["status"] }) {
         : showPending
         ? "Sending…"
         : "Send transfer"}
+    </button>
+  );
+}
+
+function DepositSubmitButton({
+  proofUploading,
+  proofUrl,
+  status,
+}: {
+  proofUploading: boolean;
+  proofUrl: string;
+  status: FormState["status"];
+}) {
+  const { pending } = useFormStatus();
+  const isSuccess = status === "success";
+  const isError = status === "error";
+  const showPending = pending && status === "idle";
+
+  const buttonTone = showPending
+    ? "bg-black/80"
+    : isSuccess
+    ? "bg-emerald-600"
+    : isError
+    ? "bg-red-600"
+    : "bg-black hover:bg-gray-900";
+
+  return (
+    <button
+      type="submit"
+      disabled={showPending || proofUploading || !proofUrl || isSuccess}
+      className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${buttonTone}`}
+    >
+      {proofUploading
+        ? "Uploading proof…"
+        : isSuccess
+        ? "Success ✓"
+        : isError
+        ? "Failed ✕"
+        : showPending
+        ? "Submitting…"
+        : "Submit deposit"}
     </button>
   );
 }
