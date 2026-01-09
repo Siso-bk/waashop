@@ -10,7 +10,6 @@ const initialState: AuthActionState = {};
 
 export function LoginForm({ identifier }: { identifier: string }) {
   const [state, action] = useActionState(loginAction, initialState);
-  const { pending } = useFormStatus();
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
@@ -51,25 +50,33 @@ export function LoginForm({ identifier }: { identifier: string }) {
       </div>
       {state.error && <p className="text-sm text-red-500">{state.error}</p>}
       <PasswordResetInline initialEmail={resetEmail} />
-      <button
-        type="submit"
-        disabled={pending}
-        className="relative w-full overflow-hidden rounded-full border border-[var(--surface-border)] bg-[var(--app-text)] px-4 py-2 text-sm font-semibold text-[var(--app-bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {pending ? (
-          <span className="inline-flex items-center justify-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Signing in...
-          </span>
-        ) : (
-          "Sign in"
-        )}
-        {pending && (
-          <span className="absolute inset-x-2 bottom-1 h-0.5 overflow-hidden rounded-full bg-white/25">
-            <span className="block h-full w-1/3 animate-nav-progress rounded-full bg-emerald-400" />
-          </span>
-        )}
-      </button>
+      <LoginSubmitButton />
     </form>
+  );
+}
+
+function LoginSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="relative w-full overflow-hidden rounded-full border border-[var(--surface-border)] bg-[var(--app-text)] px-4 py-2 text-sm font-semibold text-[var(--app-bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? (
+        <span className="inline-flex items-center justify-center gap-2">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Signing in...
+        </span>
+      ) : (
+        "Sign in"
+      )}
+      {pending && (
+        <span className="absolute inset-x-2 bottom-1 h-0.5 overflow-hidden rounded-full bg-white/25">
+          <span className="block h-full w-1/3 animate-nav-progress rounded-full bg-emerald-400" />
+        </span>
+      )}
+    </button>
   );
 }

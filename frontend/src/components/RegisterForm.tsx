@@ -16,7 +16,6 @@ type RegisterFormProps = {
 
 export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
   const [state, action] = useActionState(registerAction, initialState);
-  const { pending } = useFormStatus();
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken" | "reserved" | "invalid">("idle");
@@ -233,33 +232,42 @@ export function RegisterForm({ email, preToken, onBack }: RegisterFormProps) {
           Enter a different code
         </button>
       )}
-      <button
-        type="submit"
+      <RegisterSubmitButton
         disabled={
-          pending ||
           handleStatus === "taken" ||
           handleStatus === "reserved" ||
           handleStatus === "invalid" ||
           handleStatus === "checking" ||
           handleStatus === "idle"
         }
-        className="relative w-full overflow-hidden rounded-full border border-[var(--surface-border)] bg-[var(--app-text)] px-4 py-2 text-sm font-semibold text-[var(--app-bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {pending ? (
-          <span className="inline-flex items-center justify-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Creating account...
-          </span>
-        ) : (
-          "Create account"
-        )}
-        {pending && (
-          <span className="absolute inset-x-2 bottom-1 h-0.5 overflow-hidden rounded-full bg-white/25">
-            <span className="block h-full w-1/3 animate-nav-progress rounded-full bg-emerald-400" />
-          </span>
-        )}
-      </button>
+      />
     </form>
+  );
+}
+
+function RegisterSubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending || disabled}
+      className="relative w-full overflow-hidden rounded-full border border-[var(--surface-border)] bg-[var(--app-text)] px-4 py-2 text-sm font-semibold text-[var(--app-bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? (
+        <span className="inline-flex items-center justify-center gap-2">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Creating account...
+        </span>
+      ) : (
+        "Create account"
+      )}
+      {pending && (
+        <span className="absolute inset-x-2 bottom-1 h-0.5 overflow-hidden rounded-full bg-white/25">
+          <span className="block h-full w-1/3 animate-nav-progress rounded-full bg-emerald-400" />
+        </span>
+      )}
+    </button>
   );
 }
 

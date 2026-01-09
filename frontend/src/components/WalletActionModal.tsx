@@ -500,8 +500,9 @@ export function WalletActionModal({
       setTransferFeedback(transferState);
     }
     if (active === "send" && transferState.status === "success") {
-      const timeout = setTimeout(() => setActive(null), 900);
-      return () => clearTimeout(timeout);
+      setRecipientValue("");
+      setAmountValue("");
+      setScanMessage(null);
     }
     if (transferState.status !== "idle") {
       setIsTransferSubmitting(false);
@@ -1190,7 +1191,7 @@ export function WalletActionModal({
                       : transferFeedback.status === "success"
                       ? "Success ✓"
                       : transferFeedback.status === "error"
-                      ? "Failed ✕"
+                      ? "Try again ↻"
                       : "Send transfer"}
                   </button>
                   {transferFeedback.status !== "idle" && (

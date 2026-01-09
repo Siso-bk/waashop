@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { JackpotPlayDto } from "@/types";
 import { JackpotPlayButton } from "@/components/JackpotPlayButton";
 import { formatMinis } from "@/lib/minis";
@@ -11,14 +11,51 @@ type Props = {
 };
 
 export function JackpotShowcase({ jackpots, signedIn }: Props) {
+  const [liveJackpots, setLiveJackpots] = useState<JackpotPlayDto[]>(jackpots);
   const [selectedId, setSelectedId] = useState<string | null>(jackpots[0]?.id ?? null);
 
   const activeJackpot = useMemo(
-    () => jackpots.find((jackpot) => jackpot.id === selectedId) ?? jackpots[0],
-    [selectedId, jackpots]
+    () => liveJackpots.find((jackpot) => jackpot.id === selectedId) ?? liveJackpots[0],
+    [selectedId, liveJackpots]
   );
 
-  if (!jackpots.length) {
+  useEffect(() => {
+    setLiveJackpots(jackpots);
+  }, [jackpots]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const response = await fetch("/api/jackpots", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = (await response.json()) as { jackpots?: JackpotPlayDto[] };
+        if (!cancelled && Array.isArray(data.jackpots)) {
+          setLiveJackpots(data.jackpots);
+        }
+      } catch {
+        // Ignore transient network failures
+      }
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!liveJackpots.length) {
+      setSelectedId(null);
+      return;
+    }
+    setSelectedId((current) =>
+      current && liveJackpots.some((jackpot) => jackpot.id === current) ? current : liveJackpots[0].id
+    );
+  }, [liveJackpots]);
+
+  if (!liveJackpots.length) {
     return (
       <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
         No jackpot plays live right now. Check back soon.
@@ -75,7 +112,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
       <div className="shrink-0 space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">All jackpots</p>
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {jackpots.map((item) => {
+          {liveJackpots.map((item) => {
             const total = item.platformPercent + item.seedPercent + item.vendorPercent;
             const prize = Math.max(0, Math.floor(item.poolMinis * (1 - total / 100)));
             const isActive = item.id === activeJackpot?.id;

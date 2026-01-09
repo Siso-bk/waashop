@@ -2,6 +2,7 @@ import { getSessionUser, getRecentLedger, getActiveJackpots } from "@/lib/querie
 import { BalancePanel } from "@/components/BalancePanel";
 import { LedgerTable } from "@/components/LedgerTable";
 import { JackpotPlayButton } from "@/components/JackpotPlayButton";
+import { JackpotAutoRefresh } from "@/components/JackpotAutoRefresh";
 import Link from "next/link";
 import { formatMinis } from "@/lib/minis";
 import { backendFetch } from "@/lib/backendClient";
@@ -122,6 +123,7 @@ export default async function WalletPage({
         createTransfer={createTransfer}
       />
       <section className="space-y-3">
+        <JackpotAutoRefresh enabled={jackpots.length > 0} />
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Jackpots</p>

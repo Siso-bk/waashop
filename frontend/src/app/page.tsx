@@ -15,6 +15,7 @@ import type { WinnerSpotlightDto } from "@/types";
 import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
 import { JackpotPlayButton } from "@/components/JackpotPlayButton";
+import { JackpotAutoRefresh } from "@/components/JackpotAutoRefresh";
 import { HeroSectionClient } from "@/components/HeroSectionClient";
 import { GuestHighlightsClient } from "@/components/GuestHighlightsClient";
 import { formatMinis } from "@/lib/minis";
@@ -141,6 +142,7 @@ export default async function HomePage() {
       )}
 
       <section className="space-y-3">
+        <JackpotAutoRefresh enabled={jackpots.length > 0} />
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Jackpots</p>

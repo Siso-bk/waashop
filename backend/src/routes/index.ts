@@ -3334,9 +3334,13 @@ router.post("/uploads/sign", authMiddleware, async (req, res) => {
     filename: z.string().min(1).max(200),
     contentType: z.string().min(1).max(200),
     folder: z.string().optional(),
+    sizeBytes: z.number().int().positive().optional(),
   });
   try {
     const payload = schema.parse(req.body);
+    if (payload.sizeBytes && payload.sizeBytes > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: "File must be 5MB or smaller." });
+    }
     const bucketName = getGcsBucketName();
     const storage = getGcsStorage();
     const safeFolder = payload.folder ? sanitizePathSegment(payload.folder) : "uploads";
