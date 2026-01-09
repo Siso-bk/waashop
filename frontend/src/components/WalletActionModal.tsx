@@ -507,7 +507,7 @@ export function WalletActionModal({
       setRecipientValue("");
       setAmountValue("");
       setScanMessage(null);
-      const timeout = setTimeout(() => setTransferFeedback(initialFormState), 2000);
+      const timeout = setTimeout(() => setTransferFeedback(initialFormState), 2500);
       return () => clearTimeout(timeout);
     }
     if (active === "send" && transferState.status === "error") {
@@ -518,7 +518,7 @@ export function WalletActionModal({
       // No-op for send state cleanup.
     }
     return undefined;
-  }, [active, transferState.status, transferState.message, transferAttempt, router]);
+  }, [active, transferState, transferAttempt, router]);
 
   const parseTransferPayload = useCallback((raw: string) => {
     const trimmed = raw.trim();
