@@ -64,6 +64,7 @@ export function StandardProductOrderCard({
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 100vw"
+              unoptimized
             />
           </div>
         </div>

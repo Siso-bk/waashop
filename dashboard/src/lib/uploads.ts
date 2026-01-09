@@ -5,9 +5,12 @@ type SignedUploadResponse = {
 };
 
 export const uploadFileToGcs = async (file: File, folder?: string): Promise<string> => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || "";
-  const endpoint = baseUrl ? `${baseUrl}/api/uploads/sign` : "/api/uploads/sign";
-  const response = await fetch(endpoint, {
+  const maxBytes = 5 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    throw new Error("File must be 5MB or smaller.");
+  }
+
+  const response = await fetch("/api/uploads/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -15,6 +18,7 @@ export const uploadFileToGcs = async (file: File, folder?: string): Promise<stri
       filename: file.name,
       contentType: file.type || "application/octet-stream",
       folder,
+      sizeBytes: file.size,
     }),
   });
 

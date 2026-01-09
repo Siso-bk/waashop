@@ -73,8 +73,10 @@ export function ProductDetailClient({
                       key={url}
                       type="button"
                       onClick={() => setActiveImage(url)}
-                      className={`relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border ${
-                        url === activeImage ? "border-black" : "border-black/10"
+                      className={`relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border transition ${
+                        url === activeImage
+                          ? "border-black ring-2 ring-black/70"
+                          : "border-black/10 hover:border-black/30"
                       }`}
                       aria-label="Preview image"
                     >
@@ -87,7 +89,7 @@ export function ProductDetailClient({
           )}
 
           <div className="rounded-2xl border border-black/10 bg-gray-50 p-4 text-sm text-gray-600">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Details</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Description</p>
             {product.description ? (
               <p className="mt-2">{product.description}</p>
             ) : (
@@ -140,6 +142,20 @@ export function ProductDetailClient({
             )}
           </div>
 
+          <div className="rounded-2xl border border-black/10 bg-gray-50 p-4 text-sm text-gray-600">
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Store</p>
+            <div className="mt-2 space-y-1 text-xs text-gray-500">
+              <p>
+                <span className="text-gray-400">Address:</span>{" "}
+                {product.vendorAddress || "Not provided"}
+              </p>
+              <p>
+                <span className="text-gray-400">Support:</span>{" "}
+                {product.vendorPhone || "Contact Waashop support"}
+              </p>
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-black/10 bg-black px-5 py-4 text-white">
             <p className="text-xs uppercase tracking-[0.3em] text-white/60">Price</p>
             <p className="text-2xl font-semibold">{formatMinis(product.priceMinis)}</p>
@@ -150,18 +166,6 @@ export function ProductDetailClient({
               <span className="uppercase tracking-[0.3em] text-gray-400">Product ID</span>
               <span className="font-semibold text-black">{product.id}</span>
             </div>
-            {product.vendorAddress && (
-              <div className="flex items-center justify-between">
-                <span className="uppercase tracking-[0.3em] text-gray-400">Store address</span>
-                <span className="font-semibold text-black">{product.vendorAddress}</span>
-              </div>
-            )}
-            {product.vendorCity && (
-              <div className="flex items-center justify-between">
-                <span className="uppercase tracking-[0.3em] text-gray-400">Store city</span>
-                <span className="font-semibold text-black">{product.vendorCity}</span>
-              </div>
-            )}
             {product.vendorName && (
               <div className="flex items-center justify-between">
                 <span className="uppercase tracking-[0.3em] text-gray-400">Vendor</span>
