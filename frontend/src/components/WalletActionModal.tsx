@@ -507,7 +507,7 @@ export function WalletActionModal({
       setRecipientValue("");
       setAmountValue("");
       setScanMessage(null);
-      const timeout = setTimeout(() => setTransferFeedback(initialFormState), 1200);
+      const timeout = setTimeout(() => setTransferFeedback(initialFormState), 2000);
       return () => clearTimeout(timeout);
     }
     if (active === "send" && transferState.status === "error") {
@@ -1391,21 +1391,22 @@ function TransferSubmitButton({ status }: { status: FormState["status"] }) {
       : status === "error"
       ? "bg-red-600"
       : "bg-black hover:bg-gray-900";
+  const showPending = pending && status === "idle";
 
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={showPending}
       className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
-        pending ? "bg-black/80" : buttonTone
+        showPending ? "bg-black/80" : buttonTone
       }`}
     >
-      {pending
-        ? "Sending…"
-        : status === "success"
+      {status === "success"
         ? "Success ✓"
         : status === "error"
         ? "Try again ↻"
+        : showPending
+        ? "Sending…"
         : "Send transfer"}
     </button>
   );
