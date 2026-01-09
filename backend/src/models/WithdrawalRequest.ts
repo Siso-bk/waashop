@@ -13,7 +13,6 @@ export interface IWithdrawalRequest extends Document {
   payoutBankName?: string;
   payoutAccountNumber?: string;
   payoutPhone?: string;
-  payoutProviderName?: string;
   payoutNetwork?: string;
   note?: string;
   status: WithdrawalStatus;
@@ -36,7 +35,6 @@ const WithdrawalRequestSchema = new Schema<IWithdrawalRequest>(
     payoutBankName: { type: String },
     payoutAccountNumber: { type: String },
     payoutPhone: { type: String },
-    payoutProviderName: { type: String },
     payoutNetwork: { type: String },
     note: { type: String },
     status: { type: String, enum: ["PENDING", "APPROVED", "REJECTED"], default: "PENDING" },

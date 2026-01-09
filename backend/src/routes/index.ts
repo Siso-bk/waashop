@@ -416,7 +416,6 @@ const serializeWithdrawal = (
     payoutBankName: withdrawal.payoutBankName,
     payoutAccountNumber: withdrawal.payoutAccountNumber,
     payoutPhone: withdrawal.payoutPhone,
-    payoutProviderName: withdrawal.payoutProviderName,
     payoutNetwork: withdrawal.payoutNetwork,
     note: withdrawal.note,
     status: withdrawal.status,
@@ -1513,7 +1512,6 @@ router.post("/withdrawals", authMiddleware, async (req, res) => {
     payoutBankName: z.string().max(120).optional(),
     payoutAccountNumber: z.string().max(120).optional(),
     payoutPhone: z.string().max(80).optional(),
-    payoutProviderName: z.string().max(120).optional(),
     payoutNetwork: z.string().max(120).optional(),
     note: z.string().max(500).optional(),
   });
@@ -1560,7 +1558,6 @@ router.post("/withdrawals", authMiddleware, async (req, res) => {
       payoutBankName: payload.payoutBankName,
       payoutAccountNumber: payload.payoutAccountNumber,
       payoutPhone: payload.payoutPhone,
-      payoutProviderName: payload.payoutProviderName,
       payoutNetwork: payload.payoutNetwork,
       note: payload.note,
       status: "PENDING",

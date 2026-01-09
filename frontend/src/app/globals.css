@@ -18,6 +18,8 @@
   --balance-text-base: #ffffff;
   --balance-text-up: #34d399;
   --balance-text-down: #fca5a5;
+  --notification-unread-border: rgba(250, 204, 21, 0.75);
+  --notification-unread-glow: rgba(250, 204, 21, 0.28);
 }
 
 :root[data-theme="light"] {
@@ -37,6 +39,8 @@
   --balance-text-base: #0b0b0b;
   --balance-text-up: #15803d;
   --balance-text-down: #b91c1c;
+  --notification-unread-border: rgba(251, 191, 36, 0.7);
+  --notification-unread-glow: rgba(251, 191, 36, 0.25);
 }
 
 *,
@@ -139,8 +143,8 @@ body {
 }
 
 .notification-unread {
-  border-color: rgba(251, 191, 36, 0.7);
-  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.25);
+  border-color: var(--notification-unread-border);
+  box-shadow: 0 0 0 1px var(--notification-unread-glow);
 }
 
 .jackpot-hero {

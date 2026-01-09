@@ -58,6 +58,21 @@ export default async function WalletPage({
 }: {
   searchParams?: Promise<{ to?: string; amount?: string }>;
 }) {
+  const retry = async <T,>(fn: () => Promise<T>, attempts = 2, delayMs = 600): Promise<T> => {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+        if (attempt < attempts - 1) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+    throw lastError;
+  };
+
   const user = await getSessionUser();
   if (!user) {
     return (
@@ -76,20 +91,37 @@ export default async function WalletPage({
     );
   }
 
-  const [entries, jackpots, transfers, fxData] = await Promise.all([
-    getRecentLedger(50),
-    getActiveJackpots(),
-    backendFetch<{ outgoing: TransferDto[]; incoming: TransferDto[] }>("/api/transfers"),
-    backendFetch<{ settings: PublicSettings }>("/api/settings/public", { auth: false }).catch(() => ({
-      settings: {
-        minisPerUsd: 100,
-        usdToEtb: 120,
-        depositMethodEntries: [],
-        payoutMethodEntries: [],
-        payoutProcessingTimes: {},
-      },
-    })),
+  const [entriesResult, jackpotsResult, transfersResult, fxResult] = await Promise.allSettled([
+    retry(() => getRecentLedger(50)),
+    retry(() => getActiveJackpots()),
+    retry(() => backendFetch<{ outgoing: TransferDto[]; incoming: TransferDto[] }>("/api/transfers")),
+    retry(() => backendFetch<{ settings: PublicSettings }>("/api/settings/public", { auth: false })),
   ]);
+
+  const warnings: string[] = [];
+  if (entriesResult.status === "rejected") warnings.push("ledger");
+  if (jackpotsResult.status === "rejected") warnings.push("jackpots");
+  if (transfersResult.status === "rejected") warnings.push("transfers");
+  if (fxResult.status === "rejected") warnings.push("settings");
+
+  const entries = entriesResult.status === "fulfilled" ? entriesResult.value : [];
+  const jackpots = jackpotsResult.status === "fulfilled" ? jackpotsResult.value : [];
+  const transfers =
+    transfersResult.status === "fulfilled"
+      ? transfersResult.value
+      : { outgoing: [], incoming: [] };
+  const fxData =
+    fxResult.status === "fulfilled"
+      ? fxResult.value
+      : {
+          settings: {
+            minisPerUsd: 100,
+            usdToEtb: 120,
+            depositMethodEntries: [],
+            payoutMethodEntries: [],
+            payoutProcessingTimes: {},
+          },
+        };
 
   const minis = (user as { minisBalance?: number }).minisBalance ?? 0;
 
@@ -105,6 +137,11 @@ export default async function WalletPage({
         <h1 className="text-2xl font-semibold text-black">Balance</h1>
         <p className="text-sm text-gray-600">Buy, Sell, Deposit, Withdraw Minis.</p>
       </header>
+      {warnings.length > 0 && (
+        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/70 px-4 py-3 text-xs text-amber-900">
+          Some wallet data could not load ({warnings.join(", ")}). Refresh to try again.
+        </div>
+      )}
       <BalancePanel minis={minis} />
       <WalletActionModal
         balanceMinis={minis}
@@ -248,7 +285,6 @@ async function createWithdrawal(_prevState: ActionResult, formData: FormData): P
     payoutBankName,
     payoutAccountNumber,
     payoutPhone,
-    payoutProviderName: valueOrUndefined(formData.get("payoutProviderName")),
     payoutNetwork: valueOrUndefined(formData.get("payoutNetwork")),
     note: valueOrUndefined(formData.get("note")),
   };

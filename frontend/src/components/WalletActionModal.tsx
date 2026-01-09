@@ -557,6 +557,16 @@ export function WalletActionModal({
     [parseTransferPayload]
   );
 
+  const handleDownloadQr = useCallback(() => {
+    if (!qrDataUrl || typeof document === "undefined") return;
+    const link = document.createElement("a");
+    link.href = qrDataUrl;
+    link.download = qrFilename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }, [qrDataUrl, qrFilename]);
+
   useEffect(() => {
     if (!scannerOpen || active !== "send") {
       stopScanner();
@@ -1064,11 +1074,6 @@ export function WalletActionModal({
                       placeholder="Account name (optional)"
                       className="w-full rounded-xl border border-black/10 px-3 py-2"
                     />
-                    <input
-                      name="payoutProviderName"
-                      placeholder="Provider name (optional)"
-                      className="w-full rounded-xl border border-black/10 px-3 py-2"
-                    />
                   </>
                 )}
                 {payoutMethodType === "WALLET_ADDRESS" && (
@@ -1219,7 +1224,11 @@ export function WalletActionModal({
                         <div id={cameraReaderId} className="aspect-square w-full" />
                       </div>
                     )}
-                    <div id={fileReaderId} className="hidden" />
+                    <div
+                      id={fileReaderId}
+                      className="absolute left-[-9999px] top-0 h-[300px] w-[300px] opacity-0"
+                      aria-hidden="true"
+                    />
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1300,13 +1309,13 @@ export function WalletActionModal({
                       Copy link
                     </button>
                     {qrDataUrl && (
-                      <a
-                        href={qrDataUrl}
-                        download={qrFilename}
+                      <button
+                        type="button"
+                        onClick={handleDownloadQr}
                         className="rounded-full border border-black/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
                       >
                         Download QR
-                      </a>
+                      </button>
                     )}
                   </div>
                   {copyStatus && <p className="mt-2 text-xs text-gray-500">{copyStatus}</p>}
