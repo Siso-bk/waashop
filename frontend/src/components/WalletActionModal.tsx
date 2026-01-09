@@ -138,6 +138,7 @@ export function WalletActionModal({
   const [depositState, depositAction] = useActionState(createDeposit, initialFormState);
   const [withdrawState, withdrawAction] = useActionState(createWithdrawal, initialFormState);
   const [transferState, transferAction] = useActionState(createTransfer, initialFormState);
+  const [depositFeedback, setDepositFeedback] = useState<FormState>(initialFormState);
   const [transferFeedback, setTransferFeedback] = useState<FormState>(initialFormState);
   const [transferAttempt, setTransferAttempt] = useState(0);
   const [isDepositSubmitting, setIsDepositSubmitting] = useState(false);
@@ -470,16 +471,30 @@ export function WalletActionModal({
   useEffect(() => {
     if (active === "deposit" && (depositState.status === "success" || depositState.status === "error")) {
       router.refresh();
+      setDepositFeedback(depositState);
     }
     if (active === "deposit" && depositState.status === "success") {
-      const timeout = setTimeout(() => setActive(null), 900);
+      setMinisValue("");
+      setUsdValue("");
+      setEtbValue("");
+      setProofUrl("");
+      setProofError(null);
+      setDepositCopyMessage(null);
+      setSelectedDepositIndex("");
+      setPaymentMethod("");
+      setPaymentMethodKey("");
+      const timeout = setTimeout(() => setDepositFeedback(initialFormState), 2500);
+      return () => clearTimeout(timeout);
+    }
+    if (active === "deposit" && depositState.status === "error") {
+      const timeout = setTimeout(() => setDepositFeedback(initialFormState), 2500);
       return () => clearTimeout(timeout);
     }
     if (depositState.status !== "idle") {
       setIsDepositSubmitting(false);
     }
     return undefined;
-  }, [active, depositState.status, router]);
+  }, [active, depositState, router]);
 
   useEffect(() => {
     if (active === "withdraw" && (withdrawState.status === "success" || withdrawState.status === "error")) {
@@ -705,7 +720,10 @@ export function WalletActionModal({
               <form
                 action={depositAction}
                 className="space-y-4 text-sm text-gray-700"
-                onSubmit={() => setIsDepositSubmitting(true)}
+                onSubmit={() => {
+                  setIsDepositSubmitting(true);
+                  setDepositFeedback(initialFormState);
+                }}
               >
                 <input
                   type="hidden"
@@ -900,6 +918,33 @@ export function WalletActionModal({
                 {proofUploading && <p className="text-xs text-gray-500">Uploading proof...</p>}
                 {!proofUploading && !proofUrl && <p className="text-xs text-gray-500">Receipt upload required.</p>}
                 {proofError && <p className="text-xs text-red-500">{proofError}</p>}
+                {proofUrl && (
+                  <div className="rounded-2xl border border-black/10 bg-white p-3 text-xs text-gray-500">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Receipt preview</p>
+                      <a
+                        href={proofUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-gray-600"
+                      >
+                        Open
+                      </a>
+                    </div>
+                    {proofUrl.toLowerCase().includes(".pdf") ? (
+                      <p className="mt-2 text-xs text-gray-500">PDF receipt attached.</p>
+                    ) : (
+                      <Image
+                        src={proofUrl}
+                        alt="Deposit receipt"
+                        width={640}
+                        height={256}
+                        unoptimized
+                        className="mt-2 h-32 w-full rounded-xl border border-black/5 object-cover"
+                      />
+                    )}
+                  </div>
+                )}
                 <textarea
                   name="note"
                   rows={3}
@@ -908,13 +953,13 @@ export function WalletActionModal({
                 />
                 <button
                   type="submit"
-                  disabled={isDepositSubmitting || proofUploading || !proofUrl || depositState.status === "success"}
+                  disabled={isDepositSubmitting || proofUploading || !proofUrl || depositFeedback.status === "success"}
                   className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                     isDepositSubmitting
                       ? "bg-black/80"
-                      : depositState.status === "success"
+                      : depositFeedback.status === "success"
                       ? "bg-emerald-600"
-                      : depositState.status === "error"
+                      : depositFeedback.status === "error"
                       ? "bg-red-600"
                       : "bg-black hover:bg-gray-900"
                   }`}
@@ -923,20 +968,20 @@ export function WalletActionModal({
                     ? "Uploading proof…"
                     : isDepositSubmitting
                     ? "Submitting…"
-                    : depositState.status === "success"
+                    : depositFeedback.status === "success"
                     ? "Success ✓"
-                    : depositState.status === "error"
+                    : depositFeedback.status === "error"
                     ? "Failed ✕"
                     : "Submit deposit"}
                 </button>
-                {depositState.status !== "idle" && (
+                {depositFeedback.status !== "idle" && (
                   <p
                     className={`text-xs ${
-                      depositState.status === "success" ? "text-emerald-600" : "text-red-500"
+                      depositFeedback.status === "success" ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
-                    {depositState.status === "success" ? "✓ " : "✕ "}
-                    {depositState.message}
+                    {depositFeedback.status === "success" ? "✓ " : "✕ "}
+                    {depositFeedback.message}
                   </p>
                 )}
               </form>

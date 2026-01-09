@@ -72,9 +72,23 @@ async function DepositsTable() {
               </td>
               <td className="px-4 py-3 text-xs text-indigo-600">
                 {entry.proofUrl ? (
-                  <a href={entry.proofUrl} target="_blank" rel="noreferrer" className="hover:underline">
-                    View proof
-                  </a>
+                  <div className="space-y-2">
+                    <a href={entry.proofUrl} target="_blank" rel="noreferrer" className="hover:underline">
+                      View proof
+                    </a>
+                    {!entry.proofUrl.toLowerCase().includes(".pdf") && (
+                      <img
+                        src={entry.proofUrl}
+                        alt="Deposit proof"
+                        className="h-16 w-24 rounded-lg border border-slate-200 object-cover"
+                      />
+                    )}
+                    {entry.proofUrl.toLowerCase().includes(".pdf") && (
+                      <span className="rounded-full border border-slate-200 px-2 py-1 text-[10px] text-slate-500">
+                        PDF receipt
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   "-"
                 )}

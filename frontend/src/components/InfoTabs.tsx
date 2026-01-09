@@ -144,10 +144,8 @@ export function InfoTabs({ user, initialOrders, notifications }: InfoTabsProps) 
               {items.map((item, index) => (
                 <article
                   key={item.id}
-                  className={`rounded-2xl border p-4 ${
-                    item.status === "UNREAD"
-                      ? "border-amber-200 bg-amber-50 text-black"
-                      : "border-black/10 bg-white text-black"
+                  className={`notification-surface rounded-2xl border p-4 ${
+                    item.status === "UNREAD" ? "notification-unread" : ""
                   } ${index === 0 ? "shadow-sm" : ""}`}
                 >
                   <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-500">
