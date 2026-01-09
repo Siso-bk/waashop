@@ -62,13 +62,19 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      {heroCards.length > 0 && (
-        <section
-          className={`rounded-[32px] border px-6 py-8 sm:px-10 ${heroBorderClass} ${heroBackgroundClass} ${heroTextClass}`}
-        >
+      <section
+        className={`rounded-[32px] border px-6 py-8 sm:px-10 ${heroBorderClass} ${heroBackgroundClass} ${heroTextClass}`}
+      >
+        {heroCards.length > 0 ? (
           <HeroCardsClientOnly cards={heroCards} prefersLightText={heroPrefersLightText} />
-        </section>
-      )}
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] opacity-70">Waashop</p>
+            <h3 className="text-xl font-semibold">New drops, instant rewards</h3>
+            <p className="text-sm opacity-80">Explore featured products and live plays curated for you.</p>
+          </div>
+        )}
+      </section>
 
       <GuestHighlightsClient signedIn={isAuthenticated} highlightCards={highlightCards} />
 

@@ -47,12 +47,12 @@
   --balance-text-down: #b91c1c;
   --notification-unread-border: rgba(251, 191, 36, 0.7);
   --notification-unread-glow: rgba(251, 191, 36, 0.25);
-  --action-add-bg: #000000;
-  --action-add-border: #ffffff;
-  --action-add-text: #ffffff;
-  --action-buy-bg: #ffffff;
+  --action-add-bg: #ffffff;
+  --action-add-border: #000000;
+  --action-add-text: #000000;
+  --action-buy-bg: #000000;
   --action-buy-border: #000000;
-  --action-buy-text: #000000;
+  --action-buy-text: #ffffff;
 }
 
 *,

@@ -25,7 +25,7 @@ function SubmitCheckoutButton({ disabled }: { disabled: boolean }) {
     <button
       type="submit"
       disabled={disabled || pending}
-      className="w-full rounded-full bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-70"
+      className="w-full rounded-full border border-black bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Processing..." : "Place order"}
     </button>
@@ -154,7 +154,7 @@ export function CartClient({
               type="button"
               onClick={openCheckout}
               disabled={cart.length === 0}
-              className="rounded-full bg-black px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="rounded-full border border-black bg-black px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
               Checkout
             </button>

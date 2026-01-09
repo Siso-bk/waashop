@@ -42,7 +42,7 @@ export function StandardProductOrderCard({
             vendorName: product.vendorName,
           });
         }}
-        className="absolute right-3 top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/40 bg-gray-700/80 text-white shadow-sm transition hover:border-black/60"
+        className="absolute right-3 top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white bg-gray-700/80 text-white shadow-sm transition hover:border-white/80"
         aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">

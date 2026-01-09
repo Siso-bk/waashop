@@ -88,21 +88,21 @@ export function ProductDetailClient({
             </div>
           )}
 
-          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 text-sm text-[color:var(--app-text-muted)]">
-            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">Description</p>
+          <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Description</p>
             {product.description ? (
-              <p className="mt-2 text-[color:var(--app-text)]">{product.description}</p>
+              <p className="mt-2 text-slate-900 dark:text-slate-100">{product.description}</p>
             ) : (
-              <p className="mt-2 text-[color:var(--app-text-muted)]">No description provided yet.</p>
+              <p className="mt-2 text-slate-500 dark:text-slate-400">No description provided yet.</p>
             )}
           </div>
         </div>
 
         <div className="space-y-5">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Product</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Product</p>
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-2xl font-semibold text-black">{product.name}</h1>
+              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{product.name}</h1>
               <button
                 type="button"
                 onClick={() => {
@@ -129,29 +129,31 @@ export function ProductDetailClient({
               </button>
             </div>
             {product.vendorName && (
-              <p className="text-xs text-gray-500">Vendor: {product.vendorName}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Vendor: {product.vendorName}</p>
             )}
             {product.vendorCity && (
-              <p className="text-xs text-gray-500">Store city: {product.vendorCity}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Store city: {product.vendorCity}</p>
             )}
             {product.vendorAddress && (
-              <p className="text-xs text-gray-500">Store address: {product.vendorAddress}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Store address: {product.vendorAddress}</p>
             )}
             {product.vendorPhone && (
-              <p className="text-xs text-gray-500">Store phone: {product.vendorPhone}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Store phone: {product.vendorPhone}</p>
             )}
           </div>
 
-          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 text-sm text-[color:var(--app-text-muted)]">
-            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">Store</p>
-            <div className="mt-2 space-y-1 text-xs text-[color:var(--app-text-muted)]">
+          <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300">
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Store</p>
+            <div className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400">
               <p>
-                <span className="text-[color:var(--app-text-muted)]">Address:</span>{" "}
-                <span className="text-[color:var(--app-text)]">{product.vendorAddress || "Not provided"}</span>
+                <span className="text-slate-500 dark:text-slate-400">Address:</span>{" "}
+                <span className="text-slate-900 dark:text-slate-100">
+                  {product.vendorAddress || "Not provided"}
+                </span>
               </p>
               <p>
-                <span className="text-[color:var(--app-text-muted)]">Support:</span>{" "}
-                <span className="text-[color:var(--app-text)]">
+                <span className="text-slate-500 dark:text-slate-400">Support:</span>{" "}
+                <span className="text-slate-900 dark:text-slate-100">
                   {product.vendorPhone || "Contact Waashop support"}
                 </span>
               </p>
