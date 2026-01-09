@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useActionState, type ChangeEvent } from "react";
+import { useFormStatus } from "react-dom";
 import { formatMinis } from "@/lib/minis";
 import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
@@ -141,8 +142,6 @@ export function WalletActionModal({
   const [transferAttempt, setTransferAttempt] = useState(0);
   const [isDepositSubmitting, setIsDepositSubmitting] = useState(false);
   const [isWithdrawSubmitting, setIsWithdrawSubmitting] = useState(false);
-  const [isTransferSubmitting, setIsTransferSubmitting] = useState(false);
-  const [transferPending, setTransferPending] = useState(false);
   const [recipientValue, setRecipientValue] = useState("");
   const [amountValue, setAmountValue] = useState("");
   const [minisValue, setMinisValue] = useState("");
@@ -504,7 +503,6 @@ export function WalletActionModal({
         lastTransferHandledRef.current = transferAttempt;
       }
       setTransferFeedback(transferState);
-      setTransferPending(false);
     }
     if (active === "send" && transferState.status === "success") {
       setRecipientValue("");
@@ -513,15 +511,12 @@ export function WalletActionModal({
       const timeout = setTimeout(() => setTransferFeedback(initialFormState), 1200);
       return () => clearTimeout(timeout);
     }
-    if (transferState.status !== "idle") {
-      setIsTransferSubmitting(false);
-    }
     if (active === "send" && transferState.status === "error") {
       const timeout = setTimeout(() => setTransferFeedback(initialFormState), 2400);
       return () => clearTimeout(timeout);
     }
     if (active !== "send") {
-      setTransferPending(false);
+      // No-op for send state cleanup.
     }
     return undefined;
   }, [active, transferState.status, transferState.message, transferAttempt, router]);
@@ -1155,8 +1150,6 @@ export function WalletActionModal({
                   action={transferAction}
                   className="space-y-4 text-sm text-gray-700"
                   onSubmit={() => {
-                    setIsTransferSubmitting(true);
-                    setTransferPending(true);
                     setTransferFeedback(initialFormState);
                     setTransferAttempt((prev) => prev + 1);
                   }}
@@ -1186,27 +1179,7 @@ export function WalletActionModal({
                     placeholder="Note (optional)"
                     className="w-full rounded-xl border border-black/10 px-3 py-2"
                   />
-                  <button
-                    type="submit"
-                    disabled={isTransferSubmitting || transferPending || transferFeedback.status === "success"}
-                    className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
-                      isTransferSubmitting || transferPending
-                        ? "bg-black/80"
-                        : transferFeedback.status === "success"
-                        ? "bg-emerald-600"
-                        : transferFeedback.status === "error"
-                        ? "bg-red-600"
-                        : "bg-black hover:bg-gray-900"
-                    }`}
-                  >
-                    {isTransferSubmitting || transferPending
-                      ? "Sending…"
-                      : transferFeedback.status === "success"
-                      ? "Success ✓"
-                      : transferFeedback.status === "error"
-                      ? "Try again ↻"
-                      : "Send transfer"}
-                  </button>
+                  <TransferSubmitButton status={transferFeedback.status} />
                   {transferFeedback.status !== "idle" && (
                     <p
                       className={`text-xs ${
@@ -1407,5 +1380,34 @@ export function WalletActionModal({
         </div>
       )}
     </>
+  );
+}
+
+function TransferSubmitButton({ status }: { status: FormState["status"] }) {
+  const { pending } = useFormStatus();
+
+  const buttonTone =
+    status === "success"
+      ? "bg-emerald-600"
+      : status === "error"
+      ? "bg-red-600"
+      : "bg-black hover:bg-gray-900";
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+        pending ? "bg-black/80" : buttonTone
+      }`}
+    >
+      {pending
+        ? "Sending…"
+        : status === "success"
+        ? "Success ✓"
+        : status === "error"
+        ? "Try again ↻"
+        : "Send transfer"}
+    </button>
   );
 }
