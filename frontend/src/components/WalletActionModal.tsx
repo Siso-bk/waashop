@@ -72,7 +72,12 @@ type Html5QrcodeInstance = {
   isScanning?: boolean;
   start: (
     camera: { deviceId: { exact: string } } | { facingMode: "environment" },
-    config: { fps: number; qrbox: number },
+    config: {
+      fps: number;
+      qrbox: number | { width: number; height: number };
+      aspectRatio?: number;
+      disableFlip?: boolean;
+    },
     onSuccess: (decodedText: string) => void,
     onFailure: (error: string) => void
   ) => Promise<void>;
@@ -503,6 +508,8 @@ export function WalletActionModal({
       setRecipientValue("");
       setAmountValue("");
       setScanMessage(null);
+      const timeout = setTimeout(() => setTransferFeedback(initialFormState), 1200);
+      return () => clearTimeout(timeout);
     }
     if (transferState.status !== "idle") {
       setIsTransferSubmitting(false);
@@ -571,7 +578,7 @@ export function WalletActionModal({
         }
         await scannerRef.current.start(
           preferred?.id ? { deviceId: { exact: preferred.id } } : { facingMode: "environment" },
-          { fps: 10, qrbox: 240 },
+          { fps: 12, qrbox: { width: 220, height: 220 }, aspectRatio: 1 },
           (decodedText: string) => {
             handleScanResult(decodedText);
             setScannerOpen(false);
@@ -1230,8 +1237,8 @@ export function WalletActionModal({
                   </div>
                   <div className="mt-4">
                     {scannerOpen && (
-                      <div className="overflow-hidden rounded-2xl border border-black/10 bg-black">
-                        <div id={cameraReaderId} className="h-48 w-full" />
+                      <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-2xl border border-black/10 bg-black">
+                        <div id={cameraReaderId} className="aspect-square w-full" />
                       </div>
                     )}
                     <div id={fileReaderId} className="hidden" />
