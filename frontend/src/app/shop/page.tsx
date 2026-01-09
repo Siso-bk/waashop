@@ -79,15 +79,17 @@ export default async function ShopPage({
           </div>
         )}
       </header>
-      <nav className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+      <nav className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
         {tabList.map((tab) => {
           const isActive = tab.key === activeTab;
           return (
             <Link
               key={tab.key}
               href={`/shop?tab=${tab.key}`}
-              className={`whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.26em] text-black transition hover:opacity-80 ${
-                isActive ? "underline underline-offset-8 decoration-2" : ""
+              className={`whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.26em] transition ${
+                isActive
+                  ? "border-black/70 bg-black/15 text-black dark:border-white/80 dark:bg-white/30 dark:text-white"
+                  : "border-black/15 bg-transparent text-black hover:border-black/40 dark:border-white/20 dark:text-white/70"
               }`}
             >
               {tab.label}

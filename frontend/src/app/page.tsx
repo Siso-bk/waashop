@@ -16,7 +16,7 @@ import { BoxPurchaseButton } from "@/components/BoxPurchaseButton";
 import { ChallengePurchaseButton } from "@/components/ChallengePurchaseButton";
 import { JackpotPlayButton } from "@/components/JackpotPlayButton";
 import { JackpotAutoRefresh } from "@/components/JackpotAutoRefresh";
-import { HeroCards } from "@/components/HeroCards";
+import { HeroCardsClientOnly } from "@/components/HeroCardsClientOnly";
 import { GuestHighlightsClient } from "@/components/GuestHighlightsClient";
 import { formatMinis } from "@/lib/minis";
 
@@ -66,7 +66,7 @@ export default async function HomePage() {
         <section
           className={`rounded-[32px] border px-6 py-8 sm:px-10 ${heroBorderClass} ${heroBackgroundClass} ${heroTextClass}`}
         >
-          <HeroCards cards={heroCards} prefersLightText={heroPrefersLightText} />
+          <HeroCardsClientOnly cards={heroCards} prefersLightText={heroPrefersLightText} />
         </section>
       )}
 

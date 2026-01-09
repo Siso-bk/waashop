@@ -35,9 +35,36 @@ type VendorProduct = {
   createdAt?: string;
 };
 
+type VendorOrder = {
+  id: string;
+  productId: string;
+  productType?: string;
+  status:
+    | "PLACED"
+    | "PACKED"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
+    | "DISPUTED"
+    | "REFUNDED"
+    | "CANCELLED"
+    | "REJECTED"
+    | "DAMAGED"
+    | "UNSUCCESSFUL";
+  amountMinis: number;
+  quantity: number;
+  shippingName?: string;
+  shippingPhone?: string;
+  shippingAddress?: string;
+  trackingCode?: string;
+  createdAt?: string;
+};
+
 type VendorDashboardClientProps = {
   vendor: VendorProfile;
   initialProducts: VendorProduct[];
+  initialOrders: VendorOrder[];
   canPost: boolean;
 };
 
@@ -52,9 +79,15 @@ const defaultRewardTiers: RewardTier[] = [
   { minis: 100, probability: 0.05 },
 ];
 
-export function VendorDashboardClient({ vendor, initialProducts, canPost }: VendorDashboardClientProps) {
-  const [activeType, setActiveType] = useState<"STANDARD" | "MYSTERY_BOX" | "CHALLENGE">("STANDARD");
+export function VendorDashboardClient({
+  vendor,
+  initialProducts,
+  initialOrders,
+  canPost,
+}: VendorDashboardClientProps) {
+  const [activeType, setActiveType] = useState<"STANDARD" | "MYSTERY_BOX" | "CHALLENGE" | "FULFILLMENT">("STANDARD");
   const [products, setProducts] = useState<VendorProduct[]>(initialProducts);
+  const [orders, setOrders] = useState<VendorOrder[]>(initialOrders);
   const [formState, setFormState] = useState<FormState>({ status: "idle" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -68,6 +101,12 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
   const [rewardTiers, setRewardTiers] = useState<RewardTier[]>(defaultRewardTiers);
   const [ticketPriceMinis, setTicketPriceMinis] = useState("5");
   const [ticketCount, setTicketCount] = useState("100");
+  const [orderNote, setOrderNote] = useState<Record<string, string>>({});
+  const [trackingCode, setTrackingCode] = useState<Record<string, string>>({});
+  const [orderStatus, setOrderStatus] = useState<Record<string, VendorOrder["status"]>>({});
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [orderMessage, setOrderMessage] = useState<string | null>(null);
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(initialOrders[0]?.id ?? null);
 
   const statusTone = useMemo(() => {
     if (vendor.status === "APPROVED") return "text-emerald-600";
@@ -88,6 +127,30 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
     setTicketCount("100");
     setEditingId(null);
   };
+
+  const productNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    products.forEach((product) => map.set(product.id, product.name));
+    return map;
+  }, [products]);
+
+  const statusCounts = useMemo(() => {
+    const counts = {
+      total: orders.length,
+      pending: orders.filter((order) => order.status === "PLACED").length,
+      inTransit: orders.filter((order) => ["SHIPPED", "OUT_FOR_DELIVERY"].includes(order.status)).length,
+      delivered: orders.filter((order) => ["DELIVERED", "COMPLETED"].includes(order.status)).length,
+    };
+    return counts;
+  }, [orders]);
+
+  const activeOrder = useMemo(() => {
+    if (!orders.length) return null;
+    if (!activeOrderId || !orders.some((order) => order.id === activeOrderId)) {
+      return orders[0];
+    }
+    return orders.find((order) => order.id === activeOrderId) || orders[0];
+  }, [activeOrderId, orders]);
 
   const handleSubmit = async () => {
     if (!canPost) {
@@ -186,13 +249,45 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
     setRewardTiers((prev) => [...prev, { minis: 0, probability: 0.05 }]);
   };
 
+  const updateOrder = async (orderId: string) => {
+    setUpdatingOrderId(orderId);
+    setOrderMessage(null);
+    try {
+      const payload: Record<string, string> = {};
+      if (orderStatus[orderId]) payload.status = orderStatus[orderId];
+      if (trackingCode[orderId]) payload.trackingCode = trackingCode[orderId];
+      if (orderNote[orderId]) payload.note = orderNote[orderId];
+      const response = await fetch(`/api/vendors/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error((data as { error?: string }).error || "Unable to update order.");
+      }
+      if (data?.order) {
+        setOrders((prev) => prev.map((item) => (item.id === orderId ? data.order : item)));
+        setOrderMessage("Order updated.");
+        setOrderNote((prev) => ({ ...prev, [orderId]: "" }));
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to update order.";
+      setOrderMessage(message);
+    } finally {
+      setUpdatingOrderId(null);
+      setTimeout(() => setOrderMessage(null), 2500);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-20">
       <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
         <p className="text-xs uppercase tracking-[0.35em] text-gray-400">Vendor</p>
         <h1 className="mt-2 text-2xl font-semibold text-black">{vendor.name}</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Create listings for products, mystery boxes, and challenges.
+          Create listings for products, mystery boxes, challenges, and track fulfillment.
         </p>
         <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.3em] ${statusTone}`}>
           Status: {vendor.status}
@@ -206,7 +301,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
 
       <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap gap-2">
-          {(["STANDARD", "MYSTERY_BOX", "CHALLENGE"] as const).map((type) => (
+          {(["STANDARD", "MYSTERY_BOX", "CHALLENGE", "FULFILLMENT"] as const).map((type) => (
             <button
               key={type}
               type="button"
@@ -217,12 +312,182 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
                   : "border-black/10 text-gray-600 hover:border-black/30"
               }`}
             >
-              {type === "STANDARD" ? "Product" : type === "MYSTERY_BOX" ? "Mystery box" : "Challenge"}
+              {type === "STANDARD"
+                ? "Product"
+                : type === "MYSTERY_BOX"
+                ? "Mystery box"
+                : type === "CHALLENGE"
+                ? "Challenge"
+                : "Order fulfillment"}
             </button>
           ))}
         </div>
 
-        <div className="mt-6 grid gap-4 text-sm text-gray-700">
+        {activeType === "FULFILLMENT" ? (
+          <div className="mt-6 space-y-4 text-sm text-gray-700">
+            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">
+                Fulfillment queue
+              </p>
+              <p className="mt-2 text-sm text-[color:var(--app-text-muted)]">
+                Track paid orders, update statuses, and confirm delivery to release funds.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-4">
+              <div className="rounded-2xl border border-black/10 bg-white p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Total</p>
+                <p className="mt-2 text-xl font-semibold text-black">{statusCounts.total}</p>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Placed</p>
+                <p className="mt-2 text-xl font-semibold text-black">{statusCounts.pending}</p>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">In transit</p>
+                <p className="mt-2 text-xl font-semibold text-black">{statusCounts.inTransit}</p>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-white p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Delivered</p>
+                <p className="mt-2 text-xl font-semibold text-black">{statusCounts.delivered}</p>
+              </div>
+            </div>
+
+            {orderMessage && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-700">
+                {orderMessage}
+              </div>
+            )}
+
+            {orders.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-black/10 bg-white p-6 text-center text-sm text-gray-500">
+                No orders to fulfill yet. New customer orders will appear here.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {activeOrder && (() => {
+                  const name = productNameById.get(activeOrder.productId) || "Product";
+                  return (
+                    <div className="rounded-3xl border border-[color:var(--surface-border)] bg-white p-5 shadow-sm ring-2 ring-black/10 dark:ring-white/60">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{activeOrder.status}</p>
+                          <p className="mt-2 text-lg font-semibold text-black">{name}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatMinis(activeOrder.amountMinis)} • Qty {activeOrder.quantity}
+                          </p>
+                        </div>
+                        <div className="text-right text-xs text-gray-500">
+                          <p>Order ID</p>
+                          <p className="font-semibold text-black">{activeOrder.id}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-3 text-xs text-gray-500 sm:grid-cols-3">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Customer</p>
+                          <p>{activeOrder.shippingName || "Name not provided"}</p>
+                          <p>{activeOrder.shippingPhone || "Phone not provided"}</p>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Address</p>
+                          <p>{activeOrder.shippingAddress || "Address not provided"}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                        <label className="space-y-1">
+                          <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Status</span>
+                          <select
+                            value={orderStatus[activeOrder.id] || activeOrder.status}
+                            onChange={(event) =>
+                              setOrderStatus((prev) => ({
+                                ...prev,
+                                [activeOrder.id]: event.target.value as VendorOrder["status"],
+                              }))
+                            }
+                            className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-xs text-black"
+                          >
+                            <option value="PLACED">Placed</option>
+                            <option value="PACKED">Packed</option>
+                            <option value="SHIPPED">Shipped</option>
+                            <option value="OUT_FOR_DELIVERY">Out for delivery</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="DAMAGED">Damaged</option>
+                            <option value="UNSUCCESSFUL">Unsuccessful</option>
+                          </select>
+                        </label>
+                        <label className="space-y-1">
+                          <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Tracking</span>
+                          <input
+                            value={trackingCode[activeOrder.id] ?? activeOrder.trackingCode ?? ""}
+                            onChange={(event) =>
+                              setTrackingCode((prev) => ({ ...prev, [activeOrder.id]: event.target.value }))
+                            }
+                            className="w-full rounded-xl border border-black/10 px-3 py-2 text-xs text-black"
+                            placeholder="Tracking code"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => updateOrder(activeOrder.id)}
+                          disabled={updatingOrderId === activeOrder.id}
+                          className="h-10 self-end rounded-xl border border-black/20 bg-black px-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:bg-gray-300"
+                        >
+                          {updatingOrderId === activeOrder.id ? "Updating…" : "Update"}
+                        </button>
+                      </div>
+                      <label className="mt-3 block space-y-1">
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Note</span>
+                        <input
+                          value={orderNote[activeOrder.id] || ""}
+                          onChange={(event) =>
+                            setOrderNote((prev) => ({ ...prev, [activeOrder.id]: event.target.value }))
+                          }
+                          className="w-full rounded-xl border border-black/10 px-3 py-2 text-xs text-black"
+                          placeholder="Optional update for the customer"
+                        />
+                      </label>
+                    </div>
+                  );
+                })()}
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
+                    Order list
+                  </p>
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    {orders.map((order) => {
+                      const name = productNameById.get(order.productId) || "Product";
+                      const isActive = order.id === activeOrder?.id;
+                      return (
+                        <button
+                          key={order.id}
+                          type="button"
+                          onClick={() => setActiveOrderId(order.id)}
+                          className={`min-w-[220px] flex-1 rounded-2xl border p-3 text-left transition ${
+                            isActive
+                              ? "border-black bg-black text-white shadow-sm"
+                              : "border-black/10 bg-white text-gray-600 hover:border-black/30"
+                          }`}
+                        >
+                          <p className="text-[10px] uppercase tracking-[0.3em]">
+                            {order.status.replace(/_/g, " ")}
+                          </p>
+                          <p className={`mt-2 text-sm font-semibold ${isActive ? "text-white" : "text-black"}`}>
+                            {name}
+                          </p>
+                          <p className={`text-xs ${isActive ? "text-white/70" : "text-gray-500"}`}>
+                            {formatMinis(order.amountMinis)} • Qty {order.quantity}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-4 text-sm text-gray-700">
           {editingId && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.3em] text-amber-700">
               Editing pending listing
@@ -418,16 +683,18 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
                   />
                 </label>
               </div>
-              <div className="space-y-3 rounded-2xl border border-black/10 bg-gray-50 p-4">
+              <div className="space-y-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Reward tiers</p>
-                    <p className="text-xs text-gray-500">Probabilities must sum to 1.</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">
+                      Reward tiers
+                    </p>
+                    <p className="text-xs text-[color:var(--app-text-muted)]">Probabilities must sum to 1.</p>
                   </div>
                   <button
                     type="button"
                     onClick={addTier}
-                    className="rounded-full border border-black/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-black"
+                    className="rounded-full border border-[color:var(--surface-border)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-[color:var(--app-text)]"
                   >
                     Add tier
                   </button>
@@ -435,7 +702,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
                 <div className="space-y-3">
                   {rewardTiers.map((tier, index) => (
                     <div key={`${tier.minis}-${index}`} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                      <label className="space-y-1 text-xs text-gray-500">
+                      <label className="space-y-1 text-xs text-[color:var(--app-text-muted)]">
                         Minis
                         <input
                           type="number"
@@ -443,10 +710,10 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
                           step={0.01}
                           value={tier.minis}
                           onChange={(event) => updateTier(index, "minis", event.target.value)}
-                          className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-black"
+                          className="w-full rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 py-2 text-sm text-[color:var(--app-text)]"
                         />
                       </label>
-                      <label className="space-y-1 text-xs text-gray-500">
+                      <label className="space-y-1 text-xs text-[color:var(--app-text-muted)]">
                         Probability (0-1)
                         <input
                           type="number"
@@ -455,7 +722,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
                           step={0.01}
                           value={tier.probability}
                           onChange={(event) => updateTier(index, "probability", event.target.value)}
-                          className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-black"
+                          className="w-full rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 py-2 text-sm text-[color:var(--app-text)]"
                         />
                       </label>
                       <button
@@ -505,6 +772,7 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
             </button>
           )}
         </div>
+        )}
       </section>
 
       <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">

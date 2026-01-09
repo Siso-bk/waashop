@@ -20,6 +20,12 @@
   --balance-text-down: #fca5a5;
   --notification-unread-border: rgba(250, 204, 21, 0.75);
   --notification-unread-glow: rgba(250, 204, 21, 0.28);
+  --action-add-bg: #ffffff;
+  --action-add-border: #000000;
+  --action-add-text: #000000;
+  --action-buy-bg: #000000;
+  --action-buy-border: #ffffff;
+  --action-buy-text: #ffffff;
 }
 
 :root[data-theme="light"] {
@@ -41,6 +47,12 @@
   --balance-text-down: #b91c1c;
   --notification-unread-border: rgba(251, 191, 36, 0.7);
   --notification-unread-glow: rgba(251, 191, 36, 0.25);
+  --action-add-bg: #000000;
+  --action-add-border: #ffffff;
+  --action-add-text: #ffffff;
+  --action-buy-bg: #ffffff;
+  --action-buy-border: #000000;
+  --action-buy-text: #000000;
 }
 
 *,
@@ -118,6 +130,18 @@ body {
 .wallet-theme input::placeholder,
 .wallet-theme textarea::placeholder {
   color: var(--app-text-muted);
+}
+
+.action-add-cart {
+  background-color: var(--action-add-bg);
+  border-color: var(--action-add-border);
+  color: var(--action-add-text);
+}
+
+.action-buy-now {
+  background-color: var(--action-buy-bg);
+  border-color: var(--action-buy-border);
+  color: var(--action-buy-text);
 }
 
 .wallet-theme .wallet-surface {

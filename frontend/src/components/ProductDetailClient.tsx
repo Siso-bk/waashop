@@ -67,13 +67,13 @@ export function ProductDetailClient({
                 />
               </div>
               {images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1">
+                <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
                   {images.map((url) => (
                     <button
                       key={url}
                       type="button"
                       onClick={() => setActiveImage(url)}
-                      className={`relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border transition ${
+                      className={`relative h-16 w-16 flex-shrink-0 snap-start overflow-hidden rounded-xl border transition ${
                         url === activeImage
                           ? "border-black ring-2 ring-black/70"
                           : "border-black/10 hover:border-black/30"
@@ -88,12 +88,12 @@ export function ProductDetailClient({
             </div>
           )}
 
-          <div className="rounded-2xl border border-black/10 bg-gray-50 p-4 text-sm text-gray-600">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Description</p>
+          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 text-sm text-[color:var(--app-text-muted)]">
+            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">Description</p>
             {product.description ? (
-              <p className="mt-2">{product.description}</p>
+              <p className="mt-2 text-[color:var(--app-text)]">{product.description}</p>
             ) : (
-              <p className="mt-2 text-gray-500">No description provided yet.</p>
+              <p className="mt-2 text-[color:var(--app-text-muted)]">No description provided yet.</p>
             )}
           </div>
         </div>
@@ -142,16 +142,18 @@ export function ProductDetailClient({
             )}
           </div>
 
-          <div className="rounded-2xl border border-black/10 bg-gray-50 p-4 text-sm text-gray-600">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Store</p>
-            <div className="mt-2 space-y-1 text-xs text-gray-500">
+          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 text-sm text-[color:var(--app-text-muted)]">
+            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">Store</p>
+            <div className="mt-2 space-y-1 text-xs text-[color:var(--app-text-muted)]">
               <p>
-                <span className="text-gray-400">Address:</span>{" "}
-                {product.vendorAddress || "Not provided"}
+                <span className="text-[color:var(--app-text-muted)]">Address:</span>{" "}
+                <span className="text-[color:var(--app-text)]">{product.vendorAddress || "Not provided"}</span>
               </p>
               <p>
-                <span className="text-gray-400">Support:</span>{" "}
-                {product.vendorPhone || "Contact Waashop support"}
+                <span className="text-[color:var(--app-text-muted)]">Support:</span>{" "}
+                <span className="text-[color:var(--app-text)]">
+                  {product.vendorPhone || "Contact Waashop support"}
+                </span>
               </p>
             </div>
           </div>
@@ -200,14 +202,14 @@ export function ProductDetailClient({
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="w-full rounded-full border border-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
+                className="action-add-cart w-full rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] transition hover:opacity-90"
               >
                 Add to cart
               </button>
               <button
                 type="button"
                 onClick={handleOrderNow}
-                className="w-full rounded-full border border-white/15 bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900"
+                className="action-buy-now w-full rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] transition hover:opacity-90"
               >
                 Order now
               </button>

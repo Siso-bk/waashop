@@ -25,6 +25,20 @@ type VendorProduct = {
   createdAt?: string;
 };
 
+type VendorOrder = {
+  id: string;
+  productId: string;
+  productType?: string;
+  status: string;
+  amountMinis: number;
+  quantity: number;
+  shippingName?: string;
+  shippingPhone?: string;
+  shippingAddress?: string;
+  trackingCode?: string;
+  createdAt?: string;
+};
+
 export default async function VendorIndexPage() {
   const user = await getSessionUser();
   if (!user) {
@@ -72,7 +86,20 @@ export default async function VendorIndexPage() {
     products = [];
   }
 
+  let orders: VendorOrder[] = [];
+  try {
+    const data = await backendFetch<{ orders: VendorOrder[] }>("/api/vendors/orders");
+    orders = data.orders || [];
+  } catch {
+    orders = [];
+  }
+
   return (
-    <VendorDashboardClient vendor={vendor} initialProducts={products} canPost={vendor.status === "APPROVED"} />
+    <VendorDashboardClient
+      vendor={vendor}
+      initialProducts={products}
+      initialOrders={orders}
+      canPost={vendor.status === "APPROVED"}
+    />
   );
 }
