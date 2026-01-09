@@ -142,6 +142,7 @@ export function WalletActionModal({
   const [isDepositSubmitting, setIsDepositSubmitting] = useState(false);
   const [isWithdrawSubmitting, setIsWithdrawSubmitting] = useState(false);
   const [isTransferSubmitting, setIsTransferSubmitting] = useState(false);
+  const [transferPending, setTransferPending] = useState(false);
   const [recipientValue, setRecipientValue] = useState("");
   const [amountValue, setAmountValue] = useState("");
   const [minisValue, setMinisValue] = useState("");
@@ -503,6 +504,7 @@ export function WalletActionModal({
         lastTransferHandledRef.current = transferAttempt;
       }
       setTransferFeedback(transferState);
+      setTransferPending(false);
     }
     if (active === "send" && transferState.status === "success") {
       setRecipientValue("");
@@ -517,6 +519,9 @@ export function WalletActionModal({
     if (active === "send" && transferState.status === "error") {
       const timeout = setTimeout(() => setTransferFeedback(initialFormState), 2400);
       return () => clearTimeout(timeout);
+    }
+    if (active !== "send") {
+      setTransferPending(false);
     }
     return undefined;
   }, [active, transferState.status, transferState.message, transferAttempt, router]);
@@ -1151,6 +1156,7 @@ export function WalletActionModal({
                   className="space-y-4 text-sm text-gray-700"
                   onSubmit={() => {
                     setIsTransferSubmitting(true);
+                    setTransferPending(true);
                     setTransferFeedback(initialFormState);
                     setTransferAttempt((prev) => prev + 1);
                   }}
@@ -1182,9 +1188,9 @@ export function WalletActionModal({
                   />
                   <button
                     type="submit"
-                    disabled={isTransferSubmitting || transferFeedback.status === "success"}
+                    disabled={isTransferSubmitting || transferPending || transferFeedback.status === "success"}
                     className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
-                      isTransferSubmitting
+                      isTransferSubmitting || transferPending
                         ? "bg-black/80"
                         : transferFeedback.status === "success"
                         ? "bg-emerald-600"
@@ -1193,7 +1199,7 @@ export function WalletActionModal({
                         : "bg-black hover:bg-gray-900"
                     }`}
                   >
-                    {isTransferSubmitting
+                    {isTransferSubmitting || transferPending
                       ? "Sending…"
                       : transferFeedback.status === "success"
                       ? "Success ✓"
