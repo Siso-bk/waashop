@@ -1,6 +1,6 @@
  "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import { formatMinis } from "@/lib/minis";
 
 interface Props {
@@ -13,34 +13,32 @@ export function BalancePanel({ minis, tone = "auto" }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const valueRef = useRef<HTMLParagraphElement | null>(null);
   const animationRef = useRef<number | null>(null);
-  const themeTone = useSyncExternalStore(
-    (callback) => {
-      if (typeof document === "undefined") return () => {};
-      const observer = new MutationObserver(callback);
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-      return () => observer.disconnect();
-    },
-    () => (typeof document !== "undefined" && document.documentElement.dataset.theme === "dark" ? "dark" : "light"),
-    () => "light"
-  );
-  const isDark = tone === "dark" || (tone === "auto" && themeTone === "dark");
+  const useAutoTone = tone === "auto";
+  const isDark = tone === "dark";
   const current = minis ?? 0;
-  const containerBase =
-    "rounded-2xl p-4 transition-colors duration-700" +
-    (isDark
-      ? " border border-white/20 bg-white/10 text-white"
-      : " border border-black/10 bg-white text-black");
-  const container = containerBase;
-  const label = isDark ? "text-white/60" : "text-gray-500";
-  const description = isDark ? "text-white/70" : "text-gray-500";
-  const styleVars = {
-    "--balance-base": isDark ? "rgba(255, 255, 255, 0.1)" : "#ffffff",
-    "--balance-flash-up": isDark ? "rgba(16, 185, 129, 0.4)" : "#ccfbf1",
-    "--balance-flash-down": isDark ? "rgba(248, 113, 113, 0.4)" : "#fee2e2",
-    "--balance-text-base": isDark ? "#ffffff" : "#0b0b0b",
-    "--balance-text-up": "#15803d",
-    "--balance-text-down": "#b91c1c",
-  } as React.CSSProperties;
+  const container =
+    "rounded-2xl border p-4 transition-colors duration-700 " +
+    (useAutoTone
+      ? "bg-[color:var(--balance-bg)] text-[color:var(--balance-text-base)] border-[color:var(--balance-border)]"
+      : isDark
+      ? "border-white/20 bg-white/10 text-white"
+      : "border-black/10 bg-white text-black");
+  const label = useAutoTone ? "text-[color:var(--balance-label)]" : isDark ? "text-white/60" : "text-gray-500";
+  const description = useAutoTone
+    ? "text-[color:var(--balance-desc)]"
+    : isDark
+    ? "text-white/70"
+    : "text-gray-500";
+  const styleVars = useAutoTone
+    ? undefined
+    : ({
+        "--balance-base": isDark ? "rgba(255, 255, 255, 0.1)" : "#ffffff",
+        "--balance-flash-up": isDark ? "rgba(16, 185, 129, 0.4)" : "#ccfbf1",
+        "--balance-flash-down": isDark ? "rgba(248, 113, 113, 0.4)" : "#fee2e2",
+        "--balance-text-base": isDark ? "#ffffff" : "#0b0b0b",
+        "--balance-text-up": isDark ? "#34d399" : "#15803d",
+        "--balance-text-down": isDark ? "#fca5a5" : "#b91c1c",
+      } as React.CSSProperties);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -102,7 +100,12 @@ export function BalancePanel({ minis, tone = "auto" }: Props) {
     <div>
       <div ref={containerRef} className={container} style={styleVars}>
         <p className={`text-xs uppercase tracking-[0.3em] ${label}`}>MINIS</p>
-        <p ref={valueRef} className="mt-2 text-3xl font-semibold transition-colors duration-700">
+        <p
+          ref={valueRef}
+          className={`mt-2 text-3xl font-semibold transition-colors duration-700 ${
+            useAutoTone ? "text-[color:var(--balance-text-base)]" : ""
+          }`}
+        >
           {formatMinis(current)}
         </p>
         <p className={`text-xs ${description}`}>TOTAL BALANCE</p>
