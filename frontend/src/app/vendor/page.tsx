@@ -29,7 +29,19 @@ type VendorOrder = {
   id: string;
   productId: string;
   productType?: string;
-  status: string;
+  status:
+    | "PLACED"
+    | "PACKED"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
+    | "DISPUTED"
+    | "REFUNDED"
+    | "CANCELLED"
+    | "REJECTED"
+    | "DAMAGED"
+    | "UNSUCCESSFUL";
   amountMinis: number;
   quantity: number;
   shippingName?: string;

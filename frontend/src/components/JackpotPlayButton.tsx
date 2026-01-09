@@ -109,7 +109,7 @@ export function JackpotPlayButton({ jackpot, signedIn = true, disabled }: Props)
       <button
         onClick={handleTry}
         disabled={disabled || isLoading}
-        className="w-full rounded-full border border-orange-400/70 bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="w-full rounded-full border border-black bg-[#000] px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {isLoading ? "Trying..." : `TRY FOR ${formatMinis(jackpot.priceMinis)}`}
       </button>
