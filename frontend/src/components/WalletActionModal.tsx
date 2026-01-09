@@ -259,7 +259,6 @@ export function WalletActionModal({
       setScannerOpen(false);
       setScanStatus("idle");
       setScanMessage(null);
-      setIsTransferSubmitting(false);
     }
     if (active !== "deposit" && active !== "withdraw") {
       setMinisValue("");
