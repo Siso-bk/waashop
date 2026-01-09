@@ -211,10 +211,10 @@ export function VendorDashboardClient({ vendor, initialProducts, canPost }: Vend
               key={type}
               type="button"
               onClick={() => setActiveType(type)}
-              className={`rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] transition ${
+              className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] transition ${
                 activeType === type
-                  ? "bg-black text-white"
-                  : "border border-black/10 text-gray-600 hover:border-black/30"
+                  ? "border-black bg-black text-white"
+                  : "border-black/10 text-gray-600 hover:border-black/30"
               }`}
             >
               {type === "STANDARD" ? "Product" : type === "MYSTERY_BOX" ? "Mystery box" : "Challenge"}

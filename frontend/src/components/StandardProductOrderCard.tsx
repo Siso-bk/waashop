@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { formatMinis } from "@/lib/minis";
 import type { StandardProduct } from "@/types";
 import { isFavorite, toggleFavorite } from "@/lib/favorites";
@@ -18,32 +18,31 @@ export function StandardProductOrderCard({
   onAddToCart: (product: StandardProduct) => void;
   onOrderNow: (product: StandardProduct) => void;
 }) {
-  const hasImage = Boolean(product.imageUrls?.length || product.imageUrl);
   const imageSrc = product.imageUrls?.[0] || product.imageUrl || "/images/no-image.svg";
-  const [favorite, setFavorite] = useState(false);
-
-  useEffect(() => {
-    setFavorite(isFavorite(product.id));
-    const handleUpdate = () => setFavorite(isFavorite(product.id));
-    window.addEventListener("favorites:updated", handleUpdate);
-    return () => window.removeEventListener("favorites:updated", handleUpdate);
-  }, [product.id]);
+  const favorite = useSyncExternalStore(
+    (onStoreChange) => {
+      const handleUpdate = () => onStoreChange();
+      window.addEventListener("favorites:updated", handleUpdate);
+      return () => window.removeEventListener("favorites:updated", handleUpdate);
+    },
+    () => isFavorite(product.id),
+    () => false
+  );
 
   return (
     <article className="group relative flex flex-col rounded-3xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg">
       <button
         type="button"
         onClick={() => {
-          const result = toggleFavorite({
+          toggleFavorite({
             id: product.id,
             name: product.name,
             priceMinis: product.priceMinis,
             imageUrl: product.imageUrls?.[0] || product.imageUrl,
             vendorName: product.vendorName,
           });
-          setFavorite(result.isFavorite);
         }}
-        className="absolute right-3 top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-white/70 text-black shadow-sm transition hover:border-black/40"
+        className="absolute right-3 top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/40 bg-gray-700/80 text-white shadow-sm transition hover:border-black/60"
         aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
@@ -89,7 +88,7 @@ export function StandardProductOrderCard({
               event.stopPropagation();
               onAddToCart(product);
             }}
-            className="w-full rounded-full border border-black/20 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-black transition hover:bg-black hover:text-white"
+            className="w-full rounded-full border border-teal-500 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-teal-600 transition hover:bg-teal-600 hover:text-white"
           >
             Add to cart
           </button>
@@ -99,7 +98,7 @@ export function StandardProductOrderCard({
               event.stopPropagation();
               onOrderNow(product);
             }}
-            className="w-full rounded-full border border-white/15 bg-black px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-white transition hover:bg-gray-900"
+            className="w-full rounded-full border border-orange-500 bg-orange-500 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-white transition hover:bg-orange-600"
           >
             Order now
           </button>

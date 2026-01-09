@@ -562,7 +562,7 @@ export function VendorProductForm({ disabled }: { disabled?: boolean }) {
       <PendingButton
         pendingLabel="Submitting..."
         disabled={isLocked}
-        className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="rounded-xl border border-indigo-300 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-300"
       >
         Submit product
       </PendingButton>

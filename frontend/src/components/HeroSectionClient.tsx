@@ -1,4 +1,3 @@
-"use client";
 import { HeroCards } from "@/components/HeroCards";
 import type { HomeHeroCard } from "@/types";
 
