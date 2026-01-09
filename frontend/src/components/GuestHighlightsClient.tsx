@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { HomeHighlightCard } from "@/types";
 
@@ -21,13 +18,7 @@ type Props = {
 };
 
 export function GuestHighlightsClient({ signedIn, highlightCards }: Props) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted || signedIn) return null;
+  if (signedIn) return null;
 
   return (
     <section className="grid gap-4 sm:grid-cols-2">

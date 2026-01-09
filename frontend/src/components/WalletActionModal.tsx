@@ -132,6 +132,8 @@ export function WalletActionModal({
   const [depositState, depositAction] = useActionState(createDeposit, initialFormState);
   const [withdrawState, withdrawAction] = useActionState(createWithdrawal, initialFormState);
   const [transferState, transferAction] = useActionState(createTransfer, initialFormState);
+  const [transferFeedback, setTransferFeedback] = useState<FormState>(initialFormState);
+  const [transferAttempt, setTransferAttempt] = useState(0);
   const [isDepositSubmitting, setIsDepositSubmitting] = useState(false);
   const [isWithdrawSubmitting, setIsWithdrawSubmitting] = useState(false);
   const [isTransferSubmitting, setIsTransferSubmitting] = useState(false);
@@ -165,6 +167,7 @@ export function WalletActionModal({
   const scannerRef = useRef<Html5QrcodeInstance | null>(null);
   const fileScannerRef = useRef<Html5QrcodeInstance | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const lastTransferHandledRef = useRef(0);
   const cameraReaderId = "waashop-qr-camera-reader";
   const fileReaderId = "waashop-qr-file-reader";
 
@@ -490,7 +493,11 @@ export function WalletActionModal({
 
   useEffect(() => {
     if (active === "send" && (transferState.status === "success" || transferState.status === "error")) {
-      router.refresh();
+      if (transferAttempt > lastTransferHandledRef.current) {
+        router.refresh();
+        lastTransferHandledRef.current = transferAttempt;
+      }
+      setTransferFeedback(transferState);
     }
     if (active === "send" && transferState.status === "success") {
       const timeout = setTimeout(() => setActive(null), 900);
@@ -499,8 +506,12 @@ export function WalletActionModal({
     if (transferState.status !== "idle") {
       setIsTransferSubmitting(false);
     }
+    if (active === "send" && transferState.status === "error") {
+      const timeout = setTimeout(() => setTransferFeedback(initialFormState), 2400);
+      return () => clearTimeout(timeout);
+    }
     return undefined;
-  }, [active, transferState.status, router]);
+  }, [active, transferState.status, transferState.message, transferAttempt, router]);
 
   const parseTransferPayload = useCallback((raw: string) => {
     const trimmed = raw.trim();
@@ -1130,7 +1141,11 @@ export function WalletActionModal({
                 <form
                   action={transferAction}
                   className="space-y-4 text-sm text-gray-700"
-                  onSubmit={() => setIsTransferSubmitting(true)}
+                  onSubmit={() => {
+                    setIsTransferSubmitting(true);
+                    setTransferFeedback(initialFormState);
+                    setTransferAttempt((prev) => prev + 1);
+                  }}
                 >
                   <input
                     name="recipient"
@@ -1159,33 +1174,33 @@ export function WalletActionModal({
                   />
                   <button
                     type="submit"
-                    disabled={isTransferSubmitting || transferState.status === "success"}
+                    disabled={isTransferSubmitting || transferFeedback.status === "success"}
                     className={`w-full rounded-full border border-[var(--surface-border)] px-3 py-2 text-[13px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
                       isTransferSubmitting
                         ? "bg-black/80"
-                        : transferState.status === "success"
+                        : transferFeedback.status === "success"
                         ? "bg-emerald-600"
-                        : transferState.status === "error"
+                        : transferFeedback.status === "error"
                         ? "bg-red-600"
                         : "bg-black hover:bg-gray-900"
                     }`}
                   >
                     {isTransferSubmitting
                       ? "Sending…"
-                      : transferState.status === "success"
+                      : transferFeedback.status === "success"
                       ? "Success ✓"
-                      : transferState.status === "error"
+                      : transferFeedback.status === "error"
                       ? "Failed ✕"
                       : "Send transfer"}
                   </button>
-                  {transferState.status !== "idle" && (
+                  {transferFeedback.status !== "idle" && (
                     <p
                       className={`text-xs ${
-                        transferState.status === "success" ? "text-emerald-600" : "text-red-500"
+                        transferFeedback.status === "success" ? "text-emerald-600" : "text-red-500"
                       }`}
                     >
-                      {transferState.status === "success" ? "✓ " : "✕ "}
-                      {transferState.message}
+                      {transferFeedback.status === "success" ? "✓ " : "✕ "}
+                      {transferFeedback.message}
                     </p>
                   )}
                 </form>
