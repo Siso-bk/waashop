@@ -93,13 +93,13 @@ export function BoxPurchaseButton({ box, signedIn = true, disabled }: Props) {
       <button
         onClick={handleBuy}
         disabled={disabled || isLoading || isSoldOut}
-        className="w-full rounded-full border border-black bg-[#000] px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="w-full rounded-full border border-black bg-[#000] px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-700"
       >
         {isSoldOut ? "Sold out" : isLoading ? "Processing..." : `A BOX FOR ${formatMinis(box.priceMinis ?? 0)}`}
       </button>
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-rose-500">{error}</p>}
       {needsAuth && (
-        <Link href="/login" className="text-xs font-semibold text-black underline">
+        <Link href="/login" className="text-xs font-semibold text-[color:var(--app-text)] underline">
           Sign in to continue
         </Link>
       )}

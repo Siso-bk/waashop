@@ -30,7 +30,7 @@ export function VendorLogoField({ initialValue = "" }: Props) {
     try {
       setIsUploading(true);
       setError(null);
-      const url = await uploadFileToGcs(file, "vendor-logos");
+      const url = await uploadFileToGcs(file, { folder: "vendor-logos" });
       setLogoValue(url);
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : "Unable to upload logo.";

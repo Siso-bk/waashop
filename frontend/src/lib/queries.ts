@@ -10,6 +10,9 @@ import {
   ChallengeWin,
   WinnerSpotlightDto,
   ShopTab,
+  ProductCategory,
+  ProductReview,
+  ReviewSummary,
   StandardProduct,
   JackpotPlayDto,
   CustomerOrder,
@@ -240,6 +243,15 @@ export const getShopTabs = async (): Promise<ShopTab[]> => {
   }
 };
 
+export const getProductCategories = async (): Promise<ProductCategory[]> => {
+  try {
+    const data = await backendFetch<{ categories: ProductCategory[] }>("/api/product-categories", { auth: false });
+    return data.categories;
+  } catch {
+    return [];
+  }
+};
+
 export const getStandardProducts = async (): Promise<StandardProduct[]> => {
   try {
     const data = await backendFetch<{ products: any[] }>("/api/products?type=STANDARD", { auth: false });
@@ -252,15 +264,44 @@ export const getStandardProducts = async (): Promise<StandardProduct[]> => {
       name: product.name,
       description: product.description,
       priceMinis: product.priceMinis ?? 0,
+      vendorId: product.vendorId,
       vendorName: product.vendorName,
+      vendorStatus: product.vendorStatus,
       vendorPhone: product.vendorPhone,
+      vendorEmail: product.vendorEmail,
       vendorCity: product.vendorCity,
+      vendorCountry: product.vendorCountry,
       vendorAddress: product.vendorAddress,
+      vendorWebsite: product.vendorWebsite,
+      vendorLogoUrl: product.vendorLogoUrl,
+      vendorFulfillmentMethod: product.vendorFulfillmentMethod,
+      vendorProcessingTime: product.vendorProcessingTime,
+      vendorReturnsPolicy: product.vendorReturnsPolicy,
+      categories: product.categories,
+      status: product.status,
+      createdAt: product.createdAt,
       imageUrl: product.imageUrl,
       imageUrls: product.imageUrls,
     }));
   } catch {
     return [];
+  }
+};
+
+export const getProductReviews = async (
+  productId: string
+): Promise<{ reviews: ProductReview[]; summary: ReviewSummary }> => {
+  try {
+    const data = await backendFetch<{ reviews: ProductReview[]; summary: ReviewSummary }>(
+      `/api/reviews?productId=${productId}`,
+      { auth: false }
+    );
+    return {
+      reviews: data.reviews ?? [],
+      summary: data.summary ?? { averageRating: 0, totalReviews: 0 },
+    };
+  } catch {
+    return { reviews: [], summary: { averageRating: 0, totalReviews: 0 } };
   }
 };
 
@@ -278,10 +319,22 @@ export const getStandardProductById = async (id: string): Promise<StandardProduc
       name: data.product.name,
       description: data.product.description,
       priceMinis: data.product.priceMinis ?? 0,
+      vendorId: data.product.vendorId,
       vendorName: data.product.vendorName,
+      vendorStatus: data.product.vendorStatus,
       vendorPhone: data.product.vendorPhone,
+      vendorEmail: data.product.vendorEmail,
       vendorCity: data.product.vendorCity,
+      vendorCountry: data.product.vendorCountry,
       vendorAddress: data.product.vendorAddress,
+      vendorWebsite: data.product.vendorWebsite,
+      vendorLogoUrl: data.product.vendorLogoUrl,
+      vendorFulfillmentMethod: data.product.vendorFulfillmentMethod,
+      vendorProcessingTime: data.product.vendorProcessingTime,
+      vendorReturnsPolicy: data.product.vendorReturnsPolicy,
+      categories: data.product.categories,
+      status: data.product.status,
+      createdAt: data.product.createdAt,
       imageUrl: data.product.imageUrl,
       imageUrls: data.product.imageUrls,
     };

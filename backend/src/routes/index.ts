@@ -27,6 +27,7 @@ import TransferRequest, { ITransferRequest } from "../models/TransferRequest";
 import Notification from "../models/Notification";
 import Order, { IOrder } from "../models/Order";
 import OrderDispute, { IOrderDispute } from "../models/OrderDispute";
+import Review from "../models/Review";
 import { getPlatformSettings, updatePlatformSettings } from "../services/settings";
 import { withMongoSession, connectDB } from "../lib/db";
 import { resolveReward } from "../services/rewards";
@@ -3281,9 +3282,17 @@ router.get("/products", async (req, res) => {
       vendor._id.toString(),
       {
         name: vendor.name,
+        status: vendor.status,
         contactPhone: vendor.contactPhone,
+        contactEmail: vendor.contactEmail,
         city: vendor.city,
+        country: vendor.country,
         businessAddress: vendor.businessAddress,
+        website: vendor.website,
+        logoUrl: vendor.logoUrl,
+        fulfillmentMethod: vendor.fulfillmentMethod,
+        processingTime: vendor.processingTime,
+        returnsPolicy: vendor.returnsPolicy,
       },
     ])
   );
@@ -3291,10 +3300,22 @@ router.get("/products", async (req, res) => {
     products: products.map((product) => ({
       id: product._id.toString(),
       ...normalizeProduct(product),
+      vendorId: product.vendorId?.toString?.() || undefined,
       vendorName: vendorMap.get(product.vendorId?.toString?.() || "")?.name || undefined,
+      vendorStatus: vendorMap.get(product.vendorId?.toString?.() || "")?.status || undefined,
       vendorPhone: vendorMap.get(product.vendorId?.toString?.() || "")?.contactPhone || undefined,
+      vendorEmail: vendorMap.get(product.vendorId?.toString?.() || "")?.contactEmail || undefined,
       vendorCity: vendorMap.get(product.vendorId?.toString?.() || "")?.city || undefined,
+      vendorCountry: vendorMap.get(product.vendorId?.toString?.() || "")?.country || undefined,
       vendorAddress: vendorMap.get(product.vendorId?.toString?.() || "")?.businessAddress || undefined,
+      vendorWebsite: vendorMap.get(product.vendorId?.toString?.() || "")?.website || undefined,
+      vendorLogoUrl: vendorMap.get(product.vendorId?.toString?.() || "")?.logoUrl || undefined,
+      vendorFulfillmentMethod:
+        vendorMap.get(product.vendorId?.toString?.() || "")?.fulfillmentMethod || undefined,
+      vendorProcessingTime:
+        vendorMap.get(product.vendorId?.toString?.() || "")?.processingTime || undefined,
+      vendorReturnsPolicy:
+        vendorMap.get(product.vendorId?.toString?.() || "")?.returnsPolicy || undefined,
     })),
   });
 });
@@ -3318,12 +3339,120 @@ router.get("/products/:id", async (req, res) => {
     product: {
       id: product._id.toString(),
       ...normalizeProduct(product),
+      vendorId: product.vendorId?.toString?.() || undefined,
       vendorName: vendor?.name,
+      vendorStatus: vendor?.status,
       vendorPhone: vendor?.contactPhone,
+      vendorEmail: vendor?.contactEmail,
       vendorCity: vendor?.city,
+      vendorCountry: vendor?.country,
       vendorAddress: vendor?.businessAddress,
+      vendorWebsite: vendor?.website,
+      vendorLogoUrl: vendor?.logoUrl,
+      vendorFulfillmentMethod: vendor?.fulfillmentMethod,
+      vendorProcessingTime: vendor?.processingTime,
+      vendorReturnsPolicy: vendor?.returnsPolicy,
     },
   });
+});
+
+router.get("/reviews", async (req, res) => {
+  await connectDB();
+  const productId = typeof req.query.productId === "string" ? req.query.productId : "";
+  if (!Types.ObjectId.isValid(productId)) {
+    return res.status(400).json({ error: "Invalid product id" });
+  }
+  const limit = Math.min(Number(req.query.limit ?? 20), 50);
+  const reviews = await Review.find({ productId }).sort({ createdAt: -1 }).limit(limit).lean();
+  const userIds = reviews.map((review) => review.userId).filter(Boolean);
+  const users = await User.find({ _id: { $in: userIds } }).lean();
+  const userMap = new Map(
+    users.map((user) => [
+      user._id.toString(),
+      {
+        label: user.username ? `@${user.username}` : `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim(),
+      },
+    ])
+  );
+  const orders = await Order.find({
+    productId: new Types.ObjectId(productId),
+    buyerId: { $in: userIds },
+    status: { $nin: ["CANCELLED", "REFUNDED"] },
+  })
+    .select("buyerId")
+    .lean();
+  const verifiedSet = new Set(orders.map((order) => order.buyerId.toString()));
+  const summary = await Review.aggregate([
+    { $match: { productId: new Types.ObjectId(productId) } },
+    { $group: { _id: null, averageRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } },
+  ]);
+  const summaryEntry = summary[0] || { averageRating: 0, totalReviews: 0 };
+  res.json({
+    reviews: reviews.map((review) => ({
+      id: review._id.toString(),
+      productId: review.productId.toString(),
+      userId: review.userId.toString(),
+      rating: review.rating,
+      title: review.title,
+      body: review.body,
+      createdAt: review.createdAt?.toISOString?.() || review.createdAt,
+      userLabel: userMap.get(review.userId.toString())?.label || "Customer",
+      verifiedPurchase: verifiedSet.has(review.userId.toString()),
+    })),
+    summary: {
+      averageRating: summaryEntry.averageRating ?? 0,
+      totalReviews: summaryEntry.totalReviews ?? 0,
+    },
+  });
+});
+
+router.post("/reviews", authMiddleware, async (req, res) => {
+  const schema = z.object({
+    productId: z.string().min(1),
+    rating: z.number().int().min(1).max(5),
+    title: z.string().max(80).optional(),
+    body: z.string().max(500).optional(),
+  });
+  try {
+    const payload = schema.parse(req.body);
+    if (!Types.ObjectId.isValid(payload.productId)) {
+      return res.status(400).json({ error: "Invalid product id" });
+    }
+    await connectDB();
+    const product = await Product.findById(payload.productId).lean();
+    if (!product || product.type !== "STANDARD") {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    const review = await Review.findOneAndUpdate(
+      { productId: payload.productId, userId: req.userId },
+      {
+        $set: {
+          rating: payload.rating,
+          title: payload.title,
+          body: payload.body,
+        },
+        $setOnInsert: {
+          productId: payload.productId,
+          userId: req.userId,
+        },
+      },
+      { new: true, upsert: true }
+    );
+    res.json({
+      review: {
+        id: review._id.toString(),
+        productId: review.productId.toString(),
+        userId: review.userId.toString(),
+        rating: review.rating,
+        title: review.title,
+        body: review.body,
+        createdAt: review.createdAt?.toISOString?.() || review.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("Review create error", error);
+    res.status(400).json({ error: "Unable to submit review" });
+  }
 });
 
 router.post("/uploads/sign", authMiddleware, async (req, res) => {
@@ -3351,10 +3480,16 @@ router.post("/uploads/sign", authMiddleware, async (req, res) => {
       expires,
       contentType: payload.contentType,
     });
+    const [viewUrl] = await file.getSignedUrl({
+      version: "v4",
+      action: "read",
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    });
     const publicBase = process.env.GCS_PUBLIC_BASE_URL || `https://storage.googleapis.com/${bucketName}`;
     res.json({
       uploadUrl,
       publicUrl: `${publicBase}/${objectName}`,
+      viewUrl,
       objectName,
     });
   } catch (error) {

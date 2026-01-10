@@ -30,7 +30,7 @@ export function StandardProductOrderCard({
   );
 
   return (
-    <article className="group relative flex flex-col rounded-3xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-lg">
+    <article className="web-card group relative flex h-full min-h-[360px] flex-col rounded-3xl p-4 transition hover:-translate-y-0.5 hover:shadow-lg">
       <button
         type="button"
         onClick={() => {
@@ -42,7 +42,7 @@ export function StandardProductOrderCard({
             vendorName: product.vendorName,
           });
         }}
-        className="absolute right-3 top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white bg-gray-700/80 text-white shadow-sm transition hover:border-white/80"
+        className="absolute right-3 top-3 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white bg-zinc-800/80 text-white shadow-sm transition hover:border-white/80"
         aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
@@ -54,9 +54,13 @@ export function StandardProductOrderCard({
           />
         </svg>
       </button>
-      <Link href={`/products/${product.id}`} aria-label={`View ${product.name}`} className="relative z-10 block">
-        <div className="relative z-10 mb-2 block">
-          <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-black/10 bg-[color:var(--surface-bg)]">
+      <Link
+        href={`/products/${product.id}`}
+        aria-label={`View ${product.name}`}
+        className="relative z-10 flex flex-1 flex-col"
+      >
+        <div className="relative z-10">
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[color:var(--app-border)] bg-[color:var(--surface-bg)]">
             <Image
               src={imageSrc}
               alt={product.name}
@@ -67,21 +71,36 @@ export function StandardProductOrderCard({
             />
           </div>
         </div>
-        <div className="relative z-10 space-y-1">
-          <p className="truncate text-sm font-semibold text-black">{product.name}</p>
-          <p className="text-xs font-semibold text-black">{formatMinis(product.priceMinis)}</p>
-          {product.vendorCity && (
-            <p className="text-[11px] text-gray-500">{product.vendorCity}</p>
+        <div className="relative z-10 mt-3 space-y-1">
+          <p className="line-clamp-2 text-sm font-semibold text-[color:var(--app-foreground)]">{product.name}</p>
+          <p className="text-xs font-semibold text-[color:var(--app-foreground)]">
+            {formatMinis(product.priceMinis)}
+          </p>
+          {(product.vendorName || product.vendorCity) && (
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--app-text-muted)]">
+              {product.vendorName && <span className="truncate">By {product.vendorName}</span>}
+              {product.vendorCity && <span className="truncate">{product.vendorCity}</span>}
+              {product.vendorStatus === "APPROVED" && (
+                <span className="rounded-full border border-emerald-300/60 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
+                  Verified
+                </span>
+              )}
+            </div>
           )}
+          <div className="text-[11px] text-[color:var(--app-text-muted)]">
+            {typeof product.averageRating === "number" && typeof product.totalReviews === "number"
+              ? `${product.averageRating.toFixed(1)} ★ (${product.totalReviews})`
+              : "No ratings yet"}
+          </div>
         </div>
       </Link>
 
       {!signedIn ? (
-        <div className="relative z-10 mt-5 rounded-2xl border border-dashed border-black/15 bg-gray-50 p-4 text-xs text-gray-600">
+        <div className="relative z-10 mt-auto rounded-2xl border border-dashed border-[color:var(--app-border)] bg-[color:var(--surface-bg)] p-4 text-xs text-[color:var(--app-text-muted)]">
           Sign in to add to cart or place an order.
         </div>
       ) : (
-        <div className="relative z-10 mt-5 space-y-2 text-sm text-gray-700">
+        <div className="relative z-10 mt-auto space-y-2 text-sm text-[color:var(--app-text-muted)]">
           <button
             type="button"
             onClick={(event) => {

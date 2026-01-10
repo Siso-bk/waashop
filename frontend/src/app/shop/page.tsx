@@ -1,28 +1,39 @@
 import Link from "next/link";
 import {
-  getActiveBoxes,
-  getChallenges,
-  getActiveJackpots,
   getSessionUser,
   getShopTabs,
+  getProductCategories,
   getStandardProducts,
 } from "@/lib/queries";
 import { formatMinis } from "@/lib/minis";
 import { ShopProductsClient } from "@/components/ShopProductsClient";
 import { ShopHeader } from "@/components/ShopHeader";
-import { JackpotShowcase } from "@/components/JackpotShowcase";
-import { MysteryBoxShowcase } from "@/components/MysteryBoxShowcase";
-import { ChallengeShowcase } from "@/components/ChallengeShowcase";
+import { ShopTabNav } from "@/components/ShopTabNav";
+import { SiteTopNav } from "@/components/SiteTopNav";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const FALLBACK_TABS = [
-  { key: "mystery-boxes", label: "Mystery boxes", order: 0 },
-  { key: "products", label: "Products", order: 1 },
-  { key: "challenges", label: "Challenges", order: 2 },
-  { key: "jackpot-plays", label: "Jackpots play", order: 3 },
-  { key: "coming-soon", label: "Coming soon", order: 4 },
+  { key: "products", label: "Products", order: 0 },
+  { key: "coming-soon", label: "Coming soon", order: 1 },
 ];
+
+const PLAY_TABS = new Set(["mystery-boxes", "challenges", "jackpot-plays"]);
+
+export const metadata = {
+  title: "Shop — Waashop",
+  description: "Browse products, mystery boxes, challenges, and jackpots on Waashop.",
+  openGraph: {
+    title: "Shop — Waashop",
+    description: "Browse products, mystery boxes, challenges, and jackpots on Waashop.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shop — Waashop",
+    description: "Browse products, mystery boxes, challenges, and jackpots on Waashop.",
+  },
+};
 
 export default async function ShopPage({
   searchParams,
@@ -31,102 +42,61 @@ export default async function ShopPage({
 }) {
   const resolvedParams = searchParams ? await searchParams : undefined;
   const query = typeof resolvedParams?.q === "string" ? resolvedParams.q.trim() : "";
-  const [boxes, jackpots, user, tabs, standardProducts, challenges] = await Promise.all([
-    getActiveBoxes(),
-    getActiveJackpots(),
+  const [user, tabs, categories, standardProducts] = await Promise.all([
     getSessionUser(),
     getShopTabs(),
+    getProductCategories(),
     getStandardProducts(),
-    getChallenges(),
   ]);
   const tabList = (tabs.length ? tabs : FALLBACK_TABS)
     .slice()
+    .filter((tab) => !PLAY_TABS.has(tab.key))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const resolvedTabs = tabList.length ? tabList : FALLBACK_TABS;
   const tabKey = typeof resolvedParams?.tab === "string" ? resolvedParams.tab : "";
-  const activeTab = tabList.find((tab) => tab.key === tabKey) ? tabKey : tabList[0]?.key;
+  const activeTab = resolvedTabs.find((tab) => tab.key === tabKey) ? tabKey : resolvedTabs[0]?.key;
   const normalizedQuery = query.toLowerCase();
   const activeQuery = normalizedQuery && activeTab ? normalizedQuery : "";
-  const filteredBoxes =
-    activeTab === "mystery-boxes" && activeQuery
-      ? boxes.filter((box) => box.name.toLowerCase().includes(activeQuery))
-      : boxes;
-  const filteredChallenges =
-    activeTab === "challenges" && activeQuery
-      ? challenges.filter((challenge) =>
-          `${challenge.name} ${challenge.description ?? ""}`.toLowerCase().includes(activeQuery)
-        )
-      : challenges;
-  const filteredJackpots =
-    activeTab === "jackpot-plays" && activeQuery
-      ? jackpots.filter((jackpot) => jackpot.name.toLowerCase().includes(activeQuery))
-      : jackpots;
 
   return (
-    <div
-      className="space-y-1 pb-5"
-    >
-      <header className="space-y-2">
-        <ShopHeader activeTab={activeTab} initialQuery={query} />
-        {!user && (
-          <div className="space-y-1">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center rounded-full border border-black px-4 py-2 text-xs font-semibold text-black hover:bg-black hover:text-white"
-            >
-              Sign in to Shop
-            </Link>
-            <p className="text-xs text-gray-500">Use your email or username@pai.</p>
-          </div>
-        )}
+    <div className="web-shell pb-6">
+      <SiteTopNav signedIn={Boolean(user)} />
+      <header className="web-panel rounded-3xl p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <ShopHeader
+            activeTab={activeTab}
+            initialQuery={query}
+            suggestions={standardProducts.map((product) => product.name)}
+          />
+          {!user && (
+            <div className="flex flex-col items-start gap-1">
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center rounded-full border border-black bg-[#000] px-4 py-2 text-xs font-semibold text-white transition hover:bg-black/80"
+              >
+                Sign in to Shop
+              </Link>
+              <p className="text-xs text-[color:var(--app-text-muted)]">Use your email or username@pai.</p>
+            </div>
+          )}
+        </div>
+        <ShopTabNav tabs={resolvedTabs} activeTab={activeTab} />
       </header>
-      <nav className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-        {tabList.map((tab) => {
-          const isActive = tab.key === activeTab;
-          return (
-            <Link
-              key={tab.key}
-              href={`/shop?tab=${tab.key}`}
-              className={`whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.26em] transition ${
-                isActive
-                  ? "border-black/70 bg-black/15 text-black dark:border-white/80 dark:bg-white/30 dark:text-white"
-                  : "border-black/15 bg-transparent text-black hover:border-black/40 dark:border-white/20 dark:text-white/70"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {activeTab === "mystery-boxes" && (
-        <MysteryBoxShowcase boxes={filteredBoxes} signedIn={Boolean(user)} />
-      )}
 
       {activeTab === "products" && (
         <ShopProductsClient
           products={standardProducts}
+          categories={categories}
           signedIn={Boolean(user)}
           query={activeTab === "products" ? query : ""}
         />
       )}
-
-      {activeTab === "challenges" && (
-        <ChallengeShowcase challenges={filteredChallenges} signedIn={Boolean(user)} />
-      )}
-
-      {activeTab === "jackpot-plays" && (
-        <JackpotShowcase jackpots={filteredJackpots} signedIn={Boolean(user)} />
-      )}
-
-      {activeTab !== "mystery-boxes" &&
-        activeTab !== "products" &&
-        activeTab !== "challenges" &&
-        activeTab !== "jackpot-plays" && (
-        <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
-            {tabList.find((tab) => tab.key === activeTab)?.label}
+      {activeTab !== "products" && (
+        <div className="web-panel rounded-3xl border border-dashed p-8 text-center text-sm text-[color:var(--app-text-muted)]">
+          <p className="web-kicker">
+            {resolvedTabs.find((tab) => tab.key === activeTab)?.label}
           </p>
-          <p className="mt-3 text-lg font-semibold text-black">Coming soon</p>
+          <p className="mt-3 text-lg font-semibold text-[color:var(--app-text)]">Coming soon</p>
           <p className="mt-2">We are preparing new drops for this tab. Check back soon.</p>
         </div>
       )}

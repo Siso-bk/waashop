@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { formatMinis } from "@/lib/minis";
 import { uploadFileToGcs } from "@/lib/uploads";
+import type { VendorOrder, VendorProduct } from "@/types";
 
 const VENDOR_PRODUCTS_ENDPOINT = "/api/vendors/products";
 const MAX_IMAGE_BYTES = 500 * 1024;
@@ -17,48 +18,6 @@ type VendorProfile = {
 type RewardTier = {
   minis: number;
   probability: number;
-};
-
-type VendorProduct = {
-  id: string;
-  name: string;
-  description?: string;
-  type: "STANDARD" | "MYSTERY_BOX" | "CHALLENGE";
-  status: "PENDING" | "ACTIVE" | "REJECTED";
-  imageUrl?: string;
-  imageUrls?: string[];
-  priceMinis?: number;
-  guaranteedMinMinis?: number;
-  rewardTiers?: RewardTier[];
-  ticketPriceMinis?: number;
-  ticketCount?: number;
-  createdAt?: string;
-};
-
-type VendorOrder = {
-  id: string;
-  productId: string;
-  productType?: string;
-  status:
-    | "PLACED"
-    | "PACKED"
-    | "SHIPPED"
-    | "OUT_FOR_DELIVERY"
-    | "DELIVERED"
-    | "COMPLETED"
-    | "DISPUTED"
-    | "REFUNDED"
-    | "CANCELLED"
-    | "REJECTED"
-    | "DAMAGED"
-    | "UNSUCCESSFUL";
-  amountMinis: number;
-  quantity: number;
-  shippingName?: string;
-  shippingPhone?: string;
-  shippingAddress?: string;
-  trackingCode?: string;
-  createdAt?: string;
 };
 
 type VendorDashboardClientProps = {
@@ -536,7 +495,7 @@ export function VendorDashboardClient({
                     try {
                       setImageUploading(true);
                       setImageError(null);
-                      const url = await uploadFileToGcs(file, "vendor-products");
+                      const url = await uploadFileToGcs(file, { folder: "vendor-products" });
                       setImageUrls((current) => [...current, url]);
                     } catch (uploadError) {
                       const message = uploadError instanceof Error ? uploadError.message : "Unable to upload image.";

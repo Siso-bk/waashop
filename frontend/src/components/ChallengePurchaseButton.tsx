@@ -61,7 +61,7 @@ export function ChallengePurchaseButton({ challenge, signedIn = true }: Props) {
       <button
         onClick={handleBuy}
         disabled={isLoading || remaining <= 0 || hasWinner}
-        className="w-full rounded-full border border-black bg-[#000] px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="w-full rounded-full border border-black bg-[#000] px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-700"
       >
         {hasWinner
           ? "Winner selected"
@@ -72,29 +72,29 @@ export function ChallengePurchaseButton({ challenge, signedIn = true }: Props) {
               : "Buy ticket"}
       </button>
       {needsAuth && (
-        <Link href="/login" className="text-xs font-semibold text-black underline">
+        <Link href="/login" className="text-xs font-semibold text-[color:var(--app-text)] underline">
           Sign in to continue
         </Link>
       )}
       {hasWinner && (
-        <div className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-[11px] text-gray-600">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Winner</p>
-          <p className="mt-1 font-semibold text-black">
+        <div className="web-card px-3 py-2 text-[11px] text-[color:var(--app-text-muted)]">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">Winner</p>
+          <p className="mt-1 font-semibold text-[color:var(--app-text)]">
             {winnerLabel} · {ticketLabel}
           </p>
-          <p className="mt-1 text-[10px] text-gray-500">
+          <p className="mt-1 text-[10px] text-[color:var(--app-text-muted)]">
             {challenge.prizeDeliveredAt ? "Prize delivered." : "Awaiting prize delivery."}
           </p>
           {!challenge.prizeConfirmedAt && (
-            <p className="mt-1 text-[10px] text-gray-400">
+            <p className="mt-1 text-[10px] text-[color:var(--app-text-muted)]">
               This will show until the winner confirms the prize delivered.
             </p>
           )}
         </div>
       )}
       <div className="min-h-[16px]" aria-live="polite">
-        {error && <p className="text-xs text-red-500">{error}</p>}
-        {success && <p className="text-xs text-emerald-600">{success}</p>}
+        {error && <p className="text-xs text-rose-500">{error}</p>}
+        {success && <p className="text-xs text-emerald-500">{success}</p>}
       </div>
     </div>
   );

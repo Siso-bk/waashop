@@ -7,8 +7,8 @@ import { useEffect, useState } from "react";
 const navLinks = [
   { href: "/", label: "Home", icon: "🏠" },
   { href: "/shop", label: "Shop", icon: "🛍" },
+  { href: "/play", label: "Play", icon: "🎮" },
   { href: "/info", label: "Info", icon: "ℹ️" },
-  { href: "/wallet", label: "Wallet", icon: "💳" },
   { href: "/account", label: "Account", icon: "👤" },
 ];
 
@@ -52,7 +52,14 @@ export function MobileNav() {
         // Ignore unread fetch failures for guests.
       }
     };
-    const handleRefresh = () => {
+    const handleRefresh = (event?: Event) => {
+      if (event && "detail" in event) {
+        const detail = (event as CustomEvent<{ unread?: number }>).detail;
+        if (typeof detail?.unread === "number") {
+          setUnreadCount(detail.unread);
+          return;
+        }
+      }
       if (pathname.startsWith("/info")) {
         setUnreadCount(0);
         return;

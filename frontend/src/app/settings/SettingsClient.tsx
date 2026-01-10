@@ -133,6 +133,13 @@ export function SettingsClient({ user }: SettingsClientProps) {
   return (
     <div className="space-y-6 pb-20">
       <header className="space-y-2">
+        <Link
+          href="/account"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-black"
+        >
+          <span aria-hidden>←</span>
+          Account
+        </Link>
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Settings</p>
         <h1 className="text-2xl font-semibold text-black">Account settings</h1>
         <p className="text-sm text-gray-600">Security and account actions.</p>

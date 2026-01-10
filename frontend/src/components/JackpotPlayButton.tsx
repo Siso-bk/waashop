@@ -109,13 +109,13 @@ export function JackpotPlayButton({ jackpot, signedIn = true, disabled }: Props)
       <button
         onClick={handleTry}
         disabled={disabled || isLoading}
-        className="w-full rounded-full border border-black bg-[#000] px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="w-full rounded-full border border-black bg-[#000] px-4 py-2 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-gray-700"
       >
         {isLoading ? "Trying..." : `TRY FOR ${formatMinis(jackpot.priceMinis)}`}
       </button>
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-rose-500">{error}</p>}
       {needsAuth && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-[color:var(--app-text-muted)]">
           <Link href="/login" className="font-semibold underline">
             Sign in
           </Link>{" "}

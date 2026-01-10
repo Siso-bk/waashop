@@ -33,7 +33,7 @@ export function ChallengeShowcase({ challenges, signedIn }: Props) {
 
   if (!challenges.length) {
     return (
-      <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
+      <div className="web-panel border-dashed p-8 text-center text-sm text-[color:var(--app-text-muted)]">
         No challenges available right now. Check back soon.
       </div>
     );
@@ -77,7 +77,7 @@ export function ChallengeShowcase({ challenges, signedIn }: Props) {
       </article>
 
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">All challenges</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">All challenges</p>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {challenges.map((challenge) => {
             const isActive = challenge.id === activeChallenge?.id;
@@ -86,20 +86,20 @@ export function ChallengeShowcase({ challenges, signedIn }: Props) {
                 key={challenge.id}
                 type="button"
                 onClick={() => setActiveId(challenge.id)}
-                className={`min-w-[180px] flex-1 rounded-2xl border p-3 text-left transition ${
+                className={`web-card min-w-[180px] flex-1 p-3 text-left transition ${
                   isActive
-                    ? "border-emerald-300 bg-white shadow-sm shadow-emerald-500/10"
-                    : "border-black/10 bg-white hover:border-emerald-200"
+                    ? "border-[color:var(--app-border-strong)] shadow-sm shadow-emerald-500/10"
+                    : "hover:border-emerald-200"
                 }`}
               >
-                <div className="flex items-center justify-between text-[10px] text-gray-500">
+                <div className="flex items-center justify-between text-[10px] text-[color:var(--app-text-muted)]">
                   <span>TICKET</span>
-                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+                  <span className="rounded-full bg-[color:var(--app-foreground)] px-3 py-1 text-xs font-semibold text-[color:var(--panel-bg)]">
                     {formatMinis(challenge.ticketPriceMinis)}
                   </span>
                 </div>
-                <p className="mt-2 text-base font-semibold text-black">{challenge.name}</p>
-                <p className="text-[10px] text-gray-500">Play now</p>
+                <p className="mt-2 text-base font-semibold text-[color:var(--app-foreground)]">{challenge.name}</p>
+                <p className="text-[10px] text-[color:var(--app-text-muted)]">Play now</p>
               </button>
             );
           })}

@@ -71,14 +71,14 @@ export function ProductDetailLoader({ productId, signedIn }: Props) {
 
   if (state.status === "error") {
     return (
-      <div className="rounded-3xl border border-black/10 bg-white p-8 text-center text-sm text-gray-500">
+      <div className="web-panel p-8 text-center text-sm text-[color:var(--app-text-muted)]">
         {state.message}
       </div>
     );
   }
 
   return (
-    <div className="rounded-3xl border border-black/10 bg-white p-8 text-center text-sm text-gray-500">
+    <div className="web-panel p-8 text-center text-sm text-[color:var(--app-text-muted)]">
       Loading product...
     </div>
   );

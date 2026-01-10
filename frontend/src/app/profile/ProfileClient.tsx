@@ -134,6 +134,13 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
     <div className="space-y-6">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
+          <Link
+            href="/account"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-black"
+          >
+            <span aria-hidden>←</span>
+            Account
+          </Link>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Profile</p>
           <h1 className="text-2xl font-semibold text-black">{profile.firstName || "Waashop shopper"}</h1>
           <p className="text-xs text-gray-500">
@@ -142,9 +149,6 @@ export function ProfileClient({ initialProfile }: ProfileClientProps) {
               : "Transfers support email or username@pai. Set your username@pai to receive faster."}
           </p>
         </div>
-        <Link href="/wallet" className="text-xs font-semibold text-black underline underline-offset-4">
-          Back to wallet
-        </Link>
       </header>
 
       <section className="space-y-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">

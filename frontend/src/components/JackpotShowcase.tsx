@@ -57,7 +57,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
 
   if (!liveJackpots.length) {
     return (
-      <div className="rounded-3xl border border-dashed border-black/20 bg-white p-8 text-center text-sm text-gray-500">
+      <div className="web-panel border-dashed p-8 text-center text-sm text-[color:var(--app-text-muted)]">
         No jackpot plays live right now. Check back soon.
       </div>
     );
@@ -110,7 +110,7 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
       )}
 
       <div className="shrink-0 space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">All jackpots</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--app-text-muted)]">All jackpots</p>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {liveJackpots.map((item) => {
             const total = item.platformPercent + item.seedPercent + item.vendorPercent;
@@ -121,19 +121,19 @@ export function JackpotShowcase({ jackpots, signedIn }: Props) {
                 key={item.id}
                 type="button"
                 onClick={() => setSelectedId(item.id)}
-                className={`min-w-[180px] flex-1 rounded-2xl border p-3 text-left transition ${
+                className={`web-card min-w-[180px] flex-1 p-3 text-left transition ${
                   isActive
-                    ? "border-emerald-300 bg-white shadow-sm shadow-emerald-500/10"
-                    : "border-black/10 bg-white hover:border-emerald-200"
+                    ? "border-[color:var(--app-border-strong)] shadow-sm shadow-emerald-500/10"
+                    : "hover:border-emerald-200"
                 }`}
               >
-                <div className="flex items-center justify-between text-[10px] text-gray-500">
+                <div className="flex items-center justify-between text-[10px] text-[color:var(--app-text-muted)]">
                   <span>TRY PRICE</span>
-                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+                  <span className="rounded-full bg-[color:var(--app-foreground)] px-3 py-1 text-xs font-semibold text-[color:var(--panel-bg)]">
                     {formatMinis(item.priceMinis)}
                   </span>
                 </div>
-                <p className="mt-2 text-base font-semibold text-black">{item.name}</p>
+                <p className="mt-2 text-base font-semibold text-[color:var(--app-foreground)]">{item.name}</p>
                 <p className="text-sm font-semibold text-emerald-500">Winner prize {formatMinis(prize)}</p>
               </button>
             );

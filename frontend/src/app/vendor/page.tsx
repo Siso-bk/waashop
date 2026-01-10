@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/queries";
+import type { VendorOrder, VendorProduct } from "@/types";
 import { backendFetch } from "@/lib/backendClient";
 import { VendorDashboardClient } from "./VendorDashboardClient";
 
@@ -9,53 +10,18 @@ type VendorProfile = {
   status: "PENDING" | "APPROVED" | "SUSPENDED" | "REJECTED";
 };
 
-type VendorProduct = {
-  id: string;
-  name: string;
-  description?: string;
-  type: "STANDARD" | "MYSTERY_BOX" | "CHALLENGE";
-  status: "PENDING" | "ACTIVE" | "REJECTED";
-  imageUrl?: string;
-  imageUrls?: string[];
-  priceMinis?: number;
-  guaranteedMinMinis?: number;
-  rewardTiers?: Array<{ minis: number; probability: number }>;
-  ticketPriceMinis?: number;
-  ticketCount?: number;
-  createdAt?: string;
-};
-
-type VendorOrder = {
-  id: string;
-  productId: string;
-  productType?: string;
-  status:
-    | "PLACED"
-    | "PACKED"
-    | "SHIPPED"
-    | "OUT_FOR_DELIVERY"
-    | "DELIVERED"
-    | "COMPLETED"
-    | "DISPUTED"
-    | "REFUNDED"
-    | "CANCELLED"
-    | "REJECTED"
-    | "DAMAGED"
-    | "UNSUCCESSFUL";
-  amountMinis: number;
-  quantity: number;
-  shippingName?: string;
-  shippingPhone?: string;
-  shippingAddress?: string;
-  trackingCode?: string;
-  createdAt?: string;
-};
-
 export default async function VendorIndexPage() {
   const user = await getSessionUser();
   if (!user) {
     return (
       <div className="space-y-4 rounded-3xl border border-black/10 bg-white p-6 text-center shadow-sm">
+        <Link
+          href="/account"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-black"
+        >
+          <span aria-hidden>←</span>
+          Account
+        </Link>
         <p className="text-sm text-gray-600">Sign in to access vendor tools.</p>
         <p className="text-xs text-gray-500">Use your email or username@pai.</p>
         <Link
@@ -79,6 +45,13 @@ export default async function VendorIndexPage() {
   if (!vendor) {
     return (
       <div className="space-y-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+        <Link
+          href="/account"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-black"
+        >
+          <span aria-hidden>←</span>
+          Account
+        </Link>
         <p className="text-sm text-gray-600">No vendor profile found yet.</p>
         <Link
           href="/vendor/apply"
@@ -107,11 +80,20 @@ export default async function VendorIndexPage() {
   }
 
   return (
-    <VendorDashboardClient
-      vendor={vendor}
-      initialProducts={products}
-      initialOrders={orders}
-      canPost={vendor.status === "APPROVED"}
-    />
+    <div className="space-y-6 pb-20">
+      <Link
+        href="/account"
+        className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-black"
+      >
+        <span aria-hidden>←</span>
+        Account
+      </Link>
+      <VendorDashboardClient
+        vendor={vendor}
+        initialProducts={products}
+        initialOrders={orders}
+        canPost={vendor.status === "APPROVED"}
+      />
+    </div>
   );
 }

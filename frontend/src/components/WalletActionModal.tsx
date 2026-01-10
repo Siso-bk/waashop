@@ -402,7 +402,7 @@ export function WalletActionModal({
       setProofError(null);
       setProofUploading(true);
       try {
-        const uploadedUrl = await uploadFileToGcs(file, "deposit-proofs");
+        const uploadedUrl = await uploadFileToGcs(file, { folder: "deposit-proofs", access: "signed" });
         setProofUrl(uploadedUrl);
       } catch (error) {
         setProofError(error instanceof Error ? error.message : "Upload failed.");

@@ -33,7 +33,7 @@ export function NotificationsClient({ initialNotifications }: Props) {
       const now = new Date().toISOString();
       setItems((prev) => prev.map((item) => ({ ...item, status: "READ", readAt: now })));
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("notifications:refresh"));
+        window.dispatchEvent(new CustomEvent("notifications:refresh", { detail: { unread: 0 } }));
       }
       markInFlightRef.current = false;
     };

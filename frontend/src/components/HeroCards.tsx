@@ -20,24 +20,17 @@ export function HeroCards({ cards, prefersLightText }: Props) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const pauseUntilRef = useRef<number>(0);
-  const activeCard = visibleCards[activeIndex];
+  const safeIndex = visibleCards.length ? Math.min(activeIndex, visibleCards.length - 1) : 0;
+  const activeCard = visibleCards[safeIndex];
 
   const cardClasses = prefersLightText
     ? "border-white/20 text-white"
-    : "border-black/15 text-black";
-  const tagText = prefersLightText ? "text-white/70" : "text-black/60";
-  const bodyText = prefersLightText ? "text-white/85" : "text-black/70";
+    : "border-[color:var(--app-border)] text-[color:var(--app-foreground)]";
+  const tagText = prefersLightText ? "text-white/70" : "text-[color:var(--app-text-muted)]";
+  const bodyText = prefersLightText ? "text-white/85" : "text-[color:var(--app-text)]";
   const buttonClass = prefersLightText
     ? "border border-white/40 text-white hover:bg-white/10"
-    : "border border-black/30 text-black hover:bg-black/5";
-
-  useEffect(() => {
-    if (visibleCards.length === 0) {
-      setActiveIndex(0);
-      return;
-    }
-    setActiveIndex((current) => Math.min(current, visibleCards.length - 1));
-  }, [visibleCards.length]);
+    : "border border-[color:var(--app-border)] text-[color:var(--app-foreground)] hover:bg-[color:var(--surface-bg)]";
 
   useEffect(() => {
     const target = listRef.current;
@@ -66,12 +59,12 @@ export function HeroCards({ cards, prefersLightText }: Props) {
   }, [visibleCards.length, isVisible]);
 
   useEffect(() => {
-    const button = buttonRefs.current[activeIndex];
+    const button = buttonRefs.current[safeIndex];
     const container = listRef.current;
     if (!button || !container) return;
     const left = button.offsetLeft - 12;
     container.scrollTo({ left, behavior: "smooth" });
-  }, [activeIndex]);
+  }, [safeIndex]);
 
   return (
     <div className="space-y-4">
@@ -80,7 +73,7 @@ export function HeroCards({ cards, prefersLightText }: Props) {
           className={`rounded-[28px] border p-5 ${
             prefersLightText
               ? "border-white/25 bg-white/10 text-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
-              : "border-black/10 bg-white text-black/80 shadow-[0_25px_60px_rgba(0,0,0,0.08)]"
+              : "border-[color:var(--app-border)] bg-[color:var(--panel-bg)] text-[color:var(--app-foreground)] shadow-[0_25px_60px_rgba(0,0,0,0.08)]"
           }`}
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -103,19 +96,19 @@ export function HeroCards({ cards, prefersLightText }: Props) {
         </div>
       )}
       <div ref={listRef} className="flex gap-3 overflow-x-auto pb-2">
-        {visibleCards.map((card, index) => (
-          <button
-            key={card.id}
-            type="button"
-            ref={(node) => {
-              buttonRefs.current[index] = node;
-            }}
-            onClick={() => {
-              pauseUntilRef.current = Date.now() + 12000;
-              setActiveIndex(index);
-            }}
-            className={`relative min-w-[180px] max-w-[220px] flex-1 overflow-hidden rounded-2xl border p-3 text-left transition ${
-              activeIndex === index
+          {visibleCards.map((card, index) => (
+            <button
+              key={card.id}
+              type="button"
+              ref={(node) => {
+                buttonRefs.current[index] = node;
+              }}
+              onClick={() => {
+                pauseUntilRef.current = Date.now() + 12000;
+                setActiveIndex(index);
+              }}
+              className={`relative min-w-[180px] max-w-[220px] flex-1 overflow-hidden rounded-2xl border p-3 text-left transition ${
+              safeIndex === index
                 ? prefersLightText
                   ? "ring-2 ring-white/70 border-white/40"
                   : "ring-2 ring-black/60 border-black/40"
@@ -123,7 +116,7 @@ export function HeroCards({ cards, prefersLightText }: Props) {
                   ? "hover:border-white/40"
                   : "hover:border-black/30"
             } ${cardClasses}`}
-            aria-pressed={activeIndex === index}
+            aria-pressed={safeIndex === index}
             aria-label={card.title}
           >
             {card.imageUrl && (
@@ -141,7 +134,7 @@ export function HeroCards({ cards, prefersLightText }: Props) {
                   style={{
                     background: prefersLightText
                       ? "linear-gradient(160deg, rgba(0,0,0,0.75), rgba(0,0,0,0.25))"
-                      : "linear-gradient(160deg, rgba(255,255,255,0.95), rgba(255,255,255,0.5))",
+                      : "linear-gradient(160deg, rgba(255,255,255,0.92), rgba(255,255,255,0.5))",
                     opacity:
                       typeof card.overlayOpacity === "number"
                         ? Math.min(Math.max(card.overlayOpacity, 0.1), 0.95)

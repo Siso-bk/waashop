@@ -33,7 +33,7 @@ export function MysteryBoxShowcase({ boxes, signedIn }: Props) {
 
   if (!boxes.length) {
     return (
-      <div className="rounded-3xl border border-dashed border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-8 text-center text-sm text-[color:var(--app-text-muted)]">
+      <div className="web-panel border-dashed p-8 text-center text-sm text-[color:var(--app-text-muted)]">
         No boxes available right now. Check back soon.
       </div>
     );
@@ -92,15 +92,15 @@ export function MysteryBoxShowcase({ boxes, signedIn }: Props) {
                 key={box.id}
                 type="button"
                 onClick={() => setActiveId(box.id)}
-                className={`min-w-[180px] flex-1 rounded-2xl border bg-[color:var(--surface-bg)] p-3 text-left transition ${
+                className={`web-card min-w-[180px] flex-1 p-3 text-left transition ${
                   isActive
-                    ? "border-emerald-300 shadow-sm shadow-emerald-500/10"
-                    : "border-[color:var(--surface-border)] hover:border-emerald-200"
+                    ? "border-[color:var(--app-border-strong)] shadow-sm shadow-emerald-500/10"
+                    : "hover:border-emerald-200"
                 }`}
               >
                 <div className="flex items-center justify-between text-[10px] text-[color:var(--app-text-muted)]">
                   <span>PRICE</span>
-                  <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+                  <span className="rounded-full bg-[color:var(--app-foreground)] px-3 py-1 text-xs font-semibold text-[color:var(--panel-bg)]">
                     {formatMinis(box.priceMinis)}
                   </span>
                 </div>

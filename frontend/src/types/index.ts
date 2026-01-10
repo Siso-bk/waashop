@@ -149,17 +149,97 @@ export interface ShopTab {
   enabled?: boolean;
 }
 
+export interface ProductCategory {
+  key: string;
+  label: string;
+  order?: number;
+  enabled?: boolean;
+}
+
+export interface ProductReview {
+  id: string;
+  productId: string;
+  userId: string;
+  rating: number;
+  title?: string;
+  body?: string;
+  createdAt: string;
+  userLabel: string;
+  verifiedPurchase?: boolean;
+}
+
+export interface ReviewSummary {
+  averageRating: number;
+  totalReviews: number;
+}
+
 export interface StandardProduct {
   id: string;
   name: string;
   description?: string;
   priceMinis: number;
+  vendorId?: string;
   vendorName?: string;
+  vendorStatus?: string;
   vendorPhone?: string;
+  vendorEmail?: string;
   vendorCity?: string;
+  vendorCountry?: string;
   vendorAddress?: string;
+  vendorWebsite?: string;
+  vendorLogoUrl?: string;
+  vendorFulfillmentMethod?: string;
+  vendorProcessingTime?: string;
+  vendorReturnsPolicy?: string;
+  averageRating?: number;
+  totalReviews?: number;
+  categories?: string[];
+  status?: string;
+  createdAt?: string;
   imageUrl?: string;
   imageUrls?: string[];
+}
+
+export interface VendorProduct {
+  id: string;
+  name: string;
+  description?: string;
+  type: "STANDARD" | "MYSTERY_BOX" | "CHALLENGE";
+  status: "PENDING" | "ACTIVE" | "REJECTED";
+  imageUrl?: string;
+  imageUrls?: string[];
+  priceMinis?: number;
+  guaranteedMinMinis?: number;
+  rewardTiers?: Array<{ minis: number; probability: number }>;
+  ticketPriceMinis?: number;
+  ticketCount?: number;
+  createdAt?: string;
+}
+
+export interface VendorOrder {
+  id: string;
+  productId: string;
+  productType?: string;
+  status:
+    | "PLACED"
+    | "PACKED"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
+    | "DISPUTED"
+    | "REFUNDED"
+    | "CANCELLED"
+    | "REJECTED"
+    | "DAMAGED"
+    | "UNSUCCESSFUL";
+  amountMinis: number;
+  quantity: number;
+  shippingName?: string;
+  shippingPhone?: string;
+  shippingAddress?: string;
+  trackingCode?: string;
+  createdAt?: string;
 }
 
 export interface CustomerOrder {

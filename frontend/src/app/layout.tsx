@@ -33,7 +33,9 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <NavigationProgress />
           </Suspense>
-          <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-8 sm:pb-10 sm:pt-10">{children}</main>
+          <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6 sm:px-8 sm:pb-10 sm:pt-10">
+            {children}
+          </main>
           <MobileNav />
         </div>
       </body>

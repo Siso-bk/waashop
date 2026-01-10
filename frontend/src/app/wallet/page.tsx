@@ -76,17 +76,31 @@ export default async function WalletPage({
   const user = await getSessionUser();
   if (!user) {
     return (
-      <div className="space-y-4 rounded-2xl border border-dashed border-black/20 bg-white p-6 text-sm text-gray-600">
-        <div>
-          <p>Sign in to view your wallet history.</p>
-          <p className="mt-2 text-xs text-gray-500">Use your email or username@pai.</p>
+      <div className="wallet-theme space-y-6">
+        <header className="space-y-1">
+          <Link
+            href="/account"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-black"
+          >
+            <span aria-hidden>←</span>
+            Account
+          </Link>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Wallet</p>
+          <h1 className="text-2xl font-semibold text-black">Balance</h1>
+          <p className="text-sm text-gray-600">Buy, Sell, Deposit, Withdraw Minis.</p>
+        </header>
+        <div className="rounded-2xl border border-dashed border-black/20 bg-white p-6 text-sm text-gray-600">
+          <div>
+            <p>Sign in to view your wallet history.</p>
+            <p className="mt-2 text-xs text-gray-500">Use your email or username@pai.</p>
+          </div>
+          <Link
+            href="/login?redirect=/wallet"
+            className="mt-4 inline-flex items-center justify-center rounded-full bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900"
+          >
+            Sign in
+          </Link>
         </div>
-        <Link
-          href="/login?redirect=/wallet"
-          className="inline-flex items-center justify-center rounded-full bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-900"
-        >
-          Sign in
-        </Link>
       </div>
     );
   }
@@ -133,6 +147,13 @@ export default async function WalletPage({
   return (
     <div className="wallet-theme space-y-6">
       <header className="space-y-1">
+        <Link
+          href="/account"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-black"
+        >
+          <span aria-hidden>←</span>
+          Account
+        </Link>
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Wallet</p>
         <h1 className="text-2xl font-semibold text-black">Balance</h1>
         <p className="text-sm text-gray-600">Buy, Sell, Deposit, Withdraw Minis.</p>
@@ -166,7 +187,7 @@ export default async function WalletPage({
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Jackpots</p>
             <p className="text-sm text-gray-600">Try your luck and watch the pool grow.</p>
           </div>
-          <Link href="/shop?tab=jackpot-plays" className="text-xs font-semibold text-black">
+          <Link href="/play?tab=jackpot-plays" className="text-xs font-semibold text-black">
             View all
           </Link>
         </div>

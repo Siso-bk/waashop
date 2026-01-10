@@ -26,16 +26,27 @@ export default async function AccountPage() {
     <div className="space-y-6 pb-20">
       <header className="space-y-1">
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Account</p>
-        <h1 className="text-2xl font-semibold text-black">Manage your account</h1>
-        <p className="text-sm text-gray-600">Profile details, security, and preferences.</p>
+        <h1 className="text-2xl font-semibold text-black">Wallet & account</h1>
+        <p className="text-sm text-gray-600">Balance, profile details, security, and preferences.</p>
       </header>
       <div className="grid gap-4 sm:grid-cols-2">
+        <Link
+          href="/wallet"
+          className="group rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-black/30 hover:shadow-md"
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Wallet</p>
+          <h2 className="mt-2 text-lg font-semibold text-black">Balance & activity</h2>
+          <p className="mt-2 text-sm text-gray-600">Send, receive, deposit, and withdraw MINIS.</p>
+          <span className="mt-4 inline-flex text-xs font-semibold uppercase tracking-[0.3em] text-black">
+            Open
+          </span>
+        </Link>
         <Link
           href="/profile"
           className="group rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-black/30 hover:shadow-md"
         >
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Profile</p>
-          <h2 className="mt-2 text-lg font-semibold text-black">Personal info</h2>
+          <h2 className="mt-2 text-lg font-semibold text-black">Account management</h2>
           <p className="mt-2 text-sm text-gray-600">Update name, handle, and account identity.</p>
           <span className="mt-4 inline-flex text-xs font-semibold uppercase tracking-[0.3em] text-black">
             Open
