@@ -32,6 +32,7 @@ const adminNavItems = [
   { href: "/admin/shop-tabs", label: "Shop tabs", roles: ["admin"] },
   { href: "/admin/promo-cards", label: "Promo cards", roles: ["admin"] },
   { href: "/admin/deposits", label: "Deposits", roles: ["admin"] },
+  { href: "/admin/transfers", label: "Transfers", roles: ["admin"] },
   { href: "/admin/withdrawals", label: "Withdrawals", roles: ["admin"] },
   { href: "/admin/winners", label: "Winners", roles: ["admin"] },
   { href: "/admin/settings", label: "Settings", roles: ["admin"] },

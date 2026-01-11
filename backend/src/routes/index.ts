@@ -428,21 +428,27 @@ const serializeWithdrawal = (
   };
 };
 
-const serializeTransfer = (transfer: ITransferRequest) => ({
-  id: transfer._id.toString(),
-  senderId: transfer.senderId.toString(),
-  recipientId: transfer.recipientId.toString(),
-  recipientHandle: transfer.recipientHandle,
-  amountMinis: transfer.amountMinis,
-  feeMinis: transfer.feeMinis,
-  status: transfer.status,
-  note: transfer.note,
-  adminNote: transfer.adminNote,
-  reviewedBy: transfer.reviewedBy ? transfer.reviewedBy.toString() : undefined,
-  reviewedAt: transfer.reviewedAt?.toISOString(),
-  createdAt: transfer.createdAt.toISOString(),
-  updatedAt: transfer.updatedAt.toISOString(),
-});
+const serializeTransfer = (transfer: ITransferRequest) => {
+  const toId = (value?: Types.ObjectId | string | null) =>
+    value ? value.toString() : "";
+  const toIso = (value?: Date | string | null) =>
+    value ? new Date(value).toISOString() : new Date(0).toISOString();
+  return {
+    id: toId(transfer._id),
+    senderId: toId(transfer.senderId),
+    recipientId: toId(transfer.recipientId),
+    recipientHandle: transfer.recipientHandle,
+    amountMinis: transfer.amountMinis,
+    feeMinis: transfer.feeMinis,
+    status: transfer.status,
+    note: transfer.note,
+    adminNote: transfer.adminNote,
+    reviewedBy: transfer.reviewedBy ? transfer.reviewedBy.toString() : undefined,
+    reviewedAt: transfer.reviewedAt ? toIso(transfer.reviewedAt) : undefined,
+    createdAt: toIso(transfer.createdAt),
+    updatedAt: toIso(transfer.updatedAt),
+  };
+};
 
 const serializeNotification = (notification: any) => ({
   id: notification._id.toString(),
@@ -1596,7 +1602,13 @@ router.get(
     try {
       const params = querySchema.parse(req.query);
       await connectDB();
-      const filter = params.status ? { status: params.status } : {};
+      const filter: Record<string, unknown> = {
+        senderId: { $ne: null, $exists: true },
+        recipientId: { $ne: null, $exists: true },
+      };
+      if (params.status) {
+        filter.status = params.status;
+      }
       const withdrawals = await WithdrawalRequest.find(filter)
         .sort({ createdAt: -1 })
         .populate("userId", "email username firstName lastName")

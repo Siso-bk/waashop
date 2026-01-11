@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export function ShopHeader({
@@ -23,6 +23,7 @@ export function ShopHeader({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const tabParam = useMemo(() => {
     if (activeTab) return activeTab;
@@ -67,20 +68,20 @@ export function ShopHeader({
     }
   };
 
-  const recentSnapshot = useSyncExternalStore(
-    (onStoreChange) => {
-      const handler = () => onStoreChange();
-      window.addEventListener("storage", handler);
-      window.addEventListener("recent-searches:updated", handler);
-      return () => {
-        window.removeEventListener("storage", handler);
-        window.removeEventListener("recent-searches:updated", handler);
-      };
-    },
-    () => (typeof window === "undefined" ? "[]" : window.localStorage.getItem("waashop-recent-searches") ?? "[]"),
-    () => "[]"
-  );
-  const recentSearches = useMemo(() => parseRecent(recentSnapshot), [recentSnapshot]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const readCurrent = () => {
+      setRecentSearches(parseRecent(window.localStorage.getItem("waashop-recent-searches")));
+    };
+    readCurrent();
+    const handler = () => readCurrent();
+    window.addEventListener("storage", handler);
+    window.addEventListener("recent-searches:updated", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("recent-searches:updated", handler);
+    };
+  }, []);
 
   const commitSearch = (value: string) => {
     const trimmed = value.trim();

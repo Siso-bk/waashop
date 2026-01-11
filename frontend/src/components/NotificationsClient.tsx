@@ -57,7 +57,9 @@ export function NotificationsClient({ initialNotifications }: Props) {
         >
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-500">
             <span>{item.title}</span>
-            <span className="text-[10px] tracking-[0.3em]">{new Date(item.createdAt).toLocaleString()}</span>
+            <span className="text-[10px] tracking-[0.3em]">
+              {new Date(item.createdAt).toLocaleString("en-US")}
+            </span>
           </div>
           <p className="mt-3 text-sm text-black/80 dark:text-white/80">{item.body}</p>
           {item.status === "UNREAD" && (
